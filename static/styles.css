@@ -1,0 +1,169 @@
+body {
+    /*    font-family: Verdana, Geneva, Tahoma, sans-serif;*/
+    text-decoration: none;
+    width: 100%;
+}
+
+li{
+    list-style: none;
+    text-decoration: none;
+}
+
+a{
+}
+
+#menu-link{
+    text-decoration: none;
+    color: black;
+}
+
+#menu-link-cur {
+    text-decoration: none;
+    color: #404E77;
+}
+
+#menu-link:hover, #menu-link:focus, #menu-link:active
+{
+    color: #404E77;
+}
+
+.row {
+    display: flex;
+}
+
+.col {
+    flex: 50%;
+}
+
+.header{
+/*    border-bottom: 1px solid #404E77;*/
+/*    margin: 0em 2em 0em 0em;*/
+}
+
+.header-col{
+    flex: 50%
+}
+
+#header-top{
+    margin-right: 0px;
+}
+
+#welcome-col{
+    align-items: center;
+/*    margin-right: 2em;*/
+}
+.header-image {
+    margin-left: 2em;
+
+    width: 200px;
+    height: auto;
+}
+
+.header-menu-links{
+}
+
+.menu { 
+    float: right;
+    display: flex;
+    gap: 1em;
+    margin: 1.2em 0em 1em 0em;
+    padding-right:3em;
+}
+
+.menu li {
+}
+
+.menu a {
+    font-size: 1.2em;
+    color: black;
+    font-weight: 500;
+}
+
+#get-started {
+   
+}
+
+.foreground-image-block{
+    margin-top: 1em;
+}
+
+.foreground-spacer-block{
+    background-color: #404E77;
+    height: 1em;
+}
+.spacer-block {
+    background-color: #404E77;
+    height: 3em;
+/*
+    margin-bottom: 0;
+    padding-bottom: 0;*/
+}
+
+#index-heading{
+/*    color: #BCC4DB;*/
+    
+    background-color: white;
+    padding-bottom: 1em;
+    padding-top: 1em;
+    margin-bottom: 0px;
+    font-weight: 800;
+}
+
+.background {
+/*    margin-top: 0;
+    padding-top: 0;*/
+/*    background-color: #BCC4DB*/
+    background-color: white;
+}
+.foreground{
+    margin: 0em 2em;
+    background-color: white;
+}
+
+.main-content{
+    padding: 1em;
+}
+
+.mb-3 {
+    padding: 1em 0em 0em 0em;
+}
+
+.download-heading{
+/*    text-align: center;*/
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+#age-plot{
+    padding-top: 0;
+    margin-top: 0;
+    /*margin-left: auto;
+    margin-right: auto;*/
+    display: block;
+}
+
+.error-page {
+    text-align: center;
+}
+
+.error-image {
+    width: 300px;
+    height: auto;
+
+    margin: auto;
+    display: block;
+
+}
+
+.error-message {
+   font-weight: 500;
+}
+
+.error-message-cont{
+    font-weight: 100;
+}
+
+.overflow-auto{
+    height: 8em;
+    overflow:auto
+}

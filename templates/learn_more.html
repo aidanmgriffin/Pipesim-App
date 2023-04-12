@@ -1,0 +1,34 @@
+{% extends 'base-learnmore.html' %}
+
+{% block content %}
+
+<div class="main-content">
+    <h1>About the project</h1>
+    <div class="foreground-spacer-block"></div>
+
+    <br />
+    <h4>Abstract and Motivation</h4>
+    <p>Risk of exposure to pathogens such as Legionella and Mycobacteria from drinking water are heightened by long residence times of water in water distribution systems and elimination of disinfection agents such as chlorine through contact with biofilms inside pipe networks. Municipal water distribution systems are multiscale, mainly dendritic networks analogous to mature trees, with large diameter main pipes (trunks) terminating at a large number of taps (leaves) connected through small diameter lines (twigs). Both the accumulation of residence time (age), and the specific surface area in such systems are maximal in the final branches and twigs of the network, typically in "premise plumbing", that is, the pipe network inside buildings. Consequently there is a critical need for simulation tools that can identify locations of maximum residence time and minimum disinfection agents in premise plumbing drinking water networks. Prof. Ginn is seeking a team of students to extend an existing (Python) code that keeps track of water ages in a building pipe network and to apply the code to the cold water premise plumbing subnetwork of the PACCAR building on the WSU campus. The code, "Pipesim," authored by WSU CS student N. Chrystephan working as a research assistant in the Ginn lab 2020-2021, has been validated and is computationally stable. Pipesim simulates transient flows in the network in response to flow events at taps such as water fountains, kitchen faucets, and toilets, and uses a "particle-tracking" approach to compute ages of water throughout the pipe network at one-second resolution in time. Typical simulations span months, so with one-second resolution of water ages that vary in time, the code generates massive data sets.</p>
+
+    <h4>Additional Info</h4>
+    <p>
+        Our work with Professor Ginn could lead to significant research findings and could contribute to detection of potentially harmful substances in our campus' drinking water. We will be spending time to expand PipeSim's capabilities to include water dispersion, advanced biochemical reaction information, long term (multiple month-long) data simulation, and more. This work has been done by Aidan Griffin, Kenji Adachi, and Keagen Brendle in collaboration with Professor Ginn and Nikita Chrystephen, one of Ginn's previous research assistants. The original PipeSim project was built by Nikita, and his guides will help us to understand how to expand on PipeSim in the ways that Professor Ginn is looking for.
+    </p>
+
+    <h4>Functionality</h4>
+    <p>Users will be able to provide Excel files that translate pipe systems as data trees as input. This way you can model a particular pipe network and use that to run various simulations. A GUI will be launched where the user can choose between predetermined and random simulation parameters where they can also fine tune data output pertaining to particle locations, particle counts, and more.</p>
+
+    <p>Check out our <a href="https://github.com/WSUCptSCapstone-Fall2022Spring2023/nsf-pipesimpython">Github!</a></p>
+    <h4>Changelog</h4>
+
+    <div class="overflow-auto">
+        <h6>V 1.0.0 3/7/23</h6>
+        <p>- Wrote baseline HTML and CSS. AG</p>
+        <p>- Added file upload and processing through PipeSim backend (undid frontend to redirect inputs through web page). AG</p>
+        <p>- Added upload form. AG</p>
+        <p>- Added output page / age_graph display. AG</p>
+    </div>
+</div>
+
+{% endblock %}
+

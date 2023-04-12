@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="download-content">
+    <h3 class="download-heading">Output From {{date_time}}</h3>
+
+    <br /><br />
+
+    <h4 class="download-heading">Age Plot</h4>
+    <img id="age-plot" src="/static/plots/age_graph.png/" />
+
+    <br /><br />
+    <h4 class="download-heading">File Downloads</h4>
+
+    <ul>
+        <li><a href="#">example_download_1</a></li>
+        <li><a href="#">example_download_2</a></li>
+    </ul>
+
+</div>
+
+{% endblock %}
