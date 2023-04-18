@@ -9,6 +9,8 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
 from werkzeug.utils import secure_filename
 from datetime import datetime
+import sys
+import math
 
 
 # pylint: disable=C0103
@@ -84,11 +86,18 @@ def upload():
             pipes = request.files['pipe-network']
             flows = request.files['flow-preset']
             print("request.values", request.values)
-            print(request.values['asymptotic-diffusion-coefficient'])
+            # print(request.values['asymptotic-diffusion-coefficient'])
 
-            asymptotic_diffusion_coefficient = request.values['asymptotic-diffusion-coefficient']
+            # asymptotic_diffusion_coefficient = request.values['asymptotic-diffusion-coefficient']
             density = request.values['density']
             req_radio = request.values['inlineRadioOptions']
+
+            asymptotic_diffusion_coefficient = request.values['asymptotic-diffusion-coefficient']
+            if any(char.isdigit() for char in asymptotic_diffusion_coefficient):
+                pass
+            else:
+                asymptotic_diffusion_coefficient =  9.3 * math.pow(10, -5)
+                
             
             if req_radio == 'option1':
                 granularity = 'Seconds'
@@ -108,8 +117,9 @@ def upload():
                 flows_save_location = os.path.join('input', flows_filename)
                 flows.save(flows_save_location)
 
-            if(request.values['preset-submit']):
-                diffusion_status = 1
+            # print("request vals ", request.values, file = sys.stderr)
+            if('flex-check' in request.values):
+                diffusion_status = 1                    
             else:
                 diffusion_status = 0
 
@@ -121,17 +131,20 @@ def upload():
             output_file = sim.preset_simulation_button_handler(pipes_save_location, flows_save_location, density, diffusion_status, asymptotic_diffusion_coefficient, granularity)
 
             if(output_file):
-                print("ouptut")
+                print("output")
                 return redirect(url_for('download'))
 
+            # return asymptotic_diffusion_coefficient
             return 'uploaded'
 
         #return redirect(url_for('download'))
     return render_template("upload.html", form=form)
 
 @app.route('/download', methods = ['GET', 'POST'])
-def download():
-    return render_template('download.html', files=os.listdir('output'), date_time = date_time)
+def download(filename):
+    uploads = app.root_path
+    return send_from_directory(uploads, filename)
+    # return render_template('download.html', files=os.listdir('output'), date_time = date_time)
 
 #Error routes
 

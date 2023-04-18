@@ -147,12 +147,16 @@ class simulation_window():
         particlelogfile = "SingleParticle.csv"
         particlelogfile = open(particlelogfile, 'w')
 
+        self.options = {"Seconds":1, "Minutes":2, "Hours":3}
+        self.step_size = 1
+        self.step_var = 1
+
         
-        def setDiffusionStatus(self):
-            if self.diffusion_check_internal.get() == 0:
-                self.diffusion_status = False
-            if self.diffusion_check_internal.get() == 1:
-                self.diffusion_status = True
+    def setDiffusionStatus(self):
+        if self.diffusion_check_internal.get() == 0:
+            self.diffusion_status = False
+        if self.diffusion_check_internal.get() == 1:
+            self.diffusion_status = True
         #self.diffusion_options_frame = tk.Frame(master=self.left_column_bottom)
         #self.diffusion_options_frame.grid(row=0, column=0, sticky="nw")
         #self.diffusion_label = tk.Label(master=self.diffusion_options_frame, text="Diffusion Options", font="Helvetica 10 bold")
@@ -166,11 +170,9 @@ class simulation_window():
         #self.time_granularity_frame.grid(row=1, column=0, sticky="nw")
         #self.time_label = tk.Label(master = self.time_granularity_frame, text = "Time Granularity Options", font = "Helvetica 10 bold")
         #self.time_label.grid(row = 0, column = 0, sticky = "nw")
-        self.options = {"Seconds":1, "Minutes":2, "Hours":3}
-        self.step_size = 1
+        
         #self.step_var = tk.IntVar()
         #self.step_var.set(1)
-        self.step_var = 1
         #self.radio_grid = tk.Frame(master = self.time_granularity_frame, borderwidth = 1)
         #self.radio_grid.grid(row = 1, column = 0, sticky = "nw")
         #for key in self.options:
