@@ -11,13 +11,9 @@
     <img id="age-plot" src="/static/plots/age_graph.png/" />
 
     <br /><br />
-    <h4 class="download-heading">File Downloads</h4>
+    <h4 class="download-heading">Download Outputs</h4>
 
-    <ul>
-        <li><a href="{{url_for('download', filename = "downloadfile.txt") }}">filename</a></li>
-        <li><a href="#">example_download_2</a></li>
-    </ul>
-
+    <a class = "btn btn-success" href = "{{url_for('.download_log')}}">Download</a>
 </div>
-
+<br/><br/>
 {% endblock %}

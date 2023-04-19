@@ -191,7 +191,8 @@ class simulation_window():
     # in order to preserve data from subsequent executions of the simulator, a new save path is generated on each
     # simulation run. the save path is in the format $currentFolder/logs/$currentTime/.
     def generate_path(self):
-        path = "/logs/" + str(datetime.datetime.now())
+        # path = "/logs/" + str(datetime.datetime.now())
+        path = "/logs/output_batch"
         path = path.replace(" ", "-")
         path = path.replace(":", "-")
         path = path.replace(".", "-")

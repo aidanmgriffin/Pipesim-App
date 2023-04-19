@@ -66,7 +66,7 @@ class graphing:
     # creates a new particle age graph, saves the image, and puts the filepath in the message queue.
     def graph_age(self, particleInfo, counter, filename="/logs/"):
         displayname = './static/plots/age_graph.png'
-        filename_large = filename + '/age_graph_large.png'
+        filename_large = filename + '/graph_large.png'
         filename = filename + '/age_graph.png'
         print("displayname: ", displayname)
         self.graph_helper([16,12], 300, filename_large, particleInfo, counter)
