@@ -1,50 +1,64 @@
 {% extends 'base-documentation.html' %}
 
 {% block content %}
-<br />
-<h1 id="pipesim">Pipesim</h1>
-<p>water simulation for indoor plumbing</p>
-<h1 id="purpose-of-application">Purpose of application</h1>
-<p>Pipesim is a tool for simulating water residence times in a plumbing system or pipe network. It was designed to provide data about how long water remains in pipes within a building plumbing system before being expelled through a water faucet or other outlet. </p>
-<h1 id="simulation-models">Simulation models</h1>
-<h2 id="pipe-network">Pipe network</h2>
-<p>The pipe network should be written into a csv file where the first line looks as follows:</p>
-<h3 id="name-material-width-inches-length-feet-parent-root-endpoint">Name, Material, Width (inches), Length (feet), Parent, Root, Endpoint</h3>
-<p>The first line following this header line should contain information about the root pipe (the first pipe in the network of pipes in the simulation). Pipe information follows the format laid out in the header. Supposing the root pipe was 2 inches in diameter and 60 feet long that is made out of copper. Then, the line describing it should look like:</p>
-<pre><code>root,copper,<span class="hljs-number">2</span>,<span class="hljs-number">60</span>,NONE,<span class="hljs-literal">TRUE</span>,
-</code></pre><p>Note that the root node lists TRUE under the root column and has no entry in the Endpoint column. Since it is the root node, it has no parent and so we write NONE under the parent column. Note that these entries are case-sensitive.</p>
-<p>Pipe networks are limited to having a single root node at this time.</p>
-<p>Let us explain how to create the model</p>
-<ol>
-    <li>root</li>
-    <li>arterial-1</li>
-    <li>arterial-2</li>
-    <li>a2-branch-1</li>
-    <li>a2-branch-2</li>
-</ol>
-<p>The five pipes are connected as diagrammed below:</p>
-<pre><code>    <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span> <span class="hljs-comment">root</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span>
+<div class="main-content">
+    <h1>Documentation</h1>
+    <div class="foreground-spacer-block"></div>
+    <br/>
+    <h2 id="simulation-models">Simulation models</h1>
+    <p>Pipesim is a tool for simulating water residence times in a plumbing system or pipe network. It was designed to
+        provide data about how long water remains in pipes within a building plumbing system before being expelled
+        through a water faucet or other outlet. </p>
+    <h3 id="pipe-network">Pipe network</h2>
+    <p>The pipe network should be written into a csv file where the first line looks as follows:</p>
+    <h3 id="name-material-width-inches-length-feet-parent-root-endpoint">Name, Material, Width (inches), Length (feet),
+        Parent, Root, Endpoint</h3>
+    <p>The first line following this header line should contain information about the root pipe (the first pipe in the
+        network of pipes in the simulation). Pipe information follows the format laid out in the header. Supposing the
+        root pipe was 2 inches in diameter and 60 feet long that is made out of copper. Then, the line describing it
+        should look like:</p>
+    <pre><code>root,copper,<span class="hljs-number">2</span>,<span class="hljs-number">60</span>,NONE,<span class="hljs-literal">TRUE</span>,
+</code></pre>
+    <p>Note that the root node lists TRUE under the root column and has no entry in the Endpoint column. Since it is the
+        root node, it has no parent and so we write NONE under the parent column. Note that these entries are
+        case-sensitive.</p>
+    <p>Pipe networks are limited to having a single root node at this time.</p>
+    <p>Let us explain how to create the model</p>
+    <ol>
+        <li>root</li>
+        <li>arterial-1</li>
+        <li>arterial-2</li>
+        <li>a2-branch-1</li>
+        <li>a2-branch-2</li>
+    </ol>
+    <p>The five pipes are connected as diagrammed below:</p>
+    <pre><code>    <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span> <span class="hljs-comment">root</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span>
 <span class="hljs-comment">|</span>        <span class="hljs-comment">|</span>
 <span class="hljs-comment">arterial</span><span class="hljs-literal">-</span><span class="hljs-comment">1</span>    <span class="hljs-literal">-</span><span class="hljs-literal">-</span> <span class="hljs-comment">arterial</span><span class="hljs-literal">-</span><span class="hljs-comment">2</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-literal">-</span>
 <span class="hljs-comment">|</span>        <span class="hljs-comment">|</span>
 <span class="hljs-comment">a2</span><span class="hljs-literal">-</span><span class="hljs-comment">branch</span><span class="hljs-literal">-</span><span class="hljs-comment">1</span>    <span class="hljs-comment">a2</span><span class="hljs-literal">-</span><span class="hljs-comment">branch</span><span class="hljs-literal">-</span><span class="hljs-comment">2</span>
-</code></pre><p>This pipe network has three endpoints. One at the end of arterial-1, and one each at the end of a2-branch-1 and a2-branch-2. You will need to explicitly state these endpoints and give them names in the model file, or else these pipes will be dead-ends.</p>
-<p>We add lines 6,7,8 as follows:</p>
-<ol>
-    <li>endpoint-1</li>
-    <li>endpoint-2</li>
-    <li>endpoint-3</li>
-</ol>
-<p>Now our pipe network looks like:</p>
-<pre><code>    ----- root -----
+</code></pre>
+    <p>This pipe network has three endpoints. One at the end of arterial-1, and one each at the end of a2-branch-1 and
+        a2-branch-2. You will need to explicitly state these endpoints and give them names in the model file, or else
+        these pipes will be dead-ends.</p>
+    <p>We add lines 6,7,8 as follows:</p>
+    <ol>
+        <li>endpoint-1</li>
+        <li>endpoint-2</li>
+        <li>endpoint-3</li>
+    </ol>
+    <p>Now our pipe network looks like:</p>
+    <pre><code>    ----- root -----
     |<span class="hljs-string">        </span>|
     arterial-1    -- arterial-2 ---
     |<span class="hljs-string">        </span>|<span class="hljs-string">        </span>|
     endpoint-1    a2-branch-1    a2-branch-2
             |<span class="hljs-string">        </span>|
             endpoint-2    endpoint-3
-</code></pre><p>with a visualization of the pipe network created, let&#39;s show how this must be written into the pipe network model file.</p>
-<pre><code>root,copper,<span class="hljs-number">2</span>,<span class="hljs-number">60</span>,NONE,<span class="hljs-literal">TRUE</span>,
+</code></pre>
+    <p>with a visualization of the pipe network created, let&#39;s show how this must be written into the pipe network
+        model file.</p>
+    <pre><code>root,copper,<span class="hljs-number">2</span>,<span class="hljs-number">60</span>,NONE,<span class="hljs-literal">TRUE</span>,
 arterial<span class="hljs-number">-1</span>,copper,<span class="hljs-number">1</span>,<span class="hljs-number">40</span>,root,,
 arterial<span class="hljs-number">-2</span>,copper,<span class="hljs-number">1</span>,<span class="hljs-number">40</span>,root,,
 endpoint<span class="hljs-number">-1</span>,NONE,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,arterial<span class="hljs-number">-1</span>,,<span class="hljs-literal">TRUE</span>
@@ -52,10 +66,12 @@ a2-branch<span class="hljs-number">-1</span>,PVC,<span class="hljs-number">0.5</
 a2-branch<span class="hljs-number">-2</span>,PVC,<span class="hljs-number">0.75</span>,<span class="hljs-number">15</span>,arterial<span class="hljs-number">-2</span>,
 endpoint<span class="hljs-number">-2</span>,NONE,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,a2-branch<span class="hljs-number">-1</span>,<span class="hljs-literal">TRUE</span>
 endpoint<span class="hljs-number">-3</span>,NONE,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,a2-branch<span class="hljs-number">-2</span>,<span class="hljs-literal">TRUE</span>
-</code></pre><p>Note that pipes (including endpoints) that have parent pipes farther up the tree (in the diagram) must appear after those parent pipes in the list. There are no other restrictions on the listing order of pipes.</p>
-<h1 id="simulation-modes">Simulation modes</h1>
-<p>The application can run pre-programmed simulations which are constructed in an excel .csv file or it can run a probabalistic simulation based on probabilities set during configuration in the application.</p>
-
+</code></pre>
+    <p>Note that pipes (including endpoints) that have parent pipes farther up the tree (in the diagram) must appear
+        after those parent pipes in the list. There are no other restrictions on the listing order of pipes.</p>
+    <h2 id="simulation-modes">Simulation modes</h1>
+    <p>The application can run pre-programmed simulations which are constructed in an excel .csv file or it can run a
+        probabalistic simulation based on probabilities set during configuration in the application.</p>
+</div>
 
 {% endblock %}
-

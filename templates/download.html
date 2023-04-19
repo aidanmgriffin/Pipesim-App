@@ -9,15 +9,14 @@
 
     <h4 class="download-heading">Age Plot</h4>
     <img id="age-plot" src="/static/plots/age_graph.png/" />
+    <br/><br/>
+    <h4 class="download-heading">Concentration Plot</h4>
+    <img id="age-plot" src="/static/plots/concentration_graph.png/" />
 
     <br /><br />
-    <h4 class="download-heading">File Downloads</h4>
-
-    <ul>
-        <li><a href="#">example_download_1</a></li>
-        <li><a href="#">example_download_2</a></li>
-    </ul>
-
+    <h4 class="download-heading">Download Outputs</h4>
+    <br /> 
+    <a class = "btn btn-success" href = "{{url_for('.download_log')}}">Download</a>
 </div>
-
+<br/><br/>
 {% endblock %}

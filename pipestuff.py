@@ -193,11 +193,34 @@ class Particle:
         self.freechlorine: float = 1.0 #for now this is starting concentration
         self.manager.particleIndex[self.ID] = self
 
+        
+        self.d_m = float(self.manager.diffusionCoefficient)
+        global logfile
+        # logfile.write("Diffusion Coefficient: " + str(self.manager.diffusionActive))
+        
     # the update function increments the particle age and increments contact record according to the current container
     # material type. If the particle container is active (flowing) then calls the movement function to compute particle flow.
     def update(self):
         self.age += 1
-        self.freechlorine = self.freechlorine * 0.99 #For testing purposes, not the decay formula
+        timeStep = self.manager.timeStep
+        #lambda will change depending on the pipe it is in (area and material)
+        #eventually display graph of the concentration and later density in each pipe
+        lamb = 0.1 #see comments above about changing
+        containerName = self.container.name
+
+        selectedParticle = None
+        # if selectedParticle != None:
+            # if self.ID == selectedParticle:
+                # print('Particle:' ,str(selectedParticle), ' : ' ,containerName, ' : ', self.container.material, ' : ', self.container.area, ' : ', str(self.age), ' : ', str(self.freechlorine))
+        # print(containerName, ' : ', self.container.material, ' : ', self.container.area)
+
+
+        #Switch cases for different lambdas
+        #access to container. (area, length, type, and more)
+        # if containerName == "Pipe1":
+        #     lamb = 0.1
+
+        self.freechlorine = self.freechlorine * math.exp(-lamb*timeStep) 
         #For Free chlorine decay:
         #Get the Time Granularity for Delta T
         #Use rate of decay
@@ -283,26 +306,19 @@ class Particle:
     # diffusion math is very tricky because it depends on the strength of the concentration gradient, on the current
     # temperature, and on the types of liquids involved. For simplicity, some assumptions have been made. If needed,
     # this function could be expanded in future to take in some of the data mentioned above. For now, assumptions are
-    # made.
+    # made. Diffusion coefficient is originally assumed to be 2.14 * 10^-6
     def diffuse(self):
 
         global logfile
         
-        # diffusion rate is 8.28 * 10^-4 cm^2/min or 2.14 * 10^-6 in^2 / sec uses an assumption of 20 degrees Celsius for free chlorine in water. 
-        # diffusion_rate = 2.14 * math.pow(10, -6) 
-        try:
-            diffusion_rate = self.manager.diffusionCoefficient
-        except:
-            print("diffusion exception!")
-            diffusion_rate = 2.14 * math.pow(10, -6) 
+        d_m = self.d_m
+        avg_distance = 4 * self.manager.timeStep * d_m
 
-        avg_distance = 4 * self.manager.timeStep * diffusion_rate
         # initialize with a random seed for added randomness
         generator = random.Random()
         standard_dev = math.sqrt(avg_distance)
         modifier = generator.normalvariate(mu=0.0, sigma=standard_dev)
         movement = modifier
-        # logfile.write("Calculating diffusion for particle " + str(self.ID) + " in pipe " + self.container.name + " of length " + str(self.container.length) + " from position " + str(self.position) + " with modifier: " + str(modifier) + "\n")
         position = self.position
         newPosition = position + movement
 
@@ -311,7 +327,6 @@ class Particle:
             while remainingMovement < 0:
                 newContainer = self.container.parent
                 if newContainer == None:
-                    # logfile.write(str(self.ID) + " bumped into the root!\n")
                     self.position = 0
                     break
                 else:
@@ -327,7 +342,6 @@ class Particle:
             while remainingMovement > 0:
                 newContainer = self.select_random_child()
                 if newContainer == None:
-                    # logfile.write(str(self.ID) + " bumped into an endpoint!\n")
                     self.position = self.container.length
                     break
                 else:
@@ -353,34 +367,33 @@ class Particle:
 
                 flow = self.container.flow * remainingTime
 
-                if self.manager.diffusionCoefficient is not None:
-                    asymptotic_diffusion_rate = self.manager.diffusionCoefficient
-                else:
-                    asymptotic_diffusion_rate = 2.14 * math.pow(10, -6) #diffusion coefficient (currently at 2.14) vs 0.002 (D_inf)
-              
                 flow_endpoint_list = list(self.manager.time_since.keys())
                 
                 #Particles i that already in the pipe system versus particles that enter the pipe system during the kth flow event.
                 if self.age >= self.manager.time_since[flow_endpoint_list[-1]]:
-                    diffusion_rate_i = asymptotic_diffusion_rate * (counter.get_time() - (counter.get_time() - self.manager.time_since[flow_endpoint_list[-1]]))
+                    min_t = (counter.get_time() - (counter.get_time() - self.manager.time_since[flow_endpoint_list[-1]]))
                 else:
-                    diffusion_rate_i = asymptotic_diffusion_rate * (counter.get_time() - (counter.get_time() - self.age))
+                    min_t = (counter.get_time() - (counter.get_time() - self.age))
+
+                d_0 : float = 0.01946
+                d_m = self.d_m
+
+                logfile.write("d_0: " + str(d_m))
+
+                diffusion_rate_i = d_0 * (1 - math.exp((-min_t / 114))) + d_m
 
                 # Aidan and Tim's waste of time integration 2/22/23
                 #  d_time = (asymptotic_diffusion_rate - diffusion_rate) * (-1 + 2 * factor_scale * math.exp(-self.container.timeStep/(2 * factor_scale))) + (asymptotic_diffusion_rate * self.container.timeStep) #integrated 2/22
                 # d_time = asymptotic_diffusion_rate
 
-                # # initialize with a random seed for added randomness
-                logfile.write(str(diffusion_rate_i) +  "AR: " + str(asymptotic_diffusion_rate) + "\n")
+                # initialize with a random seed for added randomness
                 avg_distance = 4 * diffusion_rate_i * self.manager.timeStep #Taken out the time step for running in minutes. #D_time is the integral of D / flowtime
-                #avg_distance = 4 * asymptotic_diffusion_rate * self.manager.timeStep #Taken out the time step for running in minutes. #D_time is the integral of D / flowtime
                 generator = random.Random()
                 standard_dev = math.sqrt(avg_distance)
                 modifier = generator.normalvariate(mu=0.0, sigma=standard_dev)
 
                 position = self.position + modifier
                 newPosition = (flow * (CUBIC_INCHES_PER_GALLON / self.container.area)) + position
-
                 if newPosition > self.container.length:
                     # travelledDistance = newPosition - self.container.length
                     travelledDistance = self.container.length - self.position
@@ -398,10 +411,7 @@ class Particle:
                     self.position = 0 
                     containerName = self.container.name
                 
-
-                # logfile.write("updating particle" + str(self.ID) + "in pipe" + str(self.container.name)  + " time_step = " + str(self.container.timeStep) + "\n")
             elif self.container.type == "endpoint":
-                # logfile.write("expelling particle" + str(self.ID) + "from pipe" + str(self.container.name) + "\n")
                 particleInfo = []
                 time = self.manager.time.get_time()
                 particleInfo.append(time)
@@ -419,8 +429,6 @@ class Particle:
                 self.manager.expendedParticles[self.ID] = self
                 containerName = None
                 
-                # logfile.write("Calculating dispersion for particle " + str(self.ID) + " at time " + str(expelledTime) + " from position " + str(self.position) + " with modifier: " + str(modifier) + " to new position " + str(newPosition) + "\n")
-
                 break
 
             

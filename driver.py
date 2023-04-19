@@ -65,13 +65,19 @@ class graphing:
 
     # creates a new particle age graph, saves the image, and puts the filepath in the message queue.
     def graph_age(self, particleInfo, counter, filename="/logs/"):
-        displayname = './static/plots/age_graph.png'
+        age_display = './static/plots/age_graph.png'
+        concentration_display = './static/plots/concentration_graph.png'
+        filename_concentration = filename + '/concentration_graph.png'
         filename_large = filename + '/age_graph_large.png'
-        filename = filename + '/age_graph.png'
-        print("displayname: ", displayname)
+        filename_standard = filename + '/age_graph.png'
+
+        # print("displayname: ", displayname)
         self.graph_helper([16,12], 300, filename_large, particleInfo, counter)
-        self.graph_helper([8,6], 92, filename, particleInfo, counter)
-        self.graph_helper([8,6], 92, displayname, particleInfo, counter)
+        self.graph_helper([8,6], 92, filename_standard, particleInfo, counter)
+        self.graph_helper([8,6], 92, age_display, particleInfo, counter)
+        self.concentration_graph_helper([8,6], 92, concentration_display, particleInfo, counter)
+        self.concentration_graph_helper([8,6], 92, filename_concentration, particleInfo, counter) #Concentration
+        # self.graph_helper([16,12], 300, filename, particleInfo, counter, 1) --- For Larger Graph / Better Quality
 
         # self.controller.event_generate("<<graph_completed>>", when="tail")
         send = ("graph_completed", filename)
@@ -121,6 +127,50 @@ class graphing:
         except:
             print("graph_helper called before containing folder has been created! Unable to create graph.")
             pass
+
+    def concentration_graph_helper(self, size, res, filename, particleInfo, counter):
+        maxTime = 0
+        maxAge = 0
+        particleData = particleInfo
+        fig = plt.figure(figsize = size, dpi=res)
+        xy = fig.add_subplot(111)
+        data = [d for d in particleData.values()]
+        names = [n for n in particleData.keys()]
+        legend_names = []
+        legend_lines = []
+        for i in range(len(data)):
+            element = data[i]
+            name = names[i]
+            x = list(map(lambda a: a[0], element))
+            y = list(map(lambda b: b[2], element))
+            line = Line2D(x,y)
+            line.set_linestyle("")
+            line.set_marker(self.line_markers[1])
+            line.set_markeredgewidth(0.0)
+            line.set_markerfacecolor(self.select_color())
+            line.set_markersize(3.0)
+            xy.add_line(line)
+            maxX = max(x)
+            maxY = max(y)
+            maxTime = max(maxX, maxTime)
+            maxAge = max(maxY, maxAge)
+            legend_names.append(name)
+            legend_lines.append(line)
+            i += 1
+
+        xy.legend(legend_lines, legend_names)
+        xy.set_ylim(0, maxAge * 1.1)
+        xy.set_xlim(0, counter.get_time())
+        xy.set_xlabel("Simulation Time ({})".format(self.mode_name.get(self.mode)))
+        xy.set_ylabel("Expelled Particle Age ({})".format(self.mode_name.get(self.mode)))
+        try:
+            print("saving ", filename)
+            plt.savefig(filename, facecolor='w', edgecolor='w',
+                   orientation='portrait', format="png", pad_inches=0.1)
+        except:
+            print("graph_helper called before containing folder has been created! Unable to create graph.")
+            pass
+
 
 # the simulation driver has been encapsulated in a class to make it easier to separate one simulation
 # run from the next and simpler to access from other modules.

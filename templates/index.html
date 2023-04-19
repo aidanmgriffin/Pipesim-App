@@ -9,39 +9,45 @@
 
     <div class="foreground-spacer-block"></div>
 </div>
-
 <div class="main-content">
     <h1 id="get-started"> Get Started </h1>
-    <h5>Welcome to the PipeSim Pythons Web App. Read our <a href="{{url_for('documentation')}}">Documentation</a>, or click the "Upload" button to get started.</h5>
+    <h5>Welcome to the PipeSim Pythons Web App. Read our <a href="{{url_for('documentation')}}">Documentation</a>, or
+        click the "Upload" button to get started.</h5>
     <!--<a class="btn btn-primary" href="{{url_for('documentation')}}" role="button">Documentation</a>-->
     <br />
     <a class="btn btn-dark" href="{{url_for('upload')}}" role="button">Upload</a>
     <br /><br />
-    <p>Check out our <a href="https://github.com/WSUCptSCapstone-Fall2022Spring2023/nsf-pipesimpython">Github!</a></p>
+    <p>Check out our <a href="https://github.com/aidanmgriffin/Pipesim-App">Github!</a></p>
     <div class="foreground-spacer-block"></div>
     <br />
     <h4>Changelog</h4>
 
     <div class="overflow-auto">
+        <h6>V 1.3</h6>
+        <p>- Added chlorine concentration decay graph.</p>
+        <p>- Added output download.</p>
+        <p>- Updated Documentation.</p>
+        <p>- Ironed out input paramaters.</p>
+
         <h6>V 1.2</h6>
-        <p>- Added updated dispersion formula. AG</p>
-        <p>- Connected sim builder to backend. AG</p>
+        <p>- Added updated dispersion formula.</p>
+        <p>- Connected sim builder to backend.</p>
 
         <h6>V 1.1</h6>
         <p>- Redid home page. AG</p>
-        <p>- Added new upload capabilities. AG</p>
-        <p>- Added documentation / learn more pages. AG</p>
+        <p>- Added new upload capabilities.</p>
+        <p>- Added documentation / learn more pages.</p>
 
 
         <h6>V 1.0</h6>
-        <p>- Wrote baseline HTML and CSS. AG</p>
-        <p>- Added file upload and processing through PipeSim backend (undid frontend to redirect inputs through web page). AG</p>
-        <p>- Added upload form. AG</p>
-        <p>- Added output page / age_graph display. AG</p>
+        <p>- Wrote baseline HTML and CSS.</p>
+        <p>- Added file upload and processing through PipeSim backend (undid frontend to redirect inputs through web
+            page).</p>
+        <p>- Added upload form.</p>
+        <p>- Added output page / age_graph display.</p>
     </div>
 </div>
 
 
 
-    {% endblock %}
-
+{% endblock %}

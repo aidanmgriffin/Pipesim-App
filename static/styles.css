@@ -59,9 +59,6 @@ a{
     height: auto;
 }
 
-.header-menu-links{
-}
-
 .menu { 
     float: right;
     display: flex;
@@ -70,8 +67,6 @@ a{
     padding-right:3em;
 }
 
-.menu li {
-}
 
 .menu a {
     font-size: 1.2em;
@@ -79,12 +74,12 @@ a{
     font-weight: 500;
 }
 
-#get-started {
-   
-}
-
 .foreground-image-block{
     margin-top: 1em;
+}
+.foreground-image-block img {
+    width: 100%;
+    height: auto;
 }
 
 .foreground-spacer-block{
@@ -94,14 +89,9 @@ a{
 .spacer-block {
     background-color: #404E77;
     height: 3em;
-/*
-    margin-bottom: 0;
-    padding-bottom: 0;*/
 }
 
 #index-heading{
-/*    color: #BCC4DB;*/
-    
     background-color: white;
     padding-bottom: 1em;
     padding-top: 1em;
@@ -110,9 +100,7 @@ a{
 }
 
 .background {
-/*    margin-top: 0;
-    padding-top: 0;*/
-/*    background-color: #BCC4DB*/
+
     background-color: white;
 }
 .foreground{
@@ -129,7 +117,6 @@ a{
 }
 
 .download-heading{
-/*    text-align: center;*/
     padding-bottom: 0;
     margin-bottom: 0;
 }
@@ -137,8 +124,6 @@ a{
 #age-plot{
     padding-top: 0;
     margin-top: 0;
-    /*margin-left: auto;
-    margin-right: auto;*/
     display: block;
 }
 
