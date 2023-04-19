@@ -22,9 +22,9 @@ logfile = "ParticleDiffusion.log"
 logfile = open(logfile, 'a')
 
 # test single particle log
-particlelogfile = "SingleParticle.csv"
-particlelogfile = open(particlelogfile, 'a')
-writer = csv.writer(particlelogfile, 'excel')
+# particlelogfile = "SingleParticle.csv"
+# particlelogfile = open(particlelogfile, 'a')
+# writer = csv.writer(particlelogfile, 'excel')
 # writer.writerow(["ParticleID", "Modifier"])
 
 pipeIndex: dict = {}  # this stores all the pipes in the pipe system. pipes can be accessed by name, which must be unique.
