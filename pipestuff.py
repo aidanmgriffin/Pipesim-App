@@ -378,7 +378,7 @@ class Particle:
                 d_0 : float = 0.01946
                 d_m = self.d_m
 
-                logfile.write("d_0: " + str(d_m))
+                # logfile.write("d_0: " + str(d_m))
 
                 diffusion_rate_i = d_0 * (1 - math.exp((-min_t / 114))) + d_m
 
@@ -434,7 +434,7 @@ class Particle:
             
         
         if self.ID == 0:
-            writer.writerow([self.ID, position, modifier])
+            # writer.writerow([self.ID, position, modifier])
             self.manager.bins.append(modifier)
                
         return containerName
