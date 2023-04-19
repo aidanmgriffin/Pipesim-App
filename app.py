@@ -14,6 +14,7 @@ import math
 from io import BytesIO
 import zipfile
 import pathlib
+import webbrowser
 
 
 # pylint: disable=C0103
@@ -198,4 +199,5 @@ def page_not_found_500(e):
 
 if __name__ == '__main__':
     server_port = os.environ.get('PORT', '8080')
+    webbrowser.open('http://localhost:8080/', new=2)
     app.run(debug=False, port=server_port, host='0.0.0.0')
