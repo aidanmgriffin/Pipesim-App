@@ -202,7 +202,25 @@ class Particle:
     # material type. If the particle container is active (flowing) then calls the movement function to compute particle flow.
     def update(self):
         self.age += 1
-        self.freechlorine = self.freechlorine * 0.99 #For testing purposes, not the decay formula
+        timeStep = self.manager.timeStep
+        #lambda will change depending on the pipe it is in (area and material)
+        #eventually display graph of the concentration and later density in each pipe
+        lamb = 0.1 #see comments above about changing
+        containerName = self.container.name
+
+        selectedParticle = None
+        # if selectedParticle != None:
+            # if self.ID == selectedParticle:
+                # print('Particle:' ,str(selectedParticle), ' : ' ,containerName, ' : ', self.container.material, ' : ', self.container.area, ' : ', str(self.age), ' : ', str(self.freechlorine))
+        # print(containerName, ' : ', self.container.material, ' : ', self.container.area)
+
+
+        #Switch cases for different lambdas
+        #access to container. (area, length, type, and more)
+        # if containerName == "Pipe1":
+        #     lamb = 0.1
+
+        self.freechlorine = self.freechlorine * math.exp(-lamb*timeStep) 
         #For Free chlorine decay:
         #Get the Time Granularity for Delta T
         #Use rate of decay
