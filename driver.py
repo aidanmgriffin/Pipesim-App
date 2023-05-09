@@ -2,7 +2,7 @@ import os
 
 import builder
 import random
-import pipestuff
+import particles
 import csv
 import time
 import matplotlib.pyplot as plt
@@ -42,7 +42,6 @@ class execution_arguments:
 # The graphing functionality has been broken into it's own class to make it easier to call the graphing functions multiple times with different parameters.
 # now we can make the same graph at different resolution scales. The smaller one is displayed in the app, while the larger one is saved to the hard drive
 # and can be used for later review. It has a higher level of precision because it is a much higher resolution file.
-
 class graphing:
 
     # initializes a new graphing class instance when provided with a reference to the process messaging queue
@@ -188,7 +187,7 @@ class Driver:
         self.TIME_STEP = 0
         self.HOUR_LENGTH = 0
         if timer == None:
-            self.counter = pipestuff.counter()
+            self.counter = particles.counter()
         else:
             self.counter = timer
         self.activation_counter = 0
@@ -203,9 +202,9 @@ class Driver:
         self.frequencies = {}
         # initializes a random number generator to determine whether to activate a pipe or not.
         random.seed(a=None, version=float)
-        self.manager = pipestuff.ParticleManager(self.counter)
+        self.manager = particles.ParticleManager(self.counter)
         self.preview = None
-        self.pipes = None
+        self.particles = None
         self.root = None
         self.endpoints = None
         self.actives = None # list of active endpoints
@@ -295,44 +294,17 @@ class Driver:
             endpoint.deactivate_pipes()
             self.depreciate_activation(endpoint.name)
 
-    # this function controls the simulation. inputs include the root node,
-    # the list of endpoint nodes, a list including the indexes for endpoint nodes
-    # to test, the number of seconds to run the simulation for, and the time increment
-    # class.
-    # def sim_randomized(self, root, endpoints, active_endpoints, max_time, active_start, active_end, density):
-    #     #t = Timer("at a rate of 1000 tics per {:0.4f} seconds.")
-    #     start_time = None
-    #     for second in range(0, max_time):
-    #         start_time = self.progress_update(start_time, max_time, second)
-    #         # allows each particle to update and increment particle age and exposure
-    #         # TODO: multiprocessing
-    #         # for each active endpoint, computes flow through the pipe network one particle at a time
-    #         # repeats calculation for each active endpoint. particles will randomly move into active
-    #         # branches of the pipe as they move down.
-    #         time_of_day = self.counter.get_time() % self.ONE_DAY
-    #         active = False
-    #         if time_of_day >= active_start and time_of_day < active_end:
-    #             active = True
-    #         if root.isActive:
-    #             self.manager.add_particles(density, root)
-            
-    #         for endpoint in endpoints:
-    #             if endpoint.name in self.actives:
-    #                 rate = self.flowrates[endpoint.name]
-    #                 self.sim_endpoint_random(endpoint, active, rate)
-    #         self.manager.update_particles()
-    #         # if root is active, at least one endpoint is flowing. fills origin pipe with particles.
-    #         # otherwise, no new particles are added (no water flow)
-    #         self.counter.increment_time()
-
     # returns a dictionary object with the endpoints as the value, using the endpoint names as a key.
     def dict_from_endpoints(self, endpoints:list):
         rval = {}
         for item in endpoints:
             rval[item.name] = item
         return rval
-
-    # once the initial variables are set, this function runs the simulation loop for the specified duration
+    
+    # this function controls the simulation. inputs include the root node,
+    # the list of endpoint nodes, a list including the indexes for endpoint nodes
+    # to test, the number of seconds to run the simulation for, and the time increment
+    # class. once the initial variables are set, this function runs the simulation loop for the specified duration
     # only runs for preset mode, since the activations are handled differently.
     def sim_preset(self, root, endpoints, instructions, max_time, density):
         print("sim preset", max_time)
@@ -345,10 +317,7 @@ class Driver:
         time_since_starts = {}
         for instruction in instructions:
             time_since_starts[instruction] = instructions[instruction][0][0]
-        
-        print(time_since_starts)
-        
-      
+                
         for time_step in range(0, max_time):
             start_time = self.progress_update(start_time, max_time, time_step)
             # TODO: multiprocessing
@@ -605,7 +574,7 @@ class Driver:
         density = arguments.density
         instructions = arguments.instructions
 
-        manager = pipestuff.ParticleManager(self.counter)
+        manager = particles.ParticleManager(self.counter)
         manager.diffusionActive = arguments.diffuse
         manager.diffusionCoefficient = arguments.diffusionCoefficient
         root, endpoints = builder.build(modelfile, manager)

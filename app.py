@@ -100,7 +100,7 @@ def upload():
             if any(char.isdigit() for char in asymptotic_diffusion_coefficient):
                 pass
             else:
-                asymptotic_diffusion_coefficient =  9.3 * math.pow(10, -5)
+                asymptotic_diffusion_coefficient =  9.3 * math.pow(10, -5) # change name asymptotic_diffusion_coefficient to molecular diffusion coefficient
                 
             
             if req_radio == 'option1':

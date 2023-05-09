@@ -1,5 +1,5 @@
 import csv
-import pipestuff
+import particles
 import numpy as np
 
 # function imports a csv file containing data about the pipe network to be simulated.
@@ -31,10 +31,10 @@ def create_node(np, manager):
     if parent == "NONE" or isRoot == "TRUE":
         parent = None
     if isEnd == "TRUE":
-        node = pipestuff.endpoint(parent, name, manager)
+        node = particles.endpoint(parent, name, manager)
         endpointStatus = True
     else:
-        node = pipestuff.pipe(name, length, width, np[1], parent, manager)
+        node = particles.pipe(name, length, width, np[1], parent, manager)
     return node, endpointStatus
 
 # this function performs a tree search beginning at the root on the network
@@ -83,8 +83,8 @@ def add_endpoints(root, list):
 # tree data structure.
 def build(filename, man = None):
     if man == None:
-        timer = pipestuff.counter()
-        manager = pipestuff.ParticleManager(timer)
+        timer = particles.counter()
+        manager = particles.ParticleManager(timer)
     else:
         manager = man
     contents = load_csv(filename)
