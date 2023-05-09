@@ -375,12 +375,12 @@ class Particle:
                 else:
                     min_t = (counter.get_time() - (counter.get_time() - self.age))
 
-                d_0 : float = 0.01946
+                d_0 : float = 0.01946 # change to d_inf
                 d_m = self.d_m
 
                 # logfile.write("d_0: " + str(d_m))
 
-                diffusion_rate_i = d_0 * (1 - math.exp((-min_t / 114))) + d_m
+                diffusion_rate_i = (d_0 - d_m) * (1 - math.exp((-min_t / 114))) + d_m
 
                 # Aidan and Tim's waste of time integration 2/22/23
                 #  d_time = (asymptotic_diffusion_rate - diffusion_rate) * (-1 + 2 * factor_scale * math.exp(-self.container.timeStep/(2 * factor_scale))) + (asymptotic_diffusion_rate * self.container.timeStep) #integrated 2/22
