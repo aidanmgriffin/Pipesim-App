@@ -7,7 +7,8 @@ import copy
 import random
 from multiprocessing import cpu_count
 import ete3
-# from ete3.treeview.faces import AttrFace
+from ete3.treeview.faces import AttrFace
+from ete3.treeview.faces import TextFace
 from multiprocessing import Lock
 import multiprocessing as mp
 from multiprocessing import Pool, Process
@@ -16,6 +17,8 @@ import threading
 import time
 import collections
 import csv
+import preview
+
 
 # test log file
 logfile = "ParticleDiffusion.log"
@@ -69,7 +72,10 @@ class ParticleManager():
         self.tolerance = math.pow(2, -16)
         self.process_max = cpu_count()
         self.timeStep: int = 60
-        self.diffusionCoefficient: float = None #stores diffusion coefficient.
+        self.molecularDiffusionCoefficient: float = None #stores molecular diffusion coefficient.
+        # self.infDiffusionCoefficient: float = None #stores d_inf coefficient.
+        # self.alpha: float = None #stores alpha coefficient.
+
         # self.root = 
         self.bins = []
         self.flowNum: int = 0 
@@ -184,6 +190,7 @@ class Particle:
         self.ID: int = self.manager.numParticles
         self.manager.numParticles += 1
         self.contact: dict = {container.material: 0} # contact stores the number of seconds the particle has been in
+        self.ages: dict = {container.name: 0}
         # contact with each material it has touched, starting at 0.
         self.container: pipe = container  # records current parent container
         self.position: float = 0 # stores particle position within pipe
@@ -192,9 +199,9 @@ class Particle:
         self.age: int = 0
         self.freechlorine: float = 1.0 #for now this is starting concentration
         self.manager.particleIndex[self.ID] = self
-
-        
-        self.d_m = float(self.manager.diffusionCoefficient)
+        # self.d_inf =  float(self.manager.infDiffusionCoefficient)
+        self.d_m = float(self.manager.molecularDiffusionCoefficient)
+        # self.alpha = float(self.manager.alpha)
         global logfile
         # logfile.write("Diffusion Coefficient: " + str(self.manager.diffusionActive))
         
@@ -205,31 +212,16 @@ class Particle:
         timeStep = self.manager.timeStep
         #lambda will change depending on the pipe it is in (area and material)
         #eventually display graph of the concentration and later density in each pipe
-        lamb = 0.1 #see comments above about changing
+        lamb = self.container.lambdaval
         containerName = self.container.name
-
-        selectedParticle = None
-        # if selectedParticle != None:
-            # if self.ID == selectedParticle:
-                # print('Particle:' ,str(selectedParticle), ' : ' ,containerName, ' : ', self.container.material, ' : ', self.container.area, ' : ', str(self.age), ' : ', str(self.freechlorine))
-        # print(containerName, ' : ', self.container.material, ' : ', self.container.area)
-
-
-        #Switch cases for different lambdas
-        #access to container. (area, length, type, and more)
-        # if containerName == "Pipe1":
-        #     lamb = 0.1
 
         self.freechlorine = self.freechlorine * math.exp(-lamb*timeStep) 
-        #For Free chlorine decay:
-        #Get the Time Granularity for Delta T
-        #Use rate of decay
-        #Cnew = self.freechlorine
-        #Use function Cnew = Cold * exp(-rate*deltaT)
-        #update the freechlorine (self.freechlorine = Cnew)
+        
+        #For Free chlorine decay: Get the Time Granularity for Delta T. Use rate of decay. Cnew = self.freechlorine
+        #Use function Cnew = Cold * exp(-rate*deltaT). update the freechlorine (self.freechlorine = Cnew)
         containerName = self.container.name
-        #if self.manager.time.get_time() > 999:
-            #print("time")
+        
+        #Track pipes (including pipe type) of pipes that the particle has been in contact with.
         if (self.contact.get(self.container.material) is not None):
             self.contact[self.container.material] += 1
         elif(self.contact.get(self.container.material) is None):
@@ -238,11 +230,13 @@ class Particle:
             
         if self.route.count(self.container.name) < 1:
             self.route.append(self.container.name)
-            # Originally checks if container is active (water is flowing) before checking diffusion value. With issue 165
-            # this is reversed. If diffusion is active then dispersion function will be called in lieu of movement. 
-            # (The two are similar, but dispersion includes diffusive activity.)
 
+        self.ages.setdefault(containerName, 0)
+        self.ages[containerName] += 1
 
+        # Originally checks if container is active (water is flowing) before checking diffusion value. With issue 165
+        # this is reversed. If diffusion is active then dispersion function will be called in lieu of movement. 
+        # (The two are similar, but dispersion includes diffusive activity.)
         if self.manager.diffusionActive:
             if self.container.isActive:
                 containerName = self.disperse()
@@ -267,7 +261,6 @@ class Particle:
                 position = self.position
                 newPosition = (flow * (CUBIC_INCHES_PER_GALLON / self.container.area)) + position
                 if newPosition > self.container.length:
-                    # travelledDistance = newPosition - self.container.length
                     travelledDistance = self.container.length - self.position
                     partialFlow = remainingTime * (travelledDistance / CUBIC_INCHES_PER_GALLON) * self.container.area
                     elapsedTime = partialFlow / flow
@@ -281,9 +274,7 @@ class Particle:
                     self.container = self.container.select_child()
                     self.position = 0
                     containerName = self.container.name
-                # print("updating particle", self.ID, "in pipe", self.container.name)
             elif self.container.type == "endpoint":
-                # print("expelling particle", self.ID, "from pipe", self.container.name)
                 particleInfo = []
                 time = self.manager.time.get_time()
                 particleInfo.append(time)
@@ -308,9 +299,7 @@ class Particle:
     # this function could be expanded in future to take in some of the data mentioned above. For now, assumptions are
     # made. Diffusion coefficient is originally assumed to be 2.14 * 10^-6
     def diffuse(self):
-
         global logfile
-        
         d_m = self.d_m
         avg_distance = 4 * self.manager.timeStep * d_m
 
@@ -374,13 +363,18 @@ class Particle:
                     min_t = (counter.get_time() - (counter.get_time() - self.manager.time_since[flow_endpoint_list[-1]]))
                 else:
                     min_t = (counter.get_time() - (counter.get_time() - self.age))
-
-                d_0 : float = 0.01946 # change to d_inf
+                
+                # d_inf = 0.01946
+                # alpha = 114
+                # print("container vals: ", self.container.d_inf, self.container.alpha)
+                d_inf = self.container.d_inf # Set to 0.01946 in initial integration.
+                alpha = self.container.alpha # set to 114 in initial integration
                 d_m = self.d_m
 
                 # logfile.write("d_0: " + str(d_m))
 
-                diffusion_rate_i = (d_0 - d_m) * (1 - math.exp((-min_t / 114))) + d_m
+                # diffusion_rate_i = (d_inf - d_m) * (1 - math.exp((-min_t / 114))) + d_m
+                diffusion_rate_i = (d_inf - d_m) * (1 - math.exp((-min_t / alpha))) + d_m
 
                 # Aidan and Tim's waste of time integration 2/22/23
                 #  d_time = (asymptotic_diffusion_rate - diffusion_rate) * (-1 + 2 * factor_scale * math.exp(-self.container.timeStep/(2 * factor_scale))) + (asymptotic_diffusion_rate * self.container.timeStep) #integrated 2/22
@@ -433,7 +427,7 @@ class Particle:
 
             
         
-        if self.ID == 0:
+        
             # writer.writerow([self.ID, position, modifier])
             self.manager.bins.append(modifier)
                
@@ -472,6 +466,7 @@ class Particle:
         p = Particle(container)
         p.ID = self.manager.numParticles
         p.contact = copy.deepcopy(self.contact)
+        p.ages = copy.deepcopy(self.ages)
         p.age = self.age
         self.manager.numParticles += 1
         self.manager.particleIndex[p.ID] = p
@@ -490,14 +485,21 @@ class Particle:
     # getOutput returns a tuple that contains the data stored in the particle. can be used to read out at the end
     # of the particle's journey, or query along the way for testing.
     def getOutput(self):
+        add_contacts = []
+        add_ages = []
         keys = self.contact.keys()
         values = self.contact.values()
         rval = [self.ID, self.age, self.container.name]
         for key in keys:
-            rval.append(key)
-            rval.append(self.contact[key])
-        for elem in self.route:
-            rval.append(elem)
+            add_contacts.append([key, self.contact[key]])
+        rval.append(add_contacts)
+        # for elem in self.route:
+        #     rval.append(elem)
+        for pipe in self.ages.keys():
+            add_ages.append([pipe, self.ages[pipe]])
+            # rval.append(pipe)
+            # rval.append(self.ages[pipe])
+        rval.append(add_ages)
         return rval
 
     # prints details about the particle. included for testing purposes. Not used.
@@ -515,7 +517,7 @@ class Particle:
 class pipe:
 
     # the constructor takes in the pipe name, dimensions, and parent.
-    def __init__(self, name, length, width, material, parent, manager):
+    def __init__(self, name, length, width, material, parent, d_inf, alpha, lambdaval, manager):
         global pipeIndex
         self.manager = manager
         self.name = name
@@ -524,6 +526,9 @@ class pipe:
         self.radius = self.width / 2
         self.material: str = material
         self.parent: pipe = parent
+        self.d_inf: float = d_inf
+        self.alpha: float = alpha
+        self.lambdaval: float = lambdaval
         self.area: float = np.pi * math.pow((self.radius), 2) #cross-sectional-area
         self.children: list[pipe] = []
         self.isActive = False
@@ -609,78 +614,86 @@ class pipe:
 
     # this function creates and returns an ete3 tree based on the current pipes model. the ete3 tree is used to
     # create a graphical representation of the model.
-    # def generate_tree(self):
-    #     return self.tree_builder(self)
+    def generate_tree(self, ageDict):
+        return self.tree_builder(self, ageDict)
 
-    # # the tree_builder function does the actual creation of the ete3 tree. It recursively explores the current pipe
-    # # model and transcribes relevant properties of the model into new ete3 tree nodes and inserts them into the
-    # # representative model.
-    # def tree_builder(self, root):
-    #     t = ete3.Tree()
-    #     style = ete3.NodeStyle()
-    #     style["size"] = int(max(self.width*5,10))
-    #     style["fgcolor"] = "#3f7c00"
-    #     style["shape"] = "sphere"
-    #     style["vt_line_type"] = 0
-    #     style["hz_line_type"] = 0
-    #     style.show_branch_length=True
-    #     style.show_leaf_name=False
-    #     t.add_feature("num_particles", 0)
-    #     t.add_feature("avg_age", 0)
-    #     t.add_feature("max_age", 0)
-    #     t.add_feature("min_age", 0)
-    #     t.add_feature("length",root.length)
-    #     t.add_feature("active", 0)
-    #     t.set_style(style)
-    #     self.tree_helper(t, root.children)
-    #     return t
+    # the tree_builder function does the actual creation of the ete3 tree. It recursively explores the current pipe
+    # model and transcribes relevant properties of the model into new ete3 tree nodes and inserts them into the
+    # representative model.
+    def tree_builder(self, root, ageDict):
+        t = ete3.Tree()
+        style = ete3.NodeStyle()
+        style["size"] = int(max(self.width*5,10))
+        style["fgcolor"] = "#3f7c00"
+        style["shape"] = "sphere"
+        style["vt_line_type"] = 0
+        style["hz_line_type"] = 0
+        style.show_branch_length=True
+        style.show_leaf_name=True
+        # treestyle = ete3.TreeStyle()
+        # treestyle.show_leaf_name = True
+        # treestyle.show_branch_length = True
+        # treestyle.show_branch_support = True
+        t.add_feature("num_particles", 0)
+        t.add_feature("avg_age", 0)
+        t.add_feature("max_age", 0)
+        t.add_feature("min_age", 0)
+        t.add_feature("length",root.length)
+        t.add_feature("active", 0)
+        t.set_style(style)
+        self.tree_helper(t, root.children, ageDict)
+        return t
 
-    # # the tree_helper class performs the recursive exploration of the pipes model for tree_builder. It also adds more
-    # # properties to each node and creates differentiation between endpoints and non-endpoints. Note that ete3 tree nodes
-    # # inherit properties from parent nodes, which is why some properties are set by tree_builder (these apply to the
-    # # entire tree) and more are set by tree_helper. These apply to individual nodes. Tree_helper inserts data about
-    # # each pipe in the pipe model into the node data, but also assists with creating the first layer of layout data
-    # # (formatting). the layout data is later augmented just before rendering so that it can reflect the current state
-    # # of the model.
-    # def tree_helper(self, tree, iterable):
-    #     if iterable is not None:
-    #         for each in iterable:
-    #             if each is not None:
-    #                 child = tree.add_child(name=each.name)
-    #                 child.dist = each.length
-    #                 style = ete3.NodeStyle()
-    #                 if each.type != "endpoint":
-    #                     self.tree_helper(child, each.children)
-    #                     style["fgcolor"] = "#3f7c00"
-    #                 else:
-    #                     style["fgcolor"] = "#f9dc00"
-    #                     # label = AttrFace("name")
-    #                     # label.margin_top=1
-    #                     # label.margin_bottom=1
-    #                     # label.margin_left=1
-    #                     # label.margin_right=1
-    #                     # label.fsize=6
-    #                     # label.fgcolor="blue"
-    #                     # child.add_face(label, column=2, position="branch-right")
-    #                 style["shape"] = "circle"
-    #                 style["size"] = int(max(each.width*5,10))
-    #                 style["vt_line_type"] = 0
-    #                 style["hz_line_type"] = 0
-    #                 child.add_feature("num_particles", 0)
-    #                 child.add_feature("avg_age", 0)
-    #                 child.add_feature("max_age", 0)
-    #                 child.add_feature("min_age", 0)
-    #                 child.add_feature("length", each.length)
-    #                 child.add_feature("active",0)
-    #                 # active = AttrFace("active")
-    #                 # active.margin_top = 1
-    #                 # active.margin_bottom = 1
-    #                 # active.margin_left = 1
-    #                 # active.margin_right = 1
-    #                 # active.fsize = 6
-    #                 # active.fgcolor = "gray"
-    #                 # child.add_face(active, column=1, position="branch-right")
-    #                 child.set_style(style)
+    # the tree_helper class performs the recursive exploration of the pipes model for tree_builder. It also adds more
+    # properties to each node and creates differentiation between endpoints and non-endpoints. Note that ete3 tree nodes
+    # inherit properties from parent nodes, which is why some properties are set by tree_builder (these apply to the
+    # entire tree) and more are set by tree_helper. These apply to individual nodes. Tree_helper inserts data about
+    # each pipe in the pipe model into the node data, but also assists with creating the first layer of layout data
+    # (formatting). the layout data is later augmented just before rendering so that it can reflect the current state
+    # of the model.
+    def tree_helper(self, tree, iterable, ageDict):
+        if iterable is not None:
+            for each in iterable:
+                if each is not None:
+                    child = tree.add_child(name=each.name)
+                    child.dist = each.length
+                    style = ete3.NodeStyle()
+                    if each.type != "endpoint":
+                        child.add_face(ete3.TextFace(each.name), column=0, position="branch-right")
+                        if each.name in  ageDict.keys():
+                            child.add_face(ete3.TextFace(str(round((ageDict[each.name][0] / ageDict[each.name][1]), 3)), column=0, position="branch-bottom"))
+
+                        self.tree_helper(child, each.children, ageDict)
+                        style["fgcolor"] = "#3f7c00"
+                    else:
+                        style["fgcolor"] = "#f9dc00"
+                        # label = AttrFace("name")
+                        # label.margin_top=1
+                        # label.margin_bottom=1
+                        # label.margin_left=1
+                        # label.margin_right=1
+                        # label.fsize=6
+                        # label.fgcolor="blue"
+                        # child.add_face(label, column=2, position="branch-right")
+                    style["shape"] = "circle"
+                    style["size"] = int(max(each.width*5,10))
+                    style["vt_line_type"] = 0
+                    style["hz_line_type"] = 0
+                    child.add_feature("num_particles", 0)
+                    child.add_feature("avg_age", 0)
+                    child.add_feature("max_age", 0)
+                    child.add_feature("min_age", 0)
+                    child.add_feature("length", each.length)
+                    child.add_feature("active",0)
+                    # active = AttrFace("active")
+                    # active.margin_top = 1
+                    # active.margin_bottom = 1
+                    # active.margin_left = 1
+                    # active.margin_right = 1
+                    # active.fsize = 6
+                    # active.fgcolor = "gray"
+                    # child.add_face(active, column=1, position="branch-right")
+                    child.set_style(style)
 
 # the endpoint class is the control class for the pipe and initiates or ends flow events, sets flow rates,
 # and triggers activation for all other pipes upstream from it. inherits from pipe.
@@ -688,7 +701,7 @@ class endpoint(pipe):
     # constructor function is simplified from the standard pipe because it has no need for usual pipe properties
     # such as storing and tracking position of particles.
     def __init__(self, parent, name, manager):
-        super().__init__(name, 0, 0, None, parent, manager)
+        super().__init__(name, 0, 0, None, parent, 0, 0, 0, manager)
         self.type = "endpoint"
 
     # overrides the function in the parent class to produce an error and otherwise do nothing

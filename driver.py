@@ -24,7 +24,7 @@ class execution_arguments:
                  activation_range = None,
                  length = None,
                  density = None,
-                 diffusionCoefficient = None,
+                 molecularDiffusionCoefficient = None,
                  instructions = None,
                  diffuse: bool = False):
         self.settingsfile = settingsfile
@@ -35,7 +35,7 @@ class execution_arguments:
         self.activation_range = activation_range
         self.length = length
         self.density = density
-        self.diffusionCoefficient = diffusionCoefficient
+        self.molecularDiffusionCoefficient = molecularDiffusionCoefficient
         self.instructions = instructions
         self.diffuse = diffuse
 
@@ -307,9 +307,9 @@ class Driver:
     # class. once the initial variables are set, this function runs the simulation loop for the specified duration
     # only runs for preset mode, since the activations are handled differently.
     def sim_preset(self, root, endpoints, instructions, max_time, density):
-        print("sim preset", max_time)
+        # print("sim preset", max_time)
         endpoints = self.dict_from_endpoints(endpoints)
-        print("e: ", endpoints, "i: ", instructions)
+        # print("e: ", endpoints, "i: ", instructions)
         start_time = None
         keys = instructions.keys()
         
@@ -430,33 +430,57 @@ class Driver:
                 writer.writerow([name, value[0], value[1], value[2], value[3]])
         results.close()
 
-    #temporary testing function to create a csv file and write all of modifiers of a particular particle
+    #temporary testing function to create a csv file and write the average of modifiers on all particles.
     #to determine normal distribution.
     def write_bins(self, filename):
-        binput = open(filename + '.log', 'w')
         plt.figure()
-
-        plt.hist(self.manager.bins)
-        plt.savefig(filename + '.png')
-
         total = 0
         j = 0
         for i in self.manager.bins:
             total += i
             j += 1
+
+        plt.hist(self.manager.bins)
+        plt.title("Mean: " + str(total / j))
+        plt.savefig(filename + '.png', format='png')
+
+    def write_pipe_ages(self, particles, filename):
+        results = open(filename, 'w')
+        writer = csv.writer(results, 'excel')
+        ageDict = {}
+        # names = particleAges.keys()
+        for key in particles:
+            # print(key)
+            particle = particles[key]
+            data = particle.getOutput()
+            
+            for pipe in data[4]:
+                ageDict.setdefault(pipe[0], [0,0])
+                ageDict[pipe[0]][0] += pipe[1]
+                ageDict[pipe[0]][1] += 1
+
+        for entry in ageDict:
+            writer.writerow([str(entry), str(ageDict[entry]), str(ageDict[entry][0] / ageDict[entry][1])])
+
+        return ageDict
+    
+        print("root: ", self.root)
+        self.tree_helper(self.root, self.root.children)
         
-        # print("mean = ", total / j)
+    def tree_helper(self, tree, iterable):
+        if tree.type != "endpoint":
+            print(tree.name)
+        if iterable is not None:
+            for each in iterable:
+                if each is not None:
+                    if each.type != "endpoint":
+                        self.tree_helper(each, each.children)
+                        
 
-        # try:
-        #     plt.savefig('testhisto', facecolor='w', edgecolor='w',
-        #            orientation='portrait', format="png", pad_inches=0.1)
-        # except:
-        #     print("write_bins called before containing folder has been created! Unable to create graph.")
-        #     pass
-
-
-        for i in self.manager.bins:
-            binput.write(str(i)+"\n")
+            # print(data)
+            # values = particleAges.get(name)
+            # print(values)
+        
 
     
     # not currently functional as updates to the particle simulation module have broken functionality.
@@ -562,7 +586,7 @@ class Driver:
         self.write_output(logpath + "\expelled.csv",self.manager.expendedParticles)
         self.write_output(logpath + "\pipe_contents.csv", self.manager.particleIndex)
         self.write_age_and_FreeChlorine_data(logpath + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
-        self.write_bins(logpath + "\inputbin")
+        self.write_bins(logpath + "./static/plots/histogram.png")
 
     #this function executes the simulation in random mode. It first establishes flow rates and other simulation variables.
     def exec_randomized(self, arguments: execution_arguments):
@@ -615,14 +639,13 @@ class Driver:
         presetsfile = arguments.presetsfile
         density = arguments.density
         pathname = arguments.pathname
-        self.manager.diffusionCoefficient = arguments.diffusionCoefficient
+        self.manager.molecularDiffusionCoefficient = arguments.molecularDiffusionCoefficient
         self.manager.diffusionActive = arguments.diffuse
         # self.controller.event_generate("<<sim_started>>", when = "tail")
         send = ("status_started", "Simulation started.")
         self.Queue.put(send)
         self.root, self.endpoints = builder.build(modelfile, self.manager)
         self.manager.setTimeStep(self.TIME_STEP)
-        # tree_model = self.root.generate_tree()
         self.Queue.put(send)
         #self.controller.preview_manager.start(self.root, self.manager)
         # send = ("start_preview", tree_model)
@@ -638,10 +661,14 @@ class Driver:
         g = graphing(self.Queue, self.mode)
         g.graph_age(self.manager.expelledParticleData, self.counter, pathname)
 
+        
         self.write_output(pathname+"\expelled.csv", self.manager.expendedParticles)
         self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
         self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
-        self.write_bins(pathname + "\inputbin")
+        self.write_bins(".\static\plots\histogram")
+        ageDict = self.write_pipe_ages(self.manager.expendedParticles, pathname+"\pipe_ages.csv")
+        tree_model = self.root.generate_tree(ageDict)
+        tree_model.render(".\static\plots\pipe_tree.png")
         # self.controller.event_generate("<<sim_finished>>", when = "tail")
         send = ("status_completed", "Simulation complete.")
         self.Queue.put(send)

@@ -1,5 +1,5 @@
 # # import tkinter as tk
-# import pipestuff
+# import particles
 # import builder
 # import scrollframe
 # from functools import partial
@@ -56,39 +56,39 @@
 #     def __init__(self,window = None, master = None):
 #         self.root = None # root pipe node of pipes tree
 #         self.manager = None # particle manager
-#         self.active = tk.IntVar()
-#         self.active.set(0)
-#         self.graph_counter = 0
-#         if master == None or window == None:
-#             self.independent = True
-#             self.master = tk.Tk()
-#             self.master.geometry("640x400")
-#             self.window = self.master
-#         else:
-#             self.independent = False
-#             self.master = master
-#             self.window = window
-#         self.container = scrollframe.Scrolling_Area(master = self.master, width = 1000, height = 600)
-#         self.displaySelectLabel = tk.Label(master = self.container, text = "Detail Display Select")
-#         self.displaySelectFrame = tk.Frame(master = self.container, borderwidth = 1)
-#         label_names = ["Minimum age", "Maximum age", "Average age", "Number of particles"]
-#         for i in range (0, 4):
-#             button = tk.Radiobutton(self.displaySelectFrame, text = label_names[i], padx = 20, variable = self.active, value = i) # command = partial(self.updater, None)
-#             button.grid(row = 0, column = i)
+#         # # self.active = tk.IntVar()
+#         # # self.active.set(0)
+#         # self.graph_counter = 0
+#         # if master == None or window == None:
+#         #     self.independent = True
+#         #     self.master = tk.Tk()
+#         #     self.master.geometry("640x400")
+#         #     self.window = self.master
+#         # else:
+#         #     self.independent = False
+#         #     self.master = master
+#         #     self.window = window
+#         # self.container = scrollframe.Scrolling_Area(master = self.master, width = 1000, height = 600)
+#         # self.displaySelectLabel = tk.Label(master = self.container, text = "Detail Display Select")
+#         # self.displaySelectFrame = tk.Frame(master = self.container, borderwidth = 1)
+#         # label_names = ["Minimum age", "Maximum age", "Average age", "Number of particles"]
+#         # for i in range (0, 4):
+#         #     button = tk.Radiobutton(self.displaySelectFrame, text = label_names[i], padx = 20, variable = self.active, value = i) # command = partial(self.updater, None)
+#         #     button.grid(row = 0, column = i)
 
-#         if self.independent:
-#             self.displaySelectLabel.pack(side = "top", expand = 0, fill = "both")
-#             self.displaySelectFrame.pack(side= "top", expand = 0, fill = "both")
-#             self.container.pack(side = "top", expand = 1, fill = "both")
-#         else:
-#             self.displaySelectLabel.grid(row = 2, column = 0)
-#             self.displaySelectFrame.grid(row = 3, column = 0)
-#             self.container.grid(row = 0, column = 0)
-#         self.envelope = self.container.innerframe
+#         # if self.independent:
+#         #     self.displaySelectLabel.pack(side = "top", expand = 0, fill = "both")
+#         #     self.displaySelectFrame.pack(side= "top", expand = 0, fill = "both")
+#         #     self.container.pack(side = "top", expand = 1, fill = "both")
+#         # else:
+#         #     self.displaySelectLabel.grid(row = 2, column = 0)
+#         #     self.displaySelectFrame.grid(row = 3, column = 0)
+#         #     self.container.grid(row = 0, column = 0)
+#         # self.envelope = self.container.innerframe
 #         self.vars = {}
 #         self.pipeData = {}
-#         self.canvas = tk.Canvas(master=self.envelope, width=1500, height=1000)
-#         self.canvas.grid(row=0, column=0)
+#         # self.canvas = tk.Canvas(master=self.envelope, width=1500, height=1000)
+#         # self.canvas.grid(row=0, column=0)
 #         self.tree = None
 #         self.graph = None
 
@@ -98,8 +98,8 @@
 #     # active.
 #     def start(self, model):
 #         self.tree = model
-#         if self.independent:
-#             self.master.mainloop()
+#         # if self.independent:
+#         #     self.master.mainloop()
 
 #     # this helper function allows other functions or classes to get access to the scrollable frame the preview class
 #     # generates. Display calls this function to place the scrollable frame in the main application window.
@@ -108,30 +108,30 @@
 
 #     # this function is called by display when the simulation is started to disable input to the radio buttons once
 #     # the simulation is started.
-#     def disable(self):
-#         self.disable_helper(self.container)
+#     # def disable(self):
+#     #     self.disable_helper(self.container)
 
 #     # this helper function disables the radio buttons in the preview pane
-#     def disable_helper(self, widget):
-#         for item in widget.winfo_children():
-#             try:
-#                 item['state'] = tk.DISABLED
-#             except:
-#                 pass
-#             self.disable_helper(item)
+#     # def disable_helper(self, widget):
+#     #     for item in widget.winfo_children():
+#     #         try:
+#     #             item['state'] = tk.DISABLED
+#     #         except:
+#     #             pass
+#     #         self.disable_helper(item)
 
 #     # this function is called by display when the simulation is completed. It re-enables input to the radio buttons.
 #     def enable(self):
 #         self.enable_helper(self.container)
 
 #     # this function performs the re-enabling of the radio buttons.
-#     def enable_helper(self, widget):
-#         for item in widget.winfo_children():
-#             try:
-#                 item['state'] = tk.NORMAL
-#             except:
-#                 pass
-#             self.enable_helper(item)
+#     # def enable_helper(self, widget):
+#     #     for item in widget.winfo_children():
+#     #         try:
+#     #             item['state'] = tk.NORMAL
+#     #         except:
+#     #             pass
+#     #         self.enable_helper(item)
 
 #     # the updater handles the event call that has been registered with the window. This event queries all the pipes
 #     # in the model and updates the display label with the aggregate data about the particles in that pipe.
@@ -158,9 +158,9 @@
 #                 openfile = filename.format(index)
 #                 #print(openfile)
 #                 image = Image.open(openfile)
-#                 image = ImageTk.PhotoImage(image)
+#                 # image = ImageTk.PhotoImage(image)
 #                 self.graph = image
-#                 self.canvas.create_image(10, 10, anchor="nw", image=self.graph)
+#                 # self.canvas.create_image(10, 10, anchor="nw", image=self.graph)
 #                 break
 #             except:
 #                 #print("missed file", index)
@@ -204,7 +204,7 @@
 
 # # debugging function used in early development. Probably doesn't still work. not recently tested.
 # if __name__ == '__main__':
-#     partman = pipestuff.ParticleManager()
+#     partman = particles.ParticleManager()
 
 #     root, endpoints = builder.build("PACCAR-kitchens.csv", partman)
 #     obj = live_preview()

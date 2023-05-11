@@ -67,7 +67,6 @@ a{
     padding-right:3em;
 }
 
-
 .menu a {
     font-size: 1.2em;
     color: black;
@@ -85,6 +84,7 @@ a{
 .foreground-spacer-block{
     background-color: #404E77;
     height: 1em;
+    width: 100%;
 }
 .spacer-block {
     background-color: #404E77;
@@ -104,12 +104,13 @@ a{
     background-color: white;
 }
 .foreground{
-    margin: 0em 2em;
+    /* margin: 0em 2em; */
     background-color: white;
 }
 
 .main-content{
     padding: 1em;
+    margin-right: 2em;
 }
 
 .mb-3 {
@@ -151,4 +152,46 @@ a{
 .overflow-auto{
     height: 8em;
     overflow:auto
+}
+
+#docs-sidebar {
+    border-right: 1px solid #404E77; 
+    /* padding: 0; */
+}
+
+.doc-content { 
+    text-decoration: none;
+    color: black;
+    font-weight: 500;
+    font-size: 1.4em;
+}
+
+.doc-content:hover{
+    text-decoration: none;
+    color: #404E77;
+}
+
+.doc-content-sub {
+    text-decoration: none;
+    color: rgb(95, 95, 95);
+    font-weight: 400;
+    font-size: 1.4em;
+}
+
+.doc-content-sub:hover{
+    text-decoration: none;
+    color: #404E77;
+}
+
+.output-buttons { 
+    margin: 0em 1em;
+}
+
+.nav-header
+{
+    padding: 1em 0em;
+    background-color: white;
+    position: sticky;
+    top:0;
+    z-index: 999;
 }

@@ -2,9 +2,18 @@
 
 {% block content %}
 
-
 <br />
 
+{% if alert %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>Error!</strong> {{alert.message}}
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+{% endif %}
+
+<div class = "main-content">
 <h1> Run Simulation </h1>
 <p>Check documentation for additional information.</p>
 <div class="foreground-spacer-block"></div>
@@ -21,7 +30,6 @@
     </div>
 
     <button type="submit" class="btn" name="settings-submit">Upload</button>
-
 </form>
 <br />
 <div class="foreground-spacer-block"></div>
@@ -51,8 +59,8 @@
             </label>
 
         </div>
-        <div class="col-auto">
-            <input type="number" step="any" class="form-control" name="asymptotic-diffusion-coefficient" placeholder="Customize Diffusion">
+        <div class="col-md-2">
+            <input type="number" step="any" class="form-control" name="molecular-diffusion-coefficient" placeholder="Customize Molecular Diffusion">
         </div>
     </div>
     <br />
@@ -62,7 +70,7 @@
         </div>
 
         <div class="col-md-1">
-            <input type="number" step="any" class="form-control" id="density" name="density" placeholder="">
+            <input type="number" step=any class="form-control" id="density" name="density" placeholder="">
 
         </div>
     </div>
@@ -93,7 +101,7 @@
         <button type="submit" class="btn" name="preset-submit">Upload</button>
 </form>
 
-
+</div>
 
 
 {% endblock %}
