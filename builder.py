@@ -1,6 +1,6 @@
 import csv
 import particles
-import numpy as np
+# import numpy as np
 
 # function imports a csv file containing data about the pipe network to be simulated.
 # skips first line (where header information is stored)

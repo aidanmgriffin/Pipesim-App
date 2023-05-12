@@ -8,7 +8,7 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib.lines import Line2D
-from multiprocessing import Process, Pool, Queue
+# from multiprocessing import Process, Pool, Queue
 import random
 
 # simple container object to store configuration options for simulation execution.
@@ -662,13 +662,14 @@ class Driver:
         g.graph_age(self.manager.expelledParticleData, self.counter, pathname)
 
         
+        
         self.write_output(pathname+"\expelled.csv", self.manager.expendedParticles)
         self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
         self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
         self.write_bins(".\static\plots\histogram")
         ageDict = self.write_pipe_ages(self.manager.expendedParticles, pathname+"\pipe_ages.csv")
         tree_model = self.root.generate_tree(ageDict)
-        tree_model.render(".\static\plots\pipe_tree.png")
+        # tree_model.render(".\static\plots\pipe_tree.png")
         # self.controller.event_generate("<<sim_finished>>", when = "tail")
         send = ("status_completed", "Simulation complete.")
         self.Queue.put(send)

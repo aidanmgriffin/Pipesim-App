@@ -5,19 +5,22 @@ import numpy as np
 import math
 import copy
 import random
+from Bio import Phylo
+from io import StringIO
+# from ete3 import Tree, faces, TextFace, NodeStyle
 from multiprocessing import cpu_count
-import ete3
-from ete3.treeview.faces import AttrFace
-from ete3.treeview.faces import TextFace
-from multiprocessing import Lock
-import multiprocessing as mp
-from multiprocessing import Pool, Process
-from multiprocessing.pool import ThreadPool
-import threading
-import time
+# import ete3
+# from ete3.treeview.faces import AttrFace
+# from ete3.treeview.faces import TextFace
+# from multiprocessing import Lock
+# import multiprocessing as mp
+# from multiprocessing import Pool, Process
+# from multiprocessing.pool import ThreadPool
+# import threading
+# import time
 import collections
-import csv
-import preview
+# import csv
+# import preview
 
 
 # test log file
@@ -615,34 +618,59 @@ class pipe:
     # this function creates and returns an ete3 tree based on the current pipes model. the ete3 tree is used to
     # create a graphical representation of the model.
     def generate_tree(self, ageDict):
-        return self.tree_builder(self, ageDict)
+        level = ()
+        level = level + (self.name, )
+        print("level:", level)
+        if self.children is not None:
+            print("children: self.children")
+            for child in self.children:
+                if child is not None:
+                    child.generate_tree(ageDict)
+        return 0
+            
+        # print("path: ", ete3.__file__)
+        # treedata = "(A, (B, C), (D, E))"
+        # handle = StringIO(treedata)
+        # tree = Phylo.read(handle, "newick")
+        # return tree
+        # return self.tree_builder(self, ageDict)
+
+    # def tree_helper(self, tree, iterable):
+    #     if tree.type != "endpoint":
+    #         print(tree.name)
+    #     if iterable is not None:
+    #         for each in iterable:
+    #             if each is not None:
+    #                 if each.type != "endpoint":
+    #                     self.tree_helper(each, each.children)
 
     # the tree_builder function does the actual creation of the ete3 tree. It recursively explores the current pipe
     # model and transcribes relevant properties of the model into new ete3 tree nodes and inserts them into the
     # representative model.
     def tree_builder(self, root, ageDict):
-        t = ete3.Tree()
-        style = ete3.NodeStyle()
-        style["size"] = int(max(self.width*5,10))
-        style["fgcolor"] = "#3f7c00"
-        style["shape"] = "sphere"
-        style["vt_line_type"] = 0
-        style["hz_line_type"] = 0
-        style.show_branch_length=True
-        style.show_leaf_name=True
-        # treestyle = ete3.TreeStyle()
-        # treestyle.show_leaf_name = True
-        # treestyle.show_branch_length = True
-        # treestyle.show_branch_support = True
-        t.add_feature("num_particles", 0)
-        t.add_feature("avg_age", 0)
-        t.add_feature("max_age", 0)
-        t.add_feature("min_age", 0)
-        t.add_feature("length",root.length)
-        t.add_feature("active", 0)
-        t.set_style(style)
-        self.tree_helper(t, root.children, ageDict)
-        return t
+        pass
+        # t = Tree()
+        # style = NodeStyle()
+        # style["size"] = int(max(self.width*5,10))
+        # style["fgcolor"] = "#3f7c00"
+        # style["shape"] = "sphere"
+        # style["vt_line_type"] = 0
+        # style["hz_line_type"] = 0
+        # style.show_branch_length=True
+        # style.show_leaf_name=True
+        # # treestyle = ete3.TreeStyle()
+        # # treestyle.show_leaf_name = True
+        # # treestyle.show_branch_length = True
+        # # treestyle.show_branch_support = True
+        # t.add_feature("num_particles", 0)
+        # t.add_feature("avg_age", 0)
+        # t.add_feature("max_age", 0)
+        # t.add_feature("min_age", 0)
+        # t.add_feature("length",root.length)
+        # t.add_feature("active", 0)
+        # t.set_style(style)
+        # self.tree_helper(t, root.children, ageDict)
+        # return t
 
     # the tree_helper class performs the recursive exploration of the pipes model for tree_builder. It also adds more
     # properties to each node and creates differentiation between endpoints and non-endpoints. Note that ete3 tree nodes
@@ -651,49 +679,49 @@ class pipe:
     # each pipe in the pipe model into the node data, but also assists with creating the first layer of layout data
     # (formatting). the layout data is later augmented just before rendering so that it can reflect the current state
     # of the model.
-    def tree_helper(self, tree, iterable, ageDict):
-        if iterable is not None:
-            for each in iterable:
-                if each is not None:
-                    child = tree.add_child(name=each.name)
-                    child.dist = each.length
-                    style = ete3.NodeStyle()
-                    if each.type != "endpoint":
-                        child.add_face(ete3.TextFace(each.name), column=0, position="branch-right")
-                        if each.name in  ageDict.keys():
-                            child.add_face(ete3.TextFace(str(round((ageDict[each.name][0] / ageDict[each.name][1]), 3)), column=0, position="branch-bottom"))
+    # def tree_helper(self, tree, iterable, ageDict):
+    #     if iterable is not None:
+    #         for each in iterable:
+    #             if each is not None:
+    #                 child = tree.add_child(name=each.name)
+    #                 child.dist = each.length
+    #                 style = NodeStyle()
+    #                 if each.type != "endpoint":
+    #                     child.add_face(TextFace(each.name), column=0, position="branch-right")
+    #                     if each.name in  ageDict.keys():
+    #                         child.add_face(TextFace(str(round((ageDict[each.name][0] / ageDict[each.name][1]), 3))), column=0, position="branch-bottom")
 
-                        self.tree_helper(child, each.children, ageDict)
-                        style["fgcolor"] = "#3f7c00"
-                    else:
-                        style["fgcolor"] = "#f9dc00"
-                        # label = AttrFace("name")
-                        # label.margin_top=1
-                        # label.margin_bottom=1
-                        # label.margin_left=1
-                        # label.margin_right=1
-                        # label.fsize=6
-                        # label.fgcolor="blue"
-                        # child.add_face(label, column=2, position="branch-right")
-                    style["shape"] = "circle"
-                    style["size"] = int(max(each.width*5,10))
-                    style["vt_line_type"] = 0
-                    style["hz_line_type"] = 0
-                    child.add_feature("num_particles", 0)
-                    child.add_feature("avg_age", 0)
-                    child.add_feature("max_age", 0)
-                    child.add_feature("min_age", 0)
-                    child.add_feature("length", each.length)
-                    child.add_feature("active",0)
-                    # active = AttrFace("active")
-                    # active.margin_top = 1
-                    # active.margin_bottom = 1
-                    # active.margin_left = 1
-                    # active.margin_right = 1
-                    # active.fsize = 6
-                    # active.fgcolor = "gray"
-                    # child.add_face(active, column=1, position="branch-right")
-                    child.set_style(style)
+    #                     self.tree_helper(child, each.children, ageDict)
+    #                     style["fgcolor"] = "#3f7c00"
+    #                 else:
+    #                     style["fgcolor"] = "#f9dc00"
+    #                     # label = AttrFace("name")
+    #                     # label.margin_top=1
+    #                     # label.margin_bottom=1
+    #                     # label.margin_left=1
+    #                     # label.margin_right=1
+    #                     # label.fsize=6
+    #                     # label.fgcolor="blue"
+    #                     # child.add_face(label, column=2, position="branch-right")
+    #                 style["shape"] = "circle"
+    #                 style["size"] = int(max(each.width*5,10))
+    #                 style["vt_line_type"] = 0
+    #                 style["hz_line_type"] = 0
+    #                 child.add_feature("num_particles", 0)
+    #                 child.add_feature("avg_age", 0)
+    #                 child.add_feature("max_age", 0)
+    #                 child.add_feature("min_age", 0)
+    #                 child.add_feature("length", each.length)
+    #                 child.add_feature("active",0)
+    #                 # active = AttrFace("active")
+    #                 # active.margin_top = 1
+    #                 # active.margin_bottom = 1
+    #                 # active.margin_left = 1
+    #                 # active.margin_right = 1
+    #                 # active.fsize = 6
+    #                 # active.fgcolor = "gray"
+    #                 # child.add_face(active, column=1, position="branch-right")
+    #                 child.set_style(style)
 
 # the endpoint class is the control class for the pipe and initiates or ends flow events, sets flow rates,
 # and triggers activation for all other pipes upstream from it. inherits from pipe.
