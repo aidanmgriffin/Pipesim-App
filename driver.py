@@ -38,6 +38,7 @@ class execution_arguments:
         self.molecularDiffusionCoefficient = molecularDiffusionCoefficient
         self.instructions = instructions
         self.diffuse = diffuse
+        self.plt = None
 
 # The graphing functionality has been broken into it's own class to make it easier to call the graphing functions multiple times with different parameters.
 # now we can make the same graph at different resolution scales. The smaller one is displayed in the app, while the larger one is saved to the hard drive
@@ -123,6 +124,8 @@ class graphing:
             print("saving ", filename)
             plt.savefig(filename, facecolor='w', edgecolor='w',
                    orientation='portrait', format="png", pad_inches=0.1)
+            self.plt = plt
+            plt.show
         except:
             print("graph_helper called before containing folder has been created! Unable to create graph.")
             pass

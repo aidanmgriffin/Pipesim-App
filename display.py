@@ -165,7 +165,7 @@ class simulation_window():
             #                                       diffuse=self.diffusion_status, diffusionCoefficient= float(contents[0][4]))
             arguments = driver.execution_arguments(settingsfile = filename, modelfile=contents[0][0], presetsfile=contents[0][1],
                                                    density= float(contents[0][2]), pathname=self.outputLocation,
-                                                   diffuse=self.diffusion_status, diffusionCoefficient= float(contents[0][4]))
+                                                   diffuse=self.diffusion_status, molecularDiffusionCoefficient= float(contents[0][4]))
             
             sim = Process(target = simulator.exec_preset, args = (arguments,))
             

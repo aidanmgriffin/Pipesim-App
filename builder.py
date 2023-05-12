@@ -6,17 +6,17 @@ import particles
 # skips first line (where header information is stored)
 # loads data from each line into a list. creates a list of lists.
 def load_csv(filename):
-    file = open(filename,"r")
-    csvfile = csv.reader(file,dialect="excel")
-    start = 0
-    rval = []
-    for line in csvfile:
-        # print("line: ", line)
-        if start == 0:
-            start = 1
-            continue
-        rval.append(line)
-    return rval
+    with open(filename,"r") as file:
+        csvfile = csv.reader(file,dialect="excel")
+        start = 0
+        rval = []
+        for line in csvfile:
+            # print("line: ", line)
+            if start == 0:
+                start = 1
+                continue
+            rval.append(line)
+        return rval
 
 # creates a pipe using the pipe data stored in the csv file. Note that at this point,
 # each pipe is separate so parent and child pipes (connections) are filled with strings

@@ -619,12 +619,14 @@ class pipe:
     # create a graphical representation of the model.
     def generate_tree(self, ageDict):
         level = ()
-        level = level + (self.name, )
+        if self.name not in level:
+            level = level + (self.name, )
         print("level:", level)
         if self.children is not None:
             print("children: self.children")
             for child in self.children:
                 if child is not None:
+                    level = level + (self.name, )
                     child.generate_tree(ageDict)
         return 0
             
