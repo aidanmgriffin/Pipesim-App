@@ -643,6 +643,10 @@ class pipe:
                 else:
                     edge[num] = pipeEdges.index(pipe)
         
+        for num, val in enumerate(self.manager.edgeList):
+            for numj, valj in enumerate(val):
+                self.manager.edgeList[num][numj] = int(valj) + 1
+        self.manager.edgeList.insert(0, [0, 1])
         g = Graph(edges = self.manager.edgeList)
         ages = [0.0] * len(pipeEdges)
         for entry in ageDict.keys():
@@ -650,8 +654,6 @@ class pipe:
         
         pipeTuples = zip(pipeEdges, ages)
         g.es["pipeTuples"] = list(pipeTuples)
-        print("pipeTuples: ", list(pipeTuples))
-        g.es["edge_font"] = "helvetica"
         g.es["label"] = g.es["pipeTuples"]
         plot(g, "graph_scaled.png", bbox = (800,800), margin = 150, layout= g.layout_reingold_tilford(root=[0]))
 
