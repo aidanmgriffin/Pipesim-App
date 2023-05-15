@@ -7,6 +7,8 @@ import copy
 import random
 from Bio import Phylo
 from io import StringIO
+from igraph import *
+import matplotlib.pyplot as plt
 # from ete3 import Tree, faces, TextFace, NodeStyle
 from multiprocessing import cpu_count
 # import ete3
@@ -83,6 +85,9 @@ class ParticleManager():
         self.bins = []
         self.flowNum: int = 0 
         self.time_since = {}
+        self.pipeString: str = ""
+        self.edgeList: list = []
+
 
 
         #self.pool = cf.ProcessPoolExecutor(max_workers = self.process_max)
@@ -615,36 +620,40 @@ class pipe:
         depth = max(dim)
         return depth, height
 
-    # this function creates and returns an ete3 tree based on the current pipes model. the ete3 tree is used to
+    # this function creates and returns a list of edges forming a tree based on the current pipes model. This tree is used to
     # create a graphical representation of the model.
-    def generate_tree(self, ageDict):
-        level = ()
-        if self.name not in level:
-            level = level + (self.name, )
-        print("level:", level)
+    def generate_tree(self):
         if self.children is not None:
-            print("children: self.children")
             for child in self.children:
-                if child is not None:
-                    level = level + (self.name, )
-                    child.generate_tree(ageDict)
-        return 0
-            
-        # print("path: ", ete3.__file__)
-        # treedata = "(A, (B, C), (D, E))"
-        # handle = StringIO(treedata)
-        # tree = Phylo.read(handle, "newick")
-        # return tree
-        # return self.tree_builder(self, ageDict)
+                if child is not None and child.type != "endpoint":
+                    level = [self.name, child.name]
+                    self.manager.edgeList.append(level)
+                    child.generate_tree()
 
-    # def tree_helper(self, tree, iterable):
-    #     if tree.type != "endpoint":
-    #         print(tree.name)
-    #     if iterable is not None:
-    #         for each in iterable:
-    #             if each is not None:
-    #                 if each.type != "endpoint":
-    #                     self.tree_helper(each, each.children)
+    # Take list of edges and creates an igraph tree and visual representation. Graph edges are labeled with (Pipe name, average age))
+    # The graph is saved as graph_scaled.png and takes on a tree structure of the pipe network.       
+    def show_tree(self, ageDict):
+        pipeEdges = []
+      
+        for edge in self.manager.edgeList:
+            for num, pipe in enumerate(edge):
+                if pipe not in pipeEdges:
+                    pipeEdges.append(pipe)
+                    edge[num] = pipeEdges.index(pipe)
+                else:
+                    edge[num] = pipeEdges.index(pipe)
+        
+        g = Graph(edges = self.manager.edgeList)
+        ages = [0.0] * len(pipeEdges)
+        for entry in ageDict.keys():
+            ages[pipeEdges.index(entry)] = round(ageDict[entry][0] / ageDict[entry][1], 2)
+        
+        pipeTuples = zip(pipeEdges, ages)
+        g.es["pipeTuples"] = list(pipeTuples)
+        print("pipeTuples: ", list(pipeTuples))
+        g.es["edge_font"] = "helvetica"
+        g.es["label"] = g.es["pipeTuples"]
+        plot(g, "graph_scaled.png", bbox = (800,800), margin = 150, layout= g.layout_reingold_tilford(root=[0]))
 
     # the tree_builder function does the actual creation of the ete3 tree. It recursively explores the current pipe
     # model and transcribes relevant properties of the model into new ete3 tree nodes and inserts them into the
@@ -808,3 +817,10 @@ class endpoint(pipe):
             p.flow += rate_change
             p = p.parent
 
+
+def main():
+    sim = pipe("sim", 0, 0, None, None, 0, 0, 0, None)
+    pipe.show_tree(sim)
+
+if __name__ == "__main__":
+    main()

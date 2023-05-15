@@ -125,7 +125,7 @@ class graphing:
             plt.savefig(filename, facecolor='w', edgecolor='w',
                    orientation='portrait', format="png", pad_inches=0.1)
             self.plt = plt
-            plt.show
+            # plt.show()
         except:
             print("graph_helper called before containing folder has been created! Unable to create graph.")
             pass
@@ -453,10 +453,10 @@ class Driver:
         ageDict = {}
         # names = particleAges.keys()
         for key in particles:
-            # print(key)
+            # print("key: ", key)
             particle = particles[key]
             data = particle.getOutput()
-            
+            # print("data: "  , data)
             for pipe in data[4]:
                 ageDict.setdefault(pipe[0], [0,0])
                 ageDict[pipe[0]][0] += pipe[1]
@@ -671,7 +671,9 @@ class Driver:
         self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
         self.write_bins(".\static\plots\histogram")
         ageDict = self.write_pipe_ages(self.manager.expendedParticles, pathname+"\pipe_ages.csv")
-        tree_model = self.root.generate_tree(ageDict)
+        tree_model = self.root.generate_tree()
+        print("tree model = ", tree_model)
+        self.root.show_tree(ageDict)
         # tree_model.render(".\static\plots\pipe_tree.png")
         # self.controller.event_generate("<<sim_finished>>", when = "tail")
         send = ("status_completed", "Simulation complete.")
