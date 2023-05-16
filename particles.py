@@ -5,8 +5,6 @@ import numpy as np
 import math
 import copy
 import random
-from Bio import Phylo
-from io import StringIO
 from igraph import *
 import matplotlib.pyplot as plt
 # from ete3 import Tree, faces, TextFace, NodeStyle
