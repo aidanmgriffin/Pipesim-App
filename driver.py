@@ -51,8 +51,9 @@ class graphing:
         self.Queue = queue
         self.line_styles = ["-", "--", "-.", ":"]  # also "" is none
         self.line_markers = [".", "o", "v", "^", "<", ">", "p", "P", "*", "X", "D"]
-        colors = mcolors.get_named_colors_mapping()
-        self.line_colors = list(colors.keys())
+        # colors = mcolors.get_named_colors_mapping()
+        colors = ['b','g','r','c','m','y','k']
+        self.line_colors = ['b','g','r','c','m','y','k']
         self.mode = mode
         self.mode_name = {1:"Seconds", 2:"Minutes", 3:"Hours"}
 
@@ -60,7 +61,7 @@ class graphing:
     # returns a random color from among the available color options (all named colors in matplotlib.colors)
     def select_color(self):
         selected = random.choice(self.line_colors)
-        self.line_colors.remove(selected)
+        # self.line_colors.remove(selected)
         return selected
 
     # creates a new particle age graph, saves the image, and puts the filepath in the message queue.
@@ -164,7 +165,7 @@ class graphing:
         xy.set_ylim(0, maxAge * 1.1)
         xy.set_xlim(0, counter.get_time())
         xy.set_xlabel("Simulation Time ({})".format(self.mode_name.get(self.mode)))
-        xy.set_ylabel("Expelled Particle Age ({})".format(self.mode_name.get(self.mode)))
+        xy.set_ylabel("Expelled Particle Concentration (Percentage)".format(self.mode_name.get(self.mode)))
         try:
             print("saving ", filename)
             plt.savefig(filename, facecolor='w', edgecolor='w',
@@ -320,7 +321,8 @@ class Driver:
         time_since_starts = {}
         for instruction in instructions:
             time_since_starts[instruction] = instructions[instruction][0][0]
-                
+
+        print("max_time", max_time)        
         for time_step in range(0, max_time):
             start_time = self.progress_update(start_time, max_time, time_step)
             # TODO: multiprocessing
@@ -356,7 +358,8 @@ class Driver:
                 self.sim_endpoint_preset(endpoint)
             self.counter.increment_time()
 
-            root.timeStep += 1
+            # root.timeStep += 1
+            # print("Root time step: ", root.timeStep)
             # print(root.length)
 
     # this function prints to the console with statistics about the simulation and the current simulation speed.
@@ -462,6 +465,8 @@ class Driver:
                 ageDict[pipe[0]][0] += pipe[1]
                 ageDict[pipe[0]][1] += 1
 
+        #Column containing the pipe name, the total age of particles in that pipe (summed time spent in that pipe value for each particle), the number of particles that have flowed through that pipe,
+        # and the result of those two values divided from one another ( assumed to be the average age of particles in that pipe. )
         for entry in ageDict:
             writer.writerow([str(entry), str(ageDict[entry]), str(ageDict[entry][0] / ageDict[entry][1])])
 

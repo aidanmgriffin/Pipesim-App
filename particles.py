@@ -88,8 +88,6 @@ class ParticleManager():
         self.pipeString: str = ""
         self.edgeList: list = []
 
-
-
         #self.pool = cf.ProcessPoolExecutor(max_workers = self.process_max)
 
     #creates a particle that is registered to the particle manager and
@@ -98,6 +96,7 @@ class ParticleManager():
 
     def setTimeStep(self, step: int):
             self.timeStep = step
+            print("Step = ", step)
 
     def update_caller(self, particle):
         name, part = particle.update()
@@ -223,7 +222,9 @@ class Particle:
         lamb = self.container.lambdaval
         containerName = self.container.name
 
+        # print("Free Chlorine b4: " + str(self.freechlorine))
         self.freechlorine = self.freechlorine * math.exp(-lamb*timeStep) 
+        # print("Free Chlorine af: " + str(self.freechlorine), math.exp(-lamb*timeStep))
         
         #For Free chlorine decay: Get the Time Granularity for Delta T. Use rate of decay. Cnew = self.freechlorine
         #Use function Cnew = Cold * exp(-rate*deltaT). update the freechlorine (self.freechlorine = Cnew)
@@ -508,6 +509,7 @@ class Particle:
             # rval.append(pipe)
             # rval.append(self.ages[pipe])
         rval.append(add_ages)
+        rval.append(self.freechlorine)
         return rval
 
     # prints details about the particle. included for testing purposes. Not used.
@@ -545,7 +547,7 @@ class pipe:
         self.flowRate: int = 0  # gallons per minute
         self.flow: np.long = 0  # gallons per time unit
         pipeIndex[self.name] = self
-        self.timeStep = 1
+        # self.timeSpent = 1
         # pipe no longer tracks member particles
         #self.particles: dict = {} #particle id = position
         #self.average_age = 0
@@ -624,17 +626,21 @@ class pipe:
     # create a graphical representation of the model.
     def generate_tree(self):
         if self.children is not None:
+            
             for child in self.children:
                 if child is not None and child.type != "endpoint":
                     level = [self.name, child.name]
                     self.manager.edgeList.append(level)
                     child.generate_tree()
+                else:
+                    if self.parent is None:
+                        level = ['Base', self.name]
+                        self.manager.edgeList.append(level)
 
     # Take list of edges and creates an igraph tree and visual representation. Graph edges are labeled with (Pipe name, average age))
     # The graph is saved as graph_scaled.png and takes on a tree structure of the pipe network.       
     def show_tree(self, ageDict):
-        pipeEdges = []
-      
+        pipeEdges = ['Base']
         for edge in self.manager.edgeList:
             for num, pipe in enumerate(edge):
                 if pipe not in pipeEdges:
@@ -643,19 +649,20 @@ class pipe:
                 else:
                     edge[num] = pipeEdges.index(pipe)
         
-        for num, val in enumerate(self.manager.edgeList):
-            for numj, valj in enumerate(val):
-                self.manager.edgeList[num][numj] = int(valj) + 1
-        self.manager.edgeList.insert(0, [0, 1])
+        if self.manager.edgeList[0][0] != 0:
+            self.manager.edgeList.insert(0, [0,1])
+        
         g = Graph(edges = self.manager.edgeList)
+        pipeEdges.pop(0)
         ages = [0.0] * len(pipeEdges)
         for entry in ageDict.keys():
             ages[pipeEdges.index(entry)] = round(ageDict[entry][0] / ageDict[entry][1], 2)
         
+
         pipeTuples = zip(pipeEdges, ages)
         g.es["pipeTuples"] = list(pipeTuples)
         g.es["label"] = g.es["pipeTuples"]
-        plot(g, "graph_scaled.png", bbox = (800,800), margin = 150, layout= g.layout_reingold_tilford(root=[0]))
+        plot(g, "static/plots/graph_scaled.png", bbox = (800,800), margin = 150, layout= g.layout_reingold_tilford(root=[0]))
 
     # the tree_builder function does the actual creation of the ete3 tree. It recursively explores the current pipe
     # model and transcribes relevant properties of the model into new ete3 tree nodes and inserts them into the

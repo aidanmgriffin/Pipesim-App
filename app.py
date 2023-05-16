@@ -20,7 +20,7 @@ import builder
 
 # pylint: disable=C0103
 app = Flask(__name__)
-app.config['SECRET_KEY'] = "pipesimunlock"
+app.config['SECRET_KEY'] = os.urandom(12).hex()
 
 #Create a form class (file)
 class SettingsForm(FlaskForm):
@@ -40,13 +40,6 @@ class alert:
 #route to documentation page
 @app.route('/documentation', methods = ['GET', 'POST'])
 def documentation():
-    name = None
-    # form = NamerForm()
-
-    # if form.validate_on_submit():
-    #     name = form.name.data
-    #     form.name.data = ''
-
     return render_template("documentation.html")
 
 #route to learn more page
