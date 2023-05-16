@@ -183,10 +183,6 @@ class simulation_window():
         except Exception as e:
             traceback.print_exc()
             exception_holder.exception = e
-                        # print("Wrapper: ", e)
-            # raise ValueError('Wrapper Error')
-            # return None
-
         
     # function validates file name input for the two preset configuration files and (if valid)
     # launches the simulation in preset mode.
@@ -226,23 +222,13 @@ class simulation_window():
                                                    diffuse=diffusion_status, molecularDiffusionCoefficient=molecular_diffusion_coefficient)
             
             sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset,exception_holder, arguments))
-        # sim = threading.Thread(target = simulator.exec_preset, args = arguments)
-        
+
             sim.start()
             sim.join()
 
-
-        
-            # print(sim.get())
-
-            # if sim.exception:
-            #     error, tb = sim.exception
-            #     print("TB: ", tb, "Error: ", error)
-            
             if hasattr(exception_holder, 'exception'):
                 raise exception_holder.exception
             
-
             if sim.exitcode == 0:
                 return(1)
             else:
