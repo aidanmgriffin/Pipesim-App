@@ -643,46 +643,53 @@ class Driver:
     #this function executes the simulation in preset mode. This changes how pipes are activated and enables different
     # flow rates for each activation.
     def exec_preset(self, arguments: execution_arguments):
-        modelfile = arguments.modelfile
-        presetsfile = arguments.presetsfile
-        density = arguments.density
-        pathname = arguments.pathname
-        self.manager.molecularDiffusionCoefficient = arguments.molecularDiffusionCoefficient
-        self.manager.diffusionActive = arguments.diffuse
-        # self.controller.event_generate("<<sim_started>>", when = "tail")
-        send = ("status_started", "Simulation started.")
-        self.Queue.put(send)
-        self.root, self.endpoints = builder.build(modelfile, self.manager)
-        self.manager.setTimeStep(self.TIME_STEP)
-        self.Queue.put(send)
-        #self.controller.preview_manager.start(self.root, self.manager)
-        # send = ("start_preview", tree_model)
-        self.Queue.put(send)
-        maxTime, instructions = builder.load_sim_preset(presetsfile)
+        try:
+            modelfile = arguments.modelfile
+            presetsfile = arguments.presetsfile
+            density = arguments.density
+            pathname = arguments.pathname
+            self.manager.molecularDiffusionCoefficient = arguments.molecularDiffusionCoefficient
+            self.manager.diffusionActive = arguments.diffuse
+            # self.controller.event_generate("<<sim_started>>", when = "tail")
+            send = ("status_started", "Simulation started.")
+            self.Queue.put(send)
+            self.root, self.endpoints = builder.build(modelfile, self.manager)
+            self.manager.setTimeStep(self.TIME_STEP)
+            self.Queue.put(send)
+            #self.controller.preview_manager.start(self.root, self.manager)
+            # send = ("start_preview", tree_model)
+            # self.Queue.put(send)
+            maxTime, instructions = builder.load_sim_preset(presetsfile)
 
-        # print(instructions)
-        maxTime, instructions = self.parse_instructions(maxTime, instructions)
-        # print(instructions)
-        self.sim_preset(self.root, self.endpoints, instructions, maxTime, density)
-        if not os.path.isdir(pathname):
-            os.mkdir(pathname)
-        g = graphing(self.Queue, self.mode)
-        g.graph_age(self.manager.expelledParticleData, self.counter, pathname)
+            # print(instructions)
+            maxTime, instructions = self.parse_instructions(maxTime, instructions)
+            # print(instructions)
+            self.sim_preset(self.root, self.endpoints, instructions, maxTime, density)
+            if not os.path.isdir(pathname):
+                os.mkdir(pathname)
+            g = graphing(self.Queue, self.mode)
+            g.graph_age(self.manager.expelledParticleData, self.counter, pathname)
 
+            
+            
+            self.write_output(pathname+"\expelled.csv", self.manager.expendedParticles)
+            self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
+            self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
+            self.write_bins(".\static\plots\histogram")
+            ageDict = self.write_pipe_ages(self.manager.expendedParticles, pathname+"\pipe_ages.csv")
+            tree_model = self.root.generate_tree()
+            print("tree model = ", tree_model)
+            self.root.show_tree(ageDict)
+            # tree_model.render(".\static\plots\pipe_tree.png")
+            # self.controller.event_generate("<<sim_finished>>", when = "tail")
+            send = ("status_completed", "Simulation complete.")
+            self.Queue.put(send)
+        except Exception as e:
+            # self.Queue.put(("exception","error"))
+            print("Error in exec_preset: ", e, e.args)
+            # raise ValueError("error in the value")
+            raise Exception(e)
         
-        
-        self.write_output(pathname+"\expelled.csv", self.manager.expendedParticles)
-        self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
-        self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
-        self.write_bins(".\static\plots\histogram")
-        ageDict = self.write_pipe_ages(self.manager.expendedParticles, pathname+"\pipe_ages.csv")
-        tree_model = self.root.generate_tree()
-        print("tree model = ", tree_model)
-        self.root.show_tree(ageDict)
-        # tree_model.render(".\static\plots\pipe_tree.png")
-        # self.controller.event_generate("<<sim_finished>>", when = "tail")
-        send = ("status_completed", "Simulation complete.")
-        self.Queue.put(send)
 
     # this function translates the instructions from the instructions file (recorded as minutes)
     # into the appropriate time scale (seconds, minutes, or hours) as selected.

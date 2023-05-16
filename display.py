@@ -5,10 +5,12 @@ import driver
 # import numpy as np
 # from functools import partial
 # import threading
-from multiprocessing import Queue, Process, Pool
+from multiprocessing import Queue, Process, Pool, Event, Manager
 import os
 # import datetime
 import csv
+import traceback
+import sys
 
 
 # this function takes in a dictionary containing one or more lists. each list contains the age of particles
@@ -159,7 +161,7 @@ class simulation_window():
             self.generate_path()
             simulator = driver.Driver(self.Queue, step = self.step_size)
 
-            print(" pathname : ", self.outputLocation)
+            # print(" pathname : ", self.outputLocation)
             #arguments = driver.execution_arguments(settingsfile = self.file0.get(), modelfile=contents[0][0], presetsfile=contents[0][1],
             #                                       density= float(contents[0][2]), pathname=self.outputLocation,
             #                                       diffuse=self.diffusion_status, diffusionCoefficient= float(contents[0][4]))
@@ -175,7 +177,17 @@ class simulation_window():
 
             return(1)
 
+    def exception_wrapper(self, func, exception_holder, *args):
+        try:
+            return func(*args)
+        except Exception as e:
+            traceback.print_exc()
+            exception_holder.exception = e
+                        # print("Wrapper: ", e)
+            # raise ValueError('Wrapper Error')
+            # return None
 
+        
     # function validates file name input for the two preset configuration files and (if valid)
     # launches the simulation in preset mode.
     def preset_simulation_button_handler(self, file1, file2, density1, diffusion_status, molecular_diffusion_coefficient, granularity):
@@ -204,22 +216,39 @@ class simulation_window():
             valid = False
         self.step_var = self.options[granularity]
         self.set_step_time()
-
+        manager = Manager()
+        exception_holder = manager.Namespace()
         if valid:
             self.generate_path()
             simulator = driver.Driver(self.Queue, step = self.step_size)
             arguments = driver.execution_arguments(settingsfile = None, modelfile=file1, presetsfile=file2,
                                                    density=density, pathname=self.outputLocation,
                                                    diffuse=diffusion_status, molecularDiffusionCoefficient=molecular_diffusion_coefficient)
-            sim = Process(target = simulator.exec_preset, args = (arguments,))
-            # sim = threading.Thread(target = simulator.exec_preset, args = arguments)
+            
+            sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset,exception_holder, arguments))
+        # sim = threading.Thread(target = simulator.exec_preset, args = arguments)
+        
             sim.start()
             sim.join()
+
+
+        
+            # print(sim.get())
+
+            # if sim.exception:
+            #     error, tb = sim.exception
+            #     print("TB: ", tb, "Error: ", error)
+            
+            if hasattr(exception_holder, 'exception'):
+                raise exception_holder.exception
+            
 
             if sim.exitcode == 0:
                 return(1)
             else:
+                print("TB: ", traceback.format_exc(), "Sys", sys.exc_info())
                 return(0)
+            
 
     # this function validates all the inputs int he window to ensure they are valid and will result in a successful
     # simulation. The function will raise an error describing the problem if there is one, allowing the user

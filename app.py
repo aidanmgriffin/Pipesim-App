@@ -62,6 +62,7 @@ def upload():
     date_time =now.strftime("%m/%d/%Y, %H:%M:%S")
 
     form = SettingsForm()
+    alertDanger = alert("Running Simulation Failed", "Danger")
    
     if request.method == 'POST':
 
@@ -87,25 +88,31 @@ def upload():
         # User is not electing to run a settings preset simulation. 
         # Thus, running a custom simulation with selected files/settings.
         elif 'preset-submit' in request.form:
-            alertDanger = alert("Running Simulation Failed", "Danger")
             try:
                 # Get pipe network and flows files from form
                 pipes = request.files['pipe-network']
                 flows = request.files['flow-preset']
 
                 #Validating density input. Input must be a number between 0 and 1 inclusive.
-                density = request.values['density']
-                density = float(density)
-                if density < 0 or density > 1:
-                    alertDanger.message = "Density must be between 0 and 1"
+                try:
+                    density = request.values['density']
+                    density = float(density)
+                    if density < 0 or density > 1:
+                        alertDanger.message = "Density must be between 0 and 1"
+                        raise Exception
+                except:
+                    alertDanger.message = "Density must be a number between 0 and 1"
                     raise Exception
+                    
                 
                 # Validate that granularity option is selected. If none is selected, default to minutes.
                 # In case of no selection, error will be shown to the user.
                 try:
                     req_radio = request.values['inlineRadioOptions']
                 except:
-                    alertDanger.message = "Granularity option not selected. Defaulting to Minutes"
+                    alertDanger.message = "Granularity option not selected."
+                    raise Exception
+                    
 
                 if req_radio == 'option1':
                     granularity = 'Seconds'
@@ -129,8 +136,10 @@ def upload():
                 if any(char.isdigit() for char in molecular_diffusion_coefficient):
                     pass
                 else:
-                    molecular_diffusion_coefficient =  9.3 * math.pow(10, -5) # change name asymptotic_diffusion_coefficient to molecular diffusion coefficient
-                    
+                    molecular_diffusion_coefficient =  9.3 * math.pow(10, -5) 
+
+                # Attempt to save pipe network and flows files to input folder. If unsuccessful (most likely due to incorrect file type),
+                # an error will be shown to the user.    
                 try:
                     if pipes and allowed_file(pipes.filename) and flows and allowed_file(flows.filename):
                         pipes_filename = secure_filename(pipes.filename)
@@ -155,11 +164,16 @@ def upload():
 
                 sim = simulation_window()
 
-                output_file = 0
-                output_file = sim.preset_simulation_button_handler(pipes_save_location, flows_save_location, density, diffusion_status, molecular_diffusion_coefficient, granularity)
-
-            except Exception as e:
-                print("Exception: ", e)
+                # Catches and alerts users of errors in the simulation. These include errors involving output files being open,
+                # errors involving the input files, and errors involving the simulation itself.
+                try:
+                    output_file = 0
+                    output_file = sim.preset_simulation_button_handler(pipes_save_location, flows_save_location, density, diffusion_status, molecular_diffusion_coefficient, granularity)
+                except Exception as e:
+                    alertDanger.message = e
+                    raise Exception
+            except:
+                # alertDanger.message = e
                 return render_template("upload.html", form=form, alert = alertDanger)
             
             #If simulation is successful, redirect to download page. If failed, show error message.
