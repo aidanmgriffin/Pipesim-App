@@ -129,6 +129,13 @@ class simulation_window():
 
         return rval
 
+    def exception_wrapper(self, func, exception_holder, *args):
+        try:
+            return func(*args)
+        except Exception as e:
+            traceback.print_exc()
+            exception_holder.exception = e
+
     def settings_preset_simulation_button_handler(self, filename):
         print("valid")
         density = None
@@ -157,8 +164,9 @@ class simulation_window():
             #self.step_var.set(self.options[contents[0][5]])
             self.step_var = self.options[contents[0][5]]
             self.set_step_time()
-
             self.generate_path()
+            manager = Manager()
+            exception_holder = manager.Namespace()
             simulator = driver.Driver(self.Queue, step = self.step_size)
 
             # print(" pathname : ", self.outputLocation)
@@ -169,20 +177,18 @@ class simulation_window():
                                                    density= float(contents[0][2]), pathname=self.outputLocation,
                                                    diffuse=self.diffusion_status, molecularDiffusionCoefficient= float(contents[0][4]))
             
-            sim = Process(target = simulator.exec_preset, args = (arguments,))
+            sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, exception_holder, arguments))
             
-            # sim = threading.Thread(target = simulator.exec_preset, args = arguments)
             sim.start()
             sim.join()
 
-            return(1)
-
-    def exception_wrapper(self, func, exception_holder, *args):
-        try:
-            return func(*args)
-        except Exception as e:
-            traceback.print_exc()
-            exception_holder.exception = e
+            if hasattr(exception_holder, 'exception'):
+                raise exception_holder.exception
+            
+            if sim.exitcode == 0:
+                return(1)
+            else:
+                return(0)
         
     # function validates file name input for the two preset configuration files and (if valid)
     # launches the simulation in preset mode.
@@ -232,7 +238,6 @@ class simulation_window():
             if sim.exitcode == 0:
                 return(1)
             else:
-                print("TB: ", traceback.format_exc(), "Sys", sys.exc_info())
                 return(0)
             
 

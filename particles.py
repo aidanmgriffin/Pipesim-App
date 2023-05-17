@@ -85,6 +85,7 @@ class ParticleManager():
         self.time_since = {}
         self.pipeString: str = ""
         self.edgeList: list = []
+        self.endpointList: list = []
 
         #self.pool = cf.ProcessPoolExecutor(max_workers = self.process_max)
 
@@ -624,16 +625,21 @@ class pipe:
     # create a graphical representation of the model.
     def generate_tree(self):
         if self.children is not None:
-            
+            print("self: " + self.name + " children: " + str(len(self.children)))
             for child in self.children:
+                print("child: " + child.name, child.type)
                 if child is not None and child.type != "endpoint":
                     level = [self.name, child.name]
                     self.manager.edgeList.append(level)
                     child.generate_tree()
-                else:
-                    if self.parent is None:
+                elif self.parent is None:
                         level = ['Base', self.name]
                         self.manager.edgeList.append(level)
+                        if(child.type == "endpoint"):
+                            self.manager.endpointList.append(child.name)
+                elif child.type == "endpoint":
+                    self.manager.endpointList.append(child.name)
+                
 
     # Take list of edges and creates an igraph tree and visual representation. Graph edges are labeled with (Pipe name, average age))
     # The graph is saved as graph_scaled.png and takes on a tree structure of the pipe network.       
@@ -656,8 +662,18 @@ class pipe:
         for entry in ageDict.keys():
             ages[pipeEdges.index(entry)] = round(ageDict[entry][0] / ageDict[entry][1], 2)
         
-
+        x = 0
+        # print("endpoints: ", self.manager.endpointList, "Pipe Edges: ", pipeEdges, self.manager.edgeList, g.degree(1))
+        
+        for i in range(1, len(pipeEdges) + 1):
+                # print("i: ", i, "degree: ", g.degree(i))
+                if(g.degree(i) == 1):
+                    g.vs(i)["label"] = self.manager.endpointList[x]
+                    g.vs(i)["color"] = "blue"
+                    x += 1
+        
         pipeTuples = zip(pipeEdges, ages)
+        # pipeTuples = pipeEdges
         g.es["pipeTuples"] = list(pipeTuples)
         g.es["label"] = g.es["pipeTuples"]
         plot(g, "static/plots/graph_scaled.png", bbox = (800,800), margin = 150, layout= g.layout_reingold_tilford(root=[0]))

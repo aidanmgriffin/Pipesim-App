@@ -9,7 +9,8 @@ li{
     text-decoration: none;
 }
 
-a{
+p{
+    font-size: 1.2em;
 }
 
 #menu-link{
@@ -35,6 +36,9 @@ a{
     flex: 50%;
 }
 
+.table-widths {
+    width: 10%;
+}
 .header{
 /*    border-bottom: 1px solid #404E77;*/
 /*    margin: 0em 2em 0em 0em;*/
@@ -194,4 +198,10 @@ a{
     position: sticky;
     top:0;
     z-index: 999;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }

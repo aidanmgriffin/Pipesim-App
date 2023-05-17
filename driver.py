@@ -656,8 +656,8 @@ class Driver:
 
             try:
                 self.root, self.endpoints = builder.build(modelfile, self.manager)
-            except:
-                raise Exception("Error building model. Check model file for errors. [" + e + "]")
+            except Exception as e:
+                raise Exception("Error building model. Check model file for errors. [" + str(e) + "]")
             
             self.manager.setTimeStep(self.TIME_STEP)
             self.Queue.put(send)
@@ -668,21 +668,21 @@ class Driver:
             try:
                 maxTime, instructions = builder.load_sim_preset(presetsfile)
                 maxTime, instructions = self.parse_instructions(maxTime, instructions)
-            except:
-                raise Exception("Error loading preset file. Check preset file for errors.")
+            except Exception as e:
+                raise Exception("Error loading preset file. Check preset file for errors. [" + str(e) + "]")
             
             try:
                 self.sim_preset(self.root, self.endpoints, instructions, maxTime, density)
-            except:
-                raise Exception("Error running simulation. Check uploaded files for errors. [" + e + "]" )
+            except Exception as e:
+                raise Exception("Error running simulation. Check uploaded files for errors. [" + str(e) + "]" )
             
             try:
                 if not os.path.isdir(pathname):
                     os.mkdir(pathname)
                 g = graphing(self.Queue, self.mode)
                 g.graph_age(self.manager.expelledParticleData, self.counter, pathname)
-            except:
-                raise Exception("Error generating graphs. [" + e + "]") 
+            except Exception as e:
+                raise Exception("Error generating graphs. [" + str(e) + "]") 
 
             try:            
                 self.write_output(pathname+"\expelled.csv", self.manager.expendedParticles)
@@ -692,8 +692,8 @@ class Driver:
                 ageDict = self.write_pipe_ages(self.manager.expendedParticles, pathname+"\pipe_ages.csv")
                 self.root.generate_tree()
                 self.root.show_tree(ageDict)
-            except:
-                raise Exception("Error writing output files. Ensure that the output directory is not open in another program. [" + e + "]" )
+            except Exception as e:
+                raise Exception("Error writing output files. Check uploaded files for errors and ensure that the output directory is not open in another program. [" + str(e) + "]" )
             # tree_model.render(".\static\plots\pipe_tree.png")
             # self.controller.event_generate("<<sim_finished>>", when = "tail")
             send = ("status_completed", "Simulation complete.")

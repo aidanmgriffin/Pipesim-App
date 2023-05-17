@@ -41,13 +41,13 @@
 <form method="POST" enctype="multipart/form-data" name="PresetsForm">
     <!--<label for="file" class="font-weight-bold">File:</label>-->
     <div class="mb-3">
-        <label for="pipe-network" class="form-label">Pipe Network</label>
-        <input class="form-control" type="file" id="pipe-network" name="pipe-network">
+        <label for="pipe-network" class="form-label">Pipe Network </label>
+        <input class="form-control" type="file" accept = ".csv" id="pipe-network" name="pipe-network">
     </div>
 
     <div class="mb-4">
         <label for="flow-preset" class="form-label">Flows Preset</label>
-        <input class="form-control" type="file" id="flow-preset" name="flow-preset">
+        <input class="form-control" type="file" accept = ".csv" id="flow-preset" name="flow-preset">
     </div>
 
     <div class="form-row align-items-center ml-3">
@@ -70,7 +70,7 @@
         </div>
 
         <div class="col-md-1">
-            <input type="number" step=0.1 class="form-control" id="density" name="density" placeholder="">
+            <input type="number" step=any class="form-control" id="density" name="density" placeholder="">
 
         </div>
     </div>
@@ -99,8 +99,8 @@
     </div>
     <br />
         <button type="submit" class="btn" name="preset-submit">Upload</button>
+        
 </form>
-
 </div>
 
 
