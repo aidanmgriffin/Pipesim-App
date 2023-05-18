@@ -95,9 +95,11 @@ class ParticleManager():
 
     def setTimeStep(self, step: int):
             self.timeStep = step
-            print("Step = ", step)
+            # print("Step = ", step)
 
     def update_caller(self, particle):
+        # if(counter.get_time() < 50):
+        #     print("Updating particle", particle.ID, "time: ", counter.get_time())
         name, part = particle.update()
         #rval.append((name, part))
         return name, part
@@ -108,6 +110,7 @@ class ParticleManager():
 
     # updates particle age data, particle positions, and aggregate particle data for particles in each pipe (every 1000 tics)
     def update_particles(self, time_since):
+        # print("Updating particles", time_since, "time: ", counter.get_time())
         self.time_since = time_since
         #pool = Pool(processes = cpu_count())
         index = self.particleIndex.copy()
@@ -117,7 +120,11 @@ class ParticleManager():
         #particlePositions = self.pool.map(self.update_caller, particles)
         # the following line is fast
         rval = map(self.update_caller, particles)
-
+        # particles[0].age += 1
+        # try:
+        #     print("particles 0 age: ", particles[0].age)
+        # except:
+        #     pass
         #elapsed = time.time()
         #elapsed = elapsed - start
         #print("particle updates completed in ", elapsed, "seconds.")
@@ -214,6 +221,7 @@ class Particle:
     # the update function increments the particle age and increments contact record according to the current container
     # material type. If the particle container is active (flowing) then calls the movement function to compute particle flow.
     def update(self):
+        # print("age: ", self.age, "time: ", self.manager.time.get_time())
         self.age += 1
         timeStep = self.manager.timeStep
         #lambda will change depending on the pipe it is in (area and material)
@@ -357,6 +365,7 @@ class Particle:
     def disperse(self):
         global writer
         global logfile
+
         remainingTime = 1
         containerName = self.container.name
         while remainingTime > self.manager.tolerance:  # calculate particle movement until flow consumes available time (1 second)
@@ -625,9 +634,9 @@ class pipe:
     # create a graphical representation of the model.
     def generate_tree(self):
         if self.children is not None:
-            print("self: " + self.name + " children: " + str(len(self.children)))
+            # print("self: " + self.name + " children: " + str(len(self.children)))
             for child in self.children:
-                print("child: " + child.name, child.type)
+                # print("child: " + child.name, child.type)
                 if child is not None and child.type != "endpoint":
                     level = [self.name, child.name]
                     self.manager.edgeList.append(level)
@@ -643,7 +652,7 @@ class pipe:
 
     # Take list of edges and creates an igraph tree and visual representation. Graph edges are labeled with (Pipe name, average age))
     # The graph is saved as graph_scaled.png and takes on a tree structure of the pipe network.       
-    def show_tree(self, ageDict):
+    def show_tree(self, path, ageDict):
         pipeEdges = ['Base']
         for edge in self.manager.edgeList:
             for num, pipe in enumerate(edge):
@@ -659,6 +668,7 @@ class pipe:
         g = Graph(edges = self.manager.edgeList)
         pipeEdges.pop(0)
         ages = [0.0] * len(pipeEdges)
+        # print("pipeEdges: ", pipeEdges, "ageDict: ", ageDict)
         for entry in ageDict.keys():
             ages[pipeEdges.index(entry)] = round(ageDict[entry][0] / ageDict[entry][1], 2)
         
@@ -677,6 +687,7 @@ class pipe:
         g.es["pipeTuples"] = list(pipeTuples)
         g.es["label"] = g.es["pipeTuples"]
         plot(g, "static/plots/graph_scaled.png", bbox = (800,800), margin = 150, layout= g.layout_reingold_tilford(root=[0]))
+        plot(g, path, bbox = (800,800), margin = 150, layout= g.layout_reingold_tilford(root=[0]))
 
     # the tree_builder function does the actual creation of the ete3 tree. It recursively explores the current pipe
     # model and transcribes relevant properties of the model into new ete3 tree nodes and inserts them into the
@@ -781,7 +792,7 @@ class endpoint(pipe):
     # function to increase activation for self and upstream pipes to make water flow possible.
     def activate_pipes(self, newFlow=None):
         self.manager.flowNum += 1
-        print("Activate_pipes: ", newFlow)
+        # print("Activate_pipes: ", newFlow)
         self.activate()
         if newFlow is not None:
             self.update_flow_rate(newFlow)

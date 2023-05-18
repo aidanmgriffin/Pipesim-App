@@ -114,7 +114,7 @@ p{
 
 .main-content{
     padding: 1em;
-    margin-right: 2em;
+    /* margin-right: 2em; */
 }
 
 .mb-3 {
@@ -159,8 +159,15 @@ p{
 }
 
 #docs-sidebar {
+    /* position: sticky;
+    top: 0; */
     border-right: 1px solid #404E77; 
     /* padding: 0; */
+}
+
+#docs-wrapper {
+    display: flex;
+    
 }
 
 .doc-content { 
@@ -204,4 +211,8 @@ input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+h1 span { 
+    font-size: 0.5em;
 }

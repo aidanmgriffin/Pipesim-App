@@ -4,180 +4,279 @@
 {% block content %}
 
 <div class="container-fluid">
-    <!-- <div class="docs-content"> -->
+  <!-- <div class="docs-content"> -->
 
-    <div class="row">
-        <div class="col-2" id="docs-sidebar">
-            <br>
-            <h2 class="text-center">Contents</h2>
-            <li><a class="doc-content" href="#">Get Started</a></li>
-            <li><a class="doc-content" href="#simulation-models">Simulation Models</a></li>
-            <li><a class="doc-content-sub" href="#pipe-network">Pipe Network</a></li>
-            <li><a class="doc-content-sub" href="#">Flow Description</a></li>
+  <div class="row" id="docs-wrapper">
+    <div class="col-2 bg-light" id="docs-sidebar">
+      <div class="sticky-top">
+        <br>
+        <h2 class="text-center">Contents</h2>
+        <li><a class="doc-content" href="#">Get Started</a></li>
+        <li><a class="doc-content" href="#run-simulation">Run Simulation</a></li>
+        <li><a class="doc-content-sub" href="#simulation-modes">Simulation Modes</a></li>
+        <li><a class="doc-content" href="#settings-preset-file">Settings Preset File</a></li>
+        <li><a class="doc-content" href="#run-simulation">Buld Simulation Preset</a></li>
+        <li><a class="doc-content" href="#simulation-models">Simulation Models</a></li>
+        <li><a class="doc-content-sub" href="#pipe-network">Pipe Network</a></li>
+        <li><a class="doc-content-sub" href="#flow-description">Flow Description</a></li>
+        <li><a class="doc-content" href="#simulation-arguments">Simulation Arguments</a></li>
+        <li><a class="doc-content-sub" href="#diffusion">Diffusion</a></li>
+        <li><a class="doc-content-sub" href="#particle-density">Particle Density</a></li>
+        <li><a class="doc-content-sub" href="#time-granularity">Time Granularity</a></li>
+        <li><a class="doc-content" href="#outputs">Outputs</a></li>
+        <li><a class="doc-content-sub" href="#age-plot">Age Plot</a></li>
+        <li><a class="doc-content-sub" href="#concentration-plot">Concentration Plot</a></li>
+        <li><a class="doc-content-sub" href="#particle-modifier-histogram">Particle Modifier Histogram</a></li>
+        <li><a class="doc-content-sub" href="#pipe-network-diagram">Pipe Network Diagram</a></li>
+        <li><a class="doc-content" href="#download-logs">Download Logs</a></li>
 
-        </div>
 
-        <div class="col-10">
-            <br>
-            <h1>Documentation</h1>
-            <div class="foreground-spacer-block"></div>
-            <br />
-
-            <h2 id="get-started">Get Started</h2>
-            <p>Pipesim is a tool for simulating water residence times in a plumbing system or pipe network. It was
-                designed to
-                provide data about how long water remains in pipes within a building plumbing system before being
-                expelled through a water faucet or other outlet. </p>
-
-            <h2 id="simulation-models">Simulation models</h2>
-            <p> This simulation requires input in the form of two CSV files: one for the pipe network and one for the
-                flow diagram</p>
-
-            <h3 id="pipe-network">Pipe network </h3>
-            <p> First, we will build the pipe network file. To get started, open a new CSV file. </p>
-            <p>The first row (header) of the CSV file is as follows:</p>
-            <table class="table table-bordered">
-                <thead>
-                  <tr>
-                    <th scope="col" class = "table-widths">Name</th>
-                    <th scope="col" class = "table-widths">Material</th>
-                    <th scope="col" class = "table-widths">Width (inches)</th>
-                    <th scope="col" class = "table-widths">Length (feet)</th>
-                    <th scope="col" class = "table-widths">Parent</th>
-                    <th scope="col" class = "table-widths">Root?</th>
-                    <th scope="col" class = "table-widths">Endpoint?</th>
-                    <th scope="col" class = "table-widths">D_INF</th>
-                    <th scope="col" class = "table-widths">Alpha</th>
-                    <th scope="col" class = "table-widths">Lambda</th>
-                  </tr>
-                </thead>
-            </table>
-            <br/>
-            <p>The line following the header contains information about the root pipe (the first pipe in the network). The format of this line follows that of the header:</p>
-            <table class="table table-bordered">
-                  <tbody>
-                      <tr>
-                        <td scope="col" class = "table-widths">Root</th>
-                        <td scope="col" class = "table-widths">Pex</th>
-                        <td scope="col" class = "table-widths">12</th>
-                        <td scope="col" class = "table-widths">100</th>
-                        <td scope="col" class = "table-widths">NONE</th>
-                        <td scope="col" class = "table-widths">TRUE</th>
-                        <td scope="col" class = "table-widths"></th>
-                        <td scope="col" class = "table-widths">0.01946</th>
-                        <td scope="col" class = "table-widths">114</th>
-                        <td scope="col" class = "table-widths">0.1</th>
-                      </tr>
-                  </tbody>
-            </table>
-            <p>Note that the root node lists TRUE under the root column and has no entry in the Endpoint column. Since the root node has no parent, NONE is written in the parent column. Note that these entries are <em>case-sensitive</em>.</p>
-            <p>The entire pipe network file may look something like the following:</p>
-
-            <table class="table table-bordered">
-                <thead>
-                  <tr>
-                    <th scope="col" class = "table-widths">Name</th>
-                    <th scope="col" class = "table-widths">Material</th>
-                    <th scope="col" class = "table-widths">Width (inches)</th>
-                    <th scope="col" class = "table-widths">Length (feet)</th>
-                    <th scope="col" class = "table-widths">Parent</th>
-                    <th scope="col" class = "table-widths">Root?</th>
-                    <th scope="col" class = "table-widths">Endpoint?</th>
-                    <th scope="col" class = "table-widths">D_INF</th>
-                    <th scope="col" class = "table-widths">Alpha</th>
-                    <th scope="col" class = "table-widths">Lambda</th>
-                  </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td scope="col" class = "table-widths">Root</th>
-                    <td scope="col" class = "table-widths">Pex</th>
-                    <td scope="col" class = "table-widths">2</th>
-                    <td scope="col" class = "table-widths">100</th>
-                    <td scope="col" class = "table-widths">NONE</th>
-                    <td scope="col" class = "table-widths">TRUE</th>
-                    <td scope="col" class = "table-widths"></th>
-                    <td scope="col" class = "table-widths">0.01946</th>
-                    <td scope="col" class = "table-widths">114</th>
-                    <td scope="col" class = "table-widths">0.1</th>
-                  </tr>
-                  <tr>
-                    <td scope="col" class = "table-widths">Pipe</th>
-                    <td scope="col" class = "table-widths">Copper</th>
-                    <td scope="col" class = "table-widths">1.5</th>
-                    <td scope="col" class = "table-widths">32</th>
-                    <td scope="col" class = "table-widths">Root</th>
-                    <td scope="col" class = "table-widths"></th>
-                    <td scope="col" class = "table-widths"></th>
-                    <td scope="col" class = "table-widths">0.01946</th>
-                    <td scope="col" class = "table-widths">114</th>
-                    <td scope="col" class = "table-widths">0.1</th>
-                  </tr>
-                  <tr>
-                    <td scope="col" class = "table-widths">Tap</th>
-                    <td scope="col" class = "table-widths">NONE</th>
-                    <td scope="col" class = "table-widths">2</th>
-                    <td scope="col" class = "table-widths">1</th>
-                    <td scope="col" class = "table-widths">Pipe</th>
-                    <td scope="col" class = "table-widths"></th>
-                    <td scope="col" class = "table-widths">TRUE</th>
-                    <td scope="col" class = "table-widths">0.01946</th>
-                    <td scope="col" class = "table-widths">114</th>
-                    <td scope="col" class = "table-widths">0.1</th>
-                  </tr></tbody>
-            </table>
-            <p>Let us explain how to create the model</p>
-            <ol>
-                <li>root</li>
-                <li>arterial-1</li>
-                <li>arterial-2</li>
-                <li>a2-branch-1</li>
-                <li>a2-branch-2</li>
-            </ol>
-            <p>The five pipes are connected as diagrammed below:</p>
-            <img src="static/images/example-graph-scaled.png" alt="pipe network" class="img-fluid">
-            <p>This pipe network has three endpoints. One at the end of arterial-1, and one each at the end of
-                a2-branch-1
-                and
-                a2-branch-2. You will need to explicitly state these endpoints and give them names in the model file, or
-                else
-                these pipes will be dead-ends.</p>
-            <p>We add lines 6,7,8 as follows:</p>
-            <ol>
-                <li>endpoint-1</li>
-                <li>endpoint-2</li>
-                <li>endpoint-3</li>
-            </ol>
-            <p>Now our pipe network looks like:</p>
-            <pre><code>    ----- root -----
-            |<span class="hljs-string">        </span>|
-            arterial-1    -- arterial-2 ---
-            |<span class="hljs-string">        </span>|<span class="hljs-string">        </span>|
-            endpoint-1    a2-branch-1    a2-branch-2
-            |<span class="hljs-string">        </span>|
-            endpoint-2    endpoint-3
-            </code></pre>
-            <p>with a visualization of the pipe network created, let&#39;s show how this must be written into the pipe
-                network
-                model file.</p>
-            <pre><code>root,copper,<span class="hljs-number">2</span>,<span class="hljs-number">60</span>,NONE,<span class="hljs-literal">TRUE</span>,
-            arterial<span class="hljs-number">-1</span>,copper,<span class="hljs-number">1</span>,<span class="hljs-number">40</span>,root,,
-            arterial<span class="hljs-number">-2</span>,copper,<span class="hljs-number">1</span>,<span class="hljs-number">40</span>,root,,
-            endpoint<span class="hljs-number">-1</span>,NONE,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,arterial<span class="hljs-number">-1</span>,,<span class="hljs-literal">TRUE</span>
-            a2-branch<span class="hljs-number">-1</span>,PVC,<span class="hljs-number">0.5</span>,<span class="hljs-number">25</span>,arterial<span class="hljs-number">-2</span>,
-            a2-branch<span class="hljs-number">-2</span>,PVC,<span class="hljs-number">0.75</span>,<span class="hljs-number">15</span>,arterial<span class="hljs-number">-2</span>,
-            endpoint<span class="hljs-number">-2</span>,NONE,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,a2-branch<span class="hljs-number">-1</span>,<span class="hljs-literal">TRUE</span>
-            endpoint<span class="hljs-number">-3</span>,NONE,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,a2-branch<span class="hljs-number">-2</span>,<span class="hljs-literal">TRUE</span>
-            </code></pre>
-            <p>Note that pipes (including endpoints) that have parent pipes farther up the tree (in the diagram) must
-                appear after those parent pipes in the list. There are no other restrictions on the listing order of
-                pipes.</p>
-            <h2 id="simulation-modes">Simulation modes</h2>
-            <p>The application can run pre-programmed simulations which are constructed in an excel .csv file or it
-                can run a probabalistic simulation based on probabilities set during configuration in the application.
-            </p>
-        </div>
+      </div>
     </div>
+
+    <div class="col-10" id="docs-main">
+      <br>
+      <h1>Documentation</h1>
+      <div class="foreground-spacer-block"></div>
+      <br />
+
+      <h2 id="get-started">Get Started</h2>
+      <p>Pipesim is a tool for simulating water residence times in a plumbing system or pipe network. It was
+        designed to provide data about how long water remains in pipes within a building plumbing system before being
+        expelled through a water faucet or other outlet. </p>
+
+      <h2 id="run-simulation">Run Simulation</h2>
+      <h3 id="simulation-modes">Simulation Modes</h3>
+
+      <h2 id="settings-preset-file">Settings Preset File</h2>
+      <h2 id="build-simulation-preset">Build Simulation Preset</h2>
+      <h2 id="simulation-models">Simulation Models</h2>
+      <p> This simulation requires input in the form of two <em>CSV</em> files: one for the pipe network and one for the
+        flow diagram</p>
+
+      <h3 id="pipe-network">Pipe Network </h3>
+      <p> First, we will build the pipe network file. To get started, open a new <em>CSV</em> file. </p>
+      <p>The first row (header) of the <em>CSV</em> file is as follows:</p>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th scope="col" class="table-widths">Name</th>
+            <th scope="col" class="table-widths">Material</th>
+            <th scope="col" class="table-widths">Width (inches)</th>
+            <th scope="col" class="table-widths">Length (feet)</th>
+            <th scope="col" class="table-widths">Parent</th>
+            <th scope="col" class="table-widths">Root?</th>
+            <th scope="col" class="table-widths">Endpoint?</th>
+            <th scope="col" class="table-widths">D_INF</th>
+            <th scope="col" class="table-widths">Alpha</th>
+            <th scope="col" class="table-widths">Lambda</th>
+          </tr>
+        </thead>
+      </table>
+      <br />
+      <p>The line following the header contains information about the root pipe (the first pipe in the network). The
+        format of this line follows that of the header:</p>
+      <table class="table table-bordered">
+        <tbody>
+          <tr>
+            <td scope="col" class="table-widths">Root</th>
+            <td scope="col" class="table-widths">Pex</th>
+            <td scope="col" class="table-widths">12</th>
+            <td scope="col" class="table-widths">100</th>
+            <td scope="col" class="table-widths">NONE</th>
+            <td scope="col" class="table-widths">TRUE</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <td scope="col" class="table-widths">0.1</th>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The root node lists TRUE under the root column and has no entry in the Endpoint column. Since the
+        root node has no parent, NONE is written in the parent column. </p>
+
+      <div class="alert alert-secondary align-middle" role="alert">
+        <h1><i class="bi bi-exclamation"></i> <span class = "align-middle">Note that the Parent, Root?, and Endpoint? entries are <em>case-sensitive</em>. </span></h1> </div>
+
+      <p>Each concurrent entry will describe the next connected pipe in the network. Let us explain how to create the
+        model: </p>
+      <ol>
+        <li>root</li>
+        <li>arterial-1</li>
+        <li>arterial-2</li>
+        <li>a2-branch-1</li>
+        <li>a2-branch-2</li>
+      </ol>
+      <p>The five pipes are connected as diagrammed below:</p>
+      <img src="static/images/tree-graph.png" alt="pipe network" class="img-fluid">
+      <p>This pipe network has three endpoints. One at the end of arterial-1, one at the end of a2-branch-1, and one at
+        the end of a2-branch-2. You will need to explicitly state these endpoints and give them names in the model file,
+        or else these pipes will be dead-ends.</p>
+      <p>We add lines describing the endpoints as follows:</p>
+      <ol>
+        <li>endpoint-1</li>
+        <li>endpoint-2</li>
+        <li>endpoint-3</li>
+      </ol>
+      <p>Now our pipe network looks like:</p>
+      <img src="static/images/tree-graph-scaled.png" alt="pipe network" class="img-fluid">
+      <br/><br/>
+      <p>With a visualization of the pipe network created, let's show how this must be written into the pipe network model file.</p>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th scope="col" class="table-widths">Name</th>
+            <th scope="col" class="table-widths">Material</th>
+            <th scope="col" class="table-widths">Width (inches)</th>
+            <th scope="col" class="table-widths">Length (feet)</th>
+            <th scope="col" class="table-widths">Parent</th>
+            <th scope="col" class="table-widths">Root?</th>
+            <th scope="col" class="table-widths">Endpoint?</th>
+            <th scope="col" class="table-widths">D_INF</th>
+            <th scope="col" class="table-widths">Alpha</th>
+            <th scope="col" class="table-widths">Lambda</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td scope="col" class="table-widths">root</th>
+            <td scope="col" class="table-widths">Copper</th>
+            <td scope="col" class="table-widths">2</th>
+            <td scope="col" class="table-widths">60</th>
+            <td scope="col" class="table-widths">NONE</th>
+            <td scope="col" class="table-widths">TRUE</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <td scope="col" class="table-widths">0.1</th>
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">Arterial-1</th>
+            <td scope="col" class="table-widths">Copper</th>
+            <td scope="col" class="table-widths">1</th>
+            <td scope="col" class="table-widths">40</th>
+            <td scope="col" class="table-widths">Root</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <td scope="col" class="table-widths">0.1</th>
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">Arterial-2</th>
+            <td scope="col" class="table-widths">Copper</th>
+            <td scope="col" class="table-widths">1</th>
+            <td scope="col" class="table-widths">40</th>
+            <td scope="col" class="table-widths">Root</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <td scope="col" class="table-widths">0.1</th>
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">endpoint-1</th>
+            <td scope="col" class="table-widths">NONE</th>
+            <td scope="col" class="table-widths">0</th>
+            <td scope="col" class="table-widths">0</th>
+            <td scope="col" class="table-widths">Arterial-1</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">TRUE</th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <td scope="col" class="table-widths">0.1</th>
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">a2-branch-1</th>
+            <td scope="col" class="table-widths">pex</th>
+            <td scope="col" class="table-widths">0.5</th>
+            <td scope="col" class="table-widths">25</th>
+            <td scope="col" class="table-widths">arterial-2</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <td scope="col" class="table-widths">0.1</th>
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">a2-branch-2</th>
+            <td scope="col" class="table-widths">pex</th>
+            <td scope="col" class="table-widths">0.75</th>
+            <td scope="col" class="table-widths">15</th>
+            <td scope="col" class="table-widths">arterial-2</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <td scope="col" class="table-widths">0.1</th>
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">endpoint-2</th>
+            <td scope="col" class="table-widths">NONE</th>
+            <td scope="col" class="table-widths">0</th>
+            <td scope="col" class="table-widths">0</th>
+            <td scope="col" class="table-widths">a2-branch-1</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">TRUE</th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <td scope="col" class="table-widths">0.1</th>
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">endpoint-3</th>
+            <td scope="col" class="table-widths">NONE</th>
+            <td scope="col" class="table-widths">0</th>
+            <td scope="col" class="table-widths">0</th>
+            <td scope="col" class="table-widths">a2-branch-2</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">TRUE</th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <td scope="col" class="table-widths">0.1</th>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="alert alert-secondary align-middle" role="alert">
+        <h1><i class="bi bi-exclamation"></i> <span class = "align-middle">Note that a pipe must appear after it's parent pipe in the pipe network file. </span></h1>
+      </div>
+      
+     <h3 id = "flow-description">Flow Description</h3>
+
+     <h2 id = "simulation-arguments">Simulation Arguments</h2>
+     <h3 id = "diffusion">Diffusion</h3>
+     <h3 id = "particle-density">Particle Density</h3>
+     <h3 id = "time-granularity">Time Granularity</h3>
+     <h2 id = "outputs">Outputs</h2>
+     <h3 id = "age-plot">Age Plot</h3>
+     <h3 id = "concentration-plot">Concentration Plot</h3>
+     <h3 id = "particle-modifier-histogram">Particle Modifier Histogram</h3>
+     <h3 id = "pipe-network-diagram">Pipe Network Diagram</h3>
+     <h2 id = "download-logs">Download Logs</h2>
+      <!-- <p>Note that pipes (including endpoints) that have parent pipes farther up the tree (in the diagram) must
+        appear after those parent pipes in the list. There are no other restrictions on the listing order of
+        pipes.</p> -->
+      <h2 id="simulation-modes">Simulation modes</h2>
+      <p>The application can run pre-programmed simulations which are constructed in an excel .csv file or it
+        can run a probabalistic simulation based on probabilities set during configuration in the application.
+      </p>
+    </div>
+  </div>
 </div>
 
 

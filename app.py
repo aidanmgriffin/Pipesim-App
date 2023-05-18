@@ -81,7 +81,7 @@ def upload():
                 #return send_from_directory('output', output_file)
 
                 if(output_file):
-                    return redirect(url_for('download'))
+                    return redirect(url_for('download', diffusion_status = output_file[1] , date_time = date_time))
         
             return 'uploaded'
         
@@ -178,21 +178,29 @@ def upload():
             
             #If simulation is successful, redirect to download page. If failed, show error message.
             if(output_file):
-                return render_template("download.html", files=os.listdir('output'), date_time = date_time)
+                return redirect(url_for('download' , diffusion_status = diffusion_status, date_time = date_time))
+
+                # print("dir: ", os.listdir('static/plots'))
+                # return render_template("download.html",  diffusion_status = diffusion_status, date_time = date_time)
             else:
                 alertDanger.message = "Simulation Failed. Do the files contain the correct data?"
                 return render_template("upload.html", form=form, alert = alertDanger)
             
     return render_template("upload.html", form=form)
 
-#Route to download page accessed by running a simulation from upload.
+#Route to download page accessed by running a simulation from upload. If not redirected from the upload page, redirect to upload page.
+#  Therefore, it is not possible to search pipesim.com/download directly. It will just make you upload.
 @app.route('/download')
 def download():
 
-    date_time = "Latest Simulation"
+    try: 
+        date_time = request.args['date_time']
+        diffusion_status = request.args['diffusion_status']
+    except:
+        return redirect(url_for('upload'))
 
+    return render_template('download.html', diffusion_status = diffusion_status, date_time = date_time)
     #pass current time, and list of files in output folder to download page. Load download page.
-    return render_template('download.html', files=os.listdir('logs'), date_time = date_time)
     
     # path = pathlib.Path('logs\output_batch')
     # memory_file = BytesIO()

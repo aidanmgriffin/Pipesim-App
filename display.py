@@ -32,8 +32,8 @@ class simulation_window():
         self.diffusion_status = False
         logfile = "ParticleDiffusion.log"
         logfile = open(logfile, 'w')
-        particlelogfile = "SingleParticle.csv"
-        particlelogfile = open(particlelogfile, 'w')
+        # particlelogfile = "SingleParticle.csv"
+        # particlelogfile = open(particlelogfile, 'w')
 
         self.options = {"Seconds":1, "Minutes":2, "Hours":3}
         self.step_size = 1
@@ -137,7 +137,6 @@ class simulation_window():
             exception_holder.exception = e
 
     def settings_preset_simulation_button_handler(self, filename):
-        print("valid")
         density = None
         valid = True
         f0 = None
@@ -186,7 +185,7 @@ class simulation_window():
                 raise exception_holder.exception
             
             if sim.exitcode == 0:
-                return(1)
+                return([1, self.diffusion_status])
             else:
                 return(0)
         

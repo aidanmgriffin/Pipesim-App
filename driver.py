@@ -51,9 +51,11 @@ class graphing:
         self.Queue = queue
         self.line_styles = ["-", "--", "-.", ":"]  # also "" is none
         self.line_markers = [".", "o", "v", "^", "<", ">", "p", "P", "*", "X", "D"]
-        # colors = mcolors.get_named_colors_mapping()
-        colors = ['b','g','r','c','m','y','k']
-        self.line_colors = ['b','g','r','c','m','y','k']
+        # self.lowvisibilitycolors = 
+        self.colors = mcolors.get_named_colors_mapping()
+        self.line_colors = list(self.colors.keys())
+        for no_vis_color in ["white", "w", "snow", "whitesmoke", "seashell", "floralwhite", "ivory", "ghostwhite"]:
+            self.line_colors.remove(no_vis_color)
         self.mode = mode
         self.mode_name = {1:"Seconds", 2:"Minutes", 3:"Hours"}
 
@@ -61,7 +63,7 @@ class graphing:
     # returns a random color from among the available color options (all named colors in matplotlib.colors)
     def select_color(self):
         selected = random.choice(self.line_colors)
-        # self.line_colors.remove(selected)
+        self.line_colors.remove(selected)
         return selected
 
     # creates a new particle age graph, saves the image, and puts the filepath in the message queue.
@@ -174,6 +176,22 @@ class graphing:
             print("graph_helper called before containing folder has been created! Unable to create graph.")
             pass
 
+    
+    #temporary testing function to create a csv file and write the average of modifiers on all particles.
+    #to determine normal distribution.
+    def write_bins(self, filename, bins):
+        plt.figure()
+        total = 0
+        j = 0
+        for i in bins:
+            total += i
+            j += 1
+        
+        color = self.select_color()
+        plt.hist(bins, color=color, ec = color)
+        plt.title("Mean: " + str(total / j))
+        plt.savefig(filename + '.png', format='png')
+
 
 # the simulation driver has been encapsulated in a class to make it easier to separate one simulation
 # run from the next and simpler to access from other modules.
@@ -258,10 +276,10 @@ class Driver:
         if active is not None and active > 0:
             active -= 1
             self.activations[endpointName] = active
-            #print("Endpoint", endpointName, "is active for", active, "seconds")
+            # print("Endpoint", endpointName, "is active for", active, "seconds")
         elif active <= 0:
             self.activations[endpointName] = active =  -1
-            #print("Endpoint", endpointName, "is deactivated")
+            # print("Endpoint", endpointName, "is deactivated")
         return active
 
     # this function simulates an endpoint while in preset mode. this function is simplified
@@ -322,7 +340,7 @@ class Driver:
         for instruction in instructions:
             time_since_starts[instruction] = instructions[instruction][0][0]
 
-        print("max_time", max_time)        
+        # print("max_time", max_time)        
         for time_step in range(0, max_time):
             start_time = self.progress_update(start_time, max_time, time_step)
             # TODO: multiprocessing
@@ -435,20 +453,6 @@ class Driver:
             for value in values:
                 writer.writerow([name, value[0], value[1], value[2], value[3]])
         results.close()
-
-    #temporary testing function to create a csv file and write the average of modifiers on all particles.
-    #to determine normal distribution.
-    def write_bins(self, filename):
-        plt.figure()
-        total = 0
-        j = 0
-        for i in self.manager.bins:
-            total += i
-            j += 1
-
-        plt.hist(self.manager.bins)
-        plt.title("Mean: " + str(total / j))
-        plt.savefig(filename + '.png', format='png')
 
     def write_pipe_ages(self, particles, filename):
         results = open(filename, 'w')
@@ -594,7 +598,8 @@ class Driver:
         self.write_output(logpath + "\expelled.csv",self.manager.expendedParticles)
         self.write_output(logpath + "\pipe_contents.csv", self.manager.particleIndex)
         self.write_age_and_FreeChlorine_data(logpath + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
-        self.write_bins(logpath + "./static/plots/histogram.png")
+        if(self.manager.diffusionActive):
+            g.write_bins(logpath + "./static/plots/histogram.png", self.manager.bins)
 
     #this function executes the simulation in random mode. It first establishes flow rates and other simulation variables.
     def exec_randomized(self, arguments: execution_arguments):
@@ -635,7 +640,8 @@ class Driver:
         self.write_output(pathname + "\expelled.csv", self.manager.expendedParticles)
         self.write_output(pathname + "\pipe_contents.csv", self.manager.particleIndex)
         self.write_age_and_FreeChlorine_data(pathname + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
-        self.write_bins(pathname + "\inputbin")
+        if self.manager.diffusionActive:
+            g.write_bins(pathname + "\inputbin", self.manager.bins)
         # self.controller.event_generate("<<sim_finished>>", when = "tail")
         send = ("status_completed", "Simulation complete.")
         self.Queue.put(send)
@@ -688,10 +694,11 @@ class Driver:
                 self.write_output(pathname+"\expelled.csv", self.manager.expendedParticles)
                 self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
                 self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
-                self.write_bins(".\static\plots\histogram")
+                if self.manager.diffusionActive:
+                    g.write_bins(".\static\plots\histogram", self.manager.bins)
                 ageDict = self.write_pipe_ages(self.manager.expendedParticles, pathname+"\pipe_ages.csv")
                 self.root.generate_tree()
-                self.root.show_tree(ageDict)
+                self.root.show_tree(pathname + "/tree_graph.png", ageDict)
             except Exception as e:
                 raise Exception("Error writing output files. Check uploaded files for errors and ensure that the output directory is not open in another program. [" + str(e) + "]" )
             # tree_model.render(".\static\plots\pipe_tree.png")
