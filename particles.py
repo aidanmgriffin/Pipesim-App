@@ -78,7 +78,8 @@ class ParticleManager():
         self.molecularDiffusionCoefficient: float = None #stores molecular diffusion coefficient.
         # self.infDiffusionCoefficient: float = None #stores d_inf coefficient.
         # self.alpha: float = None #stores alpha coefficient.
-
+        # self.d_m = self.molecularDiffusionCoefficient / self.timeStep
+        self.d_m : float = None
         # self.root = 
         self.bins = []
         self.flowNum: int = 0 
@@ -96,6 +97,12 @@ class ParticleManager():
     def setTimeStep(self, step: int):
             self.timeStep = step
             # print("Step = ", step)
+
+    def setDiffusionCoefficient(self, diffusionCoefficient: float):
+        self.molecularDiffusionCoefficient = float(diffusionCoefficient)
+        # self.d_m = self.molecularDiffusionCoefficient / self.timeStep
+        self.d_m = 2.14
+        print("dm : ", self.d_m)
 
     def update_caller(self, particle):
         # if(counter.get_time() < 50):
@@ -213,7 +220,8 @@ class Particle:
         self.freechlorine: float = 1.0 #for now this is starting concentration
         self.manager.particleIndex[self.ID] = self
         # self.d_inf =  float(self.manager.infDiffusionCoefficient)
-        self.d_m = float(self.manager.molecularDiffusionCoefficient)
+        self.d_m = self.manager.d_m
+        # print("dm: ", self.d_m )
         # self.alpha = float(self.manager.alpha)
         global logfile
         # logfile.write("Diffusion Coefficient: " + str(self.manager.diffusionActive))
@@ -384,24 +392,26 @@ class Particle:
                 # d_inf = 0.01946
                 # alpha = 114
                 # print("container vals: ", self.container.d_inf, self.container.alpha)
-                d_inf = self.container.d_inf # Set to 0.01946 in initial integration.
-                alpha = self.container.alpha # set to 114 in initial integration
-                d_m = self.d_m
 
-                # logfile.write("d_0: " + str(d_m))
+                # 5/24 Adding division by timeStep
+                d_inf = self.container.d_inf #/ self.manager.timeStep # Set to 0.01946 in initial integration.
+                alpha = self.container.alpha #/ self.manager.timeStep # set to 114 in initial integration
+                d_m = self.d_m #/ self.manager.timeStep
 
                 # diffusion_rate_i = (d_inf - d_m) * (1 - math.exp((-min_t / 114))) + d_m
                 diffusion_rate_i = (d_inf - d_m) * (1 - math.exp((-min_t / alpha))) + d_m
-
+                logfile.write(str(d_inf - d_m) + "d_i " + str(diffusion_rate_i) + " \n")
                 # Aidan and Tim's waste of time integration 2/22/23
                 #  d_time = (asymptotic_diffusion_rate - diffusion_rate) * (-1 + 2 * factor_scale * math.exp(-self.container.timeStep/(2 * factor_scale))) + (asymptotic_diffusion_rate * self.container.timeStep) #integrated 2/22
                 # d_time = asymptotic_diffusion_rate
 
                 # initialize with a random seed for added randomness
-                avg_distance = 4 * diffusion_rate_i * self.manager.timeStep #Taken out the time step for running in minutes. #D_time is the integral of D / flowtime
+                # avg_distance = 4 * diffusion_rate_i * self.manager.timeStep #Taken out the time step for running in minutes. #D_time is the integral of D / flowtime
+                avg_distance = 4 * diffusion_rate_i #Taken out the time step for running in minutes. #D_time is the integral of D / flowtime
                 generator = random.Random()
                 standard_dev = math.sqrt(avg_distance)
                 modifier = generator.normalvariate(mu=0.0, sigma=standard_dev)
+                # logfile.write("avg_distance: " + str(avg_distance) + "id: " + str(self.ID) + "modifier: " + str(modifier) + "timestep: " + str(counter.get_time()) + "time_since: " + str(min_t) + "timestep" + str(self.manager.timeStep) + "\n")
 
                 position = self.position + modifier
                 newPosition = (flow * (CUBIC_INCHES_PER_GALLON / self.container.area)) + position
@@ -536,6 +546,7 @@ class pipe:
 
     # the constructor takes in the pipe name, dimensions, and parent.
     def __init__(self, name, length, width, material, parent, d_inf, alpha, lambdaval, manager):
+        # print("init pipe")
         global pipeIndex
         self.manager = manager
         self.name = name
@@ -544,8 +555,11 @@ class pipe:
         self.radius = self.width / 2
         self.material: str = material
         self.parent: pipe = parent
-        self.d_inf: float = d_inf
-        self.alpha: float = alpha
+        # print("before ", d_inf)
+        self.d_inf: float = d_inf / self.manager.timeStep # Set to 0.01946 in initial integration.
+        self.alpha: float = alpha / self.manager.timeStep # set to 114 in initial integration
+        # self.d_m: float = float(self.manager.molecularDiffusionCoefficient) #/ self.manager.timeStep
+        # print("after ", self.d_inf)
         self.lambdaval: float = lambdaval
         self.area: float = np.pi * math.pow((self.radius), 2) #cross-sectional-area
         self.children: list[pipe] = []
@@ -555,6 +569,11 @@ class pipe:
         self.flowRate: int = 0  # gallons per minute
         self.flow: np.long = 0  # gallons per time unit
         pipeIndex[self.name] = self
+
+        # self.d_inf = self.container.d_inf / self.manager.timeStep # Set to 0.01946 in initial integration.
+        # self.alpha = self.container.alpha / self.manager.timeStep # set to 114 in initial integration
+        # self.d_m = self.d_m / self.manager.timeStep
+
         # self.timeSpent = 1
         # pipe no longer tracks member particles
         #self.particles: dict = {} #particle id = position
@@ -653,6 +672,7 @@ class pipe:
     # Take list of edges and creates an igraph tree and visual representation. Graph edges are labeled with (Pipe name, average age))
     # The graph is saved as graph_scaled.png and takes on a tree structure of the pipe network.       
     def show_tree(self, path, ageDict):
+        # try:
         pipeEdges = ['Base']
         for edge in self.manager.edgeList:
             for num, pipe in enumerate(edge):
@@ -668,15 +688,15 @@ class pipe:
         g = Graph(edges = self.manager.edgeList)
         pipeEdges.pop(0)
         ages = [0.0] * len(pipeEdges)
-        # print("pipeEdges: ", pipeEdges, "ageDict: ", ageDict)
+        print("pipeEdges: ", pipeEdges, "ageDict: ", ageDict)
         for entry in ageDict.keys():
             ages[pipeEdges.index(entry)] = round(ageDict[entry][0] / ageDict[entry][1], 2)
         
         x = 0
-        # print("endpoints: ", self.manager.endpointList, "Pipe Edges: ", pipeEdges, self.manager.edgeList, g.degree(1))
+        print("endpoints: ", self.manager.endpointList, "Pipe Edges: ", pipeEdges, "el: ", self.manager.edgeList)
         
         for i in range(1, len(pipeEdges) + 1):
-                # print("i: ", i, "degree: ", g.degree(i))
+                print("i: ", i, "degree: ", g.degree(i))
                 if(g.degree(i) == 1):
                     g.vs(i)["label"] = self.manager.endpointList[x]
                     g.vs(i)["color"] = "blue"
@@ -688,6 +708,8 @@ class pipe:
         g.es["label"] = g.es["pipeTuples"]
         plot(g, "static/plots/graph_scaled.png", bbox = (800,800), margin = 150, layout= g.layout_reingold_tilford(root=[0]))
         plot(g, path, bbox = (800,800), margin = 150, layout= g.layout_reingold_tilford(root=[0]))
+        # except Exception as e:
+        #     print(e, "Error generating graph")
 
     # the tree_builder function does the actual creation of the ete3 tree. It recursively explores the current pipe
     # model and transcribes relevant properties of the model into new ete3 tree nodes and inserts them into the

@@ -14,6 +14,8 @@
             {% if diffusion_status %}
             <a type="button" href="#modifier-distribution" class="btn btn-light btn-sm mx-2">Modifier Distribution</a>
             {% endif %}
+            <a type="button" href="#age-distribution" class="btn btn-light btn-sm mx-2">Age Distribution</a>
+            <a type="button" href="#flow-plot" class="btn btn-light btn-sm mx-2">Flow Plot</a>
             <a type="button" href="#network-layout" class="btn btn-light btn-sm mx-2">Network Layout</a>
             <a type="button" href="#download-outputs" class="btn btn-light btn-sm mx-2">Download Ouptuts</a>
         </div>
@@ -41,9 +43,26 @@
         <br /><br />
         <h4 class="download-heading">Distribution of Particle Modifiers</h4>
         <p> Values added to particles advective diffusion/dispersion. </p>
-        <img src="/static/plots/histogram.png/" />
+        <img src="/static/plots/modifier_histogram.png/" />
     </div>
     {% endif %}
+
+    <div id="age-distribution">
+        <br /><br />
+        <br /><br />
+        <h4 class="download-heading">Distribution of Particle Ages</h4>
+        <p>Age at expulsion from pipe network.</p>
+        <img src="/static/plots/expelled_histogram.png/" />
+    </div>
+
+    <div id="flow-plot">
+        <br /><br /><br /><br />
+        <h4 class="download-heading">Flow Plot</h4>
+        <p> Flow rate as a function of simulation time. </p>
+        <br />
+        <img src="/static/plots/flow_graph.png" />
+    </div>
+
 
     <div id="network-layout">
         <br /><br /><br /><br />
