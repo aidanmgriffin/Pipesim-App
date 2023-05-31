@@ -2,6 +2,6 @@ Name,Material,Width (inches),Length (feet),Parent,Root,Endpoint,D_INF,Alpha,Lamb
 root,copper,2,100,NONE,TRUE,,0.01946,114,0.1
 Arterial-1,copper,1,100,root,,,0.01946,114,0.1
 Arterial-2,copper,1,100,root,,,0.01946,114,0.1
-a2-branch-2,PVC,0.5,100,Arterial-2,,,0.01946,114,0.1
+a2-branch-2,PVC,0.5,200,Arterial-2,,,0.01946,114,0.1
 Endpoint-1,None,0,0,Arterial-1,,TRUE,0.01946,114,0.1
 Endpoint-2,None,0,0,a2-branch-2,,TRUE,0.01946,114,0.1

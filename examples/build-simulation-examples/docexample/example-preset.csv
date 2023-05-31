@@ -1,6 +1,6 @@
 endpoint,starttime (minutes),endtime (minutes),flowrate (gallons per minute),simlifetime (days)
-Endpoint-1,0,120,5,0.5
-Endpoint-2,90,410,2.5,
+Endpoint-1,0,120,5,1
+Endpoint-2,90,410,1,
 Endpoint-1,900,1025,1.25,
-Endpoint-2,1000,2000,3,
+Endpoint-2,1000,2000,1,
 Endpoint-1,2480,3000,0.5,
