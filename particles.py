@@ -100,9 +100,9 @@ class ParticleManager():
 
     def setDiffusionCoefficient(self, diffusionCoefficient: float):
         self.molecularDiffusionCoefficient = float(diffusionCoefficient)
-        # self.d_m = self.molecularDiffusionCoefficient / self.timeStep
-        self.d_m = 2.14
-        print("dm : ", self.d_m)
+        self.d_m = self.molecularDiffusionCoefficient / self.timeStep
+        # self.d_m = 2.14
+        # print("dm : ", self.d_m)
 
     def update_caller(self, particle):
         # if(counter.get_time() < 50):
@@ -229,8 +229,8 @@ class Particle:
     # the update function increments the particle age and increments contact record according to the current container
     # material type. If the particle container is active (flowing) then calls the movement function to compute particle flow.
     def update(self):
+        # self.age += 1
         # print("age: ", self.age, "time: ", self.manager.time.get_time())
-        self.age += 1
         timeStep = self.manager.timeStep
         #lambda will change depending on the pipe it is in (area and material)
         #eventually display graph of the concentration and later density in each pipe
@@ -254,10 +254,9 @@ class Particle:
             
         if self.route.count(self.container.name) < 1:
             self.route.append(self.container.name)
-
+        
         self.ages.setdefault(containerName, 0)
         self.ages[containerName] += 1
-
         # Originally checks if container is active (water is flowing) before checking diffusion value. With issue 165
         # this is reversed. If diffusion is active then dispersion function will be called in lieu of movement. 
         # (The two are similar, but dispersion includes diffusive activity.)
@@ -269,7 +268,13 @@ class Particle:
 
         elif self.container.isActive:
             containerName = self.movement()
+
+        
+        
+        self.age += 1
+        
         return containerName, self
+    
 
     # The particle movement code is really the heart of this entire application. Everything depends on this being accurate and
     # performant because scientific results are drawn from how and when particles traverse the network. This function
@@ -325,7 +330,9 @@ class Particle:
     def diffuse(self):
         global logfile
         d_m = self.d_m
-        avg_distance = 4 * self.manager.timeStep * d_m
+
+        # Originally 4 * D_m * timestep. With D_m being divided by the timestep, we no longer multiply by timestep.
+        avg_distance = 4 * d_m
 
         # initialize with a random seed for added randomness
         generator = random.Random()
@@ -398,9 +405,10 @@ class Particle:
                 alpha = self.container.alpha #/ self.manager.timeStep # set to 114 in initial integration
                 d_m = self.d_m #/ self.manager.timeStep
 
+                # print("d_M: ", d_m)
                 # diffusion_rate_i = (d_inf - d_m) * (1 - math.exp((-min_t / 114))) + d_m
                 diffusion_rate_i = (d_inf - d_m) * (1 - math.exp((-min_t / alpha))) + d_m
-                logfile.write(str(d_inf - d_m) + "d_i " + str(diffusion_rate_i) + " \n")
+                # logfile.write(str(d_inf - d_m) + "d_i " + str(diffusion_rate_i) + " \n")
                 # Aidan and Tim's waste of time integration 2/22/23
                 #  d_time = (asymptotic_diffusion_rate - diffusion_rate) * (-1 + 2 * factor_scale * math.exp(-self.container.timeStep/(2 * factor_scale))) + (asymptotic_diffusion_rate * self.container.timeStep) #integrated 2/22
                 # d_time = asymptotic_diffusion_rate
@@ -413,6 +421,7 @@ class Particle:
                 modifier = generator.normalvariate(mu=0.0, sigma=standard_dev)
                 # logfile.write("avg_distance: " + str(avg_distance) + "id: " + str(self.ID) + "modifier: " + str(modifier) + "timestep: " + str(counter.get_time()) + "time_since: " + str(min_t) + "timestep" + str(self.manager.timeStep) + "\n")
 
+                logfile.write("modifier : " + str(modifier) + " id : " + str(self.ID) + " \n")
                 position = self.position + modifier
                 newPosition = (flow * (CUBIC_INCHES_PER_GALLON / self.container.area)) + position
                 if newPosition > self.container.length:
@@ -437,6 +446,9 @@ class Particle:
                 time = self.manager.time.get_time()
                 particleInfo.append(time)
                 expelledTime = self.age + (1 - remainingTime)
+                logfile.write("expelled: " + str(expelledTime) + " age: " + str(self.age) + " remaining time: " + str( 1 - remainingTime) + " current time: " + str(counter.get_time()))
+
+
                 self.age = expelledTime
                 # print(expelledTime)
                 particleInfo.append(self.age)

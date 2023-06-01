@@ -11,6 +11,7 @@ from matplotlib.lines import Line2D
 # from multiprocessing import Process, Pool, Queue
 import random
 import copy
+import numpy as np
 # simple container object to store configuration options for simulation execution.
 # note that it performs no validation on input and may be created with improper values,
 # missing values, or incorrect types.
@@ -54,7 +55,7 @@ class graphing:
         # self.lowvisibilitycolors = 
         self.colors = mcolors.get_named_colors_mapping()
         self.line_colors = list(self.colors.keys())
-        for no_vis_color in ["white", "w", "snow", "whitesmoke", "seashell", "floralwhite", "ivory", "ghostwhite"]:
+        for no_vis_color in ["white", "w", "snow", "whitesmoke", "seashell", "floralwhite", "ivory", "ghostwhite", "xkcd:pale lilac"]:
             self.line_colors.remove(no_vis_color)
         self.mode = mode
         self.mode_name = {1:"Seconds", 2:"Minutes", 3:"Hours"}
@@ -81,8 +82,12 @@ class graphing:
         self.graph_helper([16,12], 300, filename_large, particleInfo, counter)
         self.graph_helper([8,6], 92, filename_standard, particleInfo, counter)
         self.graph_helper([8,6], 92, age_display, particleInfo, counter)
-        self.flow_graph_helper([8,6], 92, filename_flows, particleInfo, counter, flowList)
-        self.flow_graph_helper([8,6], 92, flows_display, particleInfo, counter, flowList)
+        try:
+            self.flow_graph_helper([8,6], 92, filename_flows, particleInfo, counter, flowList)
+            self.flow_graph_helper([8,6], 92, flows_display, particleInfo, counter, flowList)
+        except:
+            print("Flow Graph Failed")
+            pass
         self.concentration_graph_helper([8,6], 92, concentration_display, particleInfo, counter)
         self.concentration_graph_helper([8,6], 92, filename_concentration, particleInfo, counter) #Concentration
         # self.graph_helper([16,12], 300, filename, particleInfo, counter, 1) --- For Larger Graph / Better Quality
@@ -103,7 +108,7 @@ class graphing:
         names = [n for n in particleData.keys()]
         legend_names = []
         legend_lines = []
-        print("Data  ", len(data))
+        # print("Data  ", len(data))
         for i in range(len(data)):
             element = data[i]
             name = names[i]
@@ -154,7 +159,7 @@ class graphing:
         xy = fig.add_subplot(111)
         # print("particleData: ", particleData)
         # data = [d for d in flowList]
-        # print("flowList: ", flowList)
+        print("flowList: ", flowList)
         data = [d for d in flowList.values()]
         names = [n for n in flowList.keys()]
        
@@ -277,7 +282,7 @@ class graphing:
             j += 1
         
         color = self.select_color()
-        plt.hist(values, bins=30, color=color, ec = color)
+        plt.hist(values, bins=30, color=color, ec = color, edgecolor='black')
         try:
             plt.title("Mean: " + str(total / j))
         except:
@@ -298,12 +303,26 @@ class graphing:
         # newValues = [i[1] for i in values.items()]
 
         # print("nv: ", newValues, "\n\n")
+        
         for i in newValues:
             # print("i: ", i)
             total += i
             j += 1
+        
+        #Find the highest value in the newValues list.
+        #Multiply it by 0.1 to get the number of bins.
+        # print("newValues: ", newValues)
+        # numBins = int(round(max(newValues) * 0.1, 0))
+        # print("numBins: ", numBins)
+
         color = self.select_color()
-        plt.hist(newValues, bins=30, color=color, ec = color)
+        plt.hist(newValues, bins=40, color=color, ec = color, density=True, edgecolor='black')
+        
+        #label the bins in the matplotlib histogram
+        # plt.xticks(np.arange(-3, 3, 1))
+
+        print("total: ", total)
+
         try:
             plt.title("Mean: " + str(total / j))
         except:
@@ -460,20 +479,21 @@ class Driver:
             time_since_starts[instruction] = instructions[instruction][0][0]
         
         
-        flowInstructions = copy.deepcopy(instructions)     
+        flowInstructions = copy.deepcopy(instructions) 
+        # print("flow instructions lol ", flowInstructions)    
         for time_step in range(0, max_time):
             for instruction in flowInstructions:
                 try:
                     self.flowList.setdefault(instruction, [])
                     # print("timestep: ", time_step, "ins: ", instruction, "inin: ", instructions[instruction])
                     if time_step >= flowInstructions[instruction][0][0] and time_step <= flowInstructions[instruction][0][1]:
-                        # print("append")
+                        # print("append", flowInstructions[instruction][0][2])
                         self.flowList[instruction].append([time_step, flowInstructions[instruction][0][2]])
                     elif time_step > flowInstructions[instruction][0][1]:
-                        pass
+                        # pass
                         # print("pop")
-                        # flowInstructions[instruction].pop(0)
-                        # self.flowList[instruction].append([time_step, instructions[instruction][0][2]])
+                        flowInstructions[instruction].pop(0)
+                        self.flowList[instruction].append([time_step, instructions[instruction][0][2]])
                 except: 
                     print("exception")
                     pass
