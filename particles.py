@@ -100,7 +100,7 @@ class ParticleManager():
 
     def setDiffusionCoefficient(self, diffusionCoefficient: float):
         self.molecularDiffusionCoefficient = float(diffusionCoefficient)
-        self.d_m = self.molecularDiffusionCoefficient / self.timeStep
+        self.d_m = self.molecularDiffusionCoefficient # / self.timeStep
         # self.d_m = 2.14
         # print("dm : ", self.d_m)
 
@@ -403,6 +403,7 @@ class Particle:
                 # 5/24 Adding division by timeStep
                 d_inf = self.container.d_inf #/ self.manager.timeStep # Set to 0.01946 in initial integration.
                 alpha = self.container.alpha #/ self.manager.timeStep # set to 114 in initial integration
+                # print(alpha)
                 d_m = self.d_m #/ self.manager.timeStep
 
                 # print("d_M: ", d_m)
@@ -568,8 +569,8 @@ class pipe:
         self.material: str = material
         self.parent: pipe = parent
         # print("before ", d_inf)
-        self.d_inf: float = d_inf / self.manager.timeStep # Set to 0.01946 in initial integration.
-        self.alpha: float = alpha / self.manager.timeStep # set to 114 in initial integration
+        self.d_inf: float = d_inf #/ self.manager.timeStep # Set to 0.01946 in initial integration.
+        self.alpha: float = alpha #/ self.manager.timeStep # set to 114 in initial integration
         # self.d_m: float = float(self.manager.molecularDiffusionCoefficient) #/ self.manager.timeStep
         # print("after ", self.d_inf)
         self.lambdaval: float = lambdaval

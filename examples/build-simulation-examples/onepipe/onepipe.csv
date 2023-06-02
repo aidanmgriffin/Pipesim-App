@@ -1,3 +1,3 @@
 Pex,Material,Width (inches),Length (feet),Parent,Root,Endpoint,D_INF,Alpha,Lambda
-Pipe,Copper,12,10,NONE,TRUE,,0.1946,114,0.1
-Tap,None,2,1,Pipe,,TRUE,0.1946,114,0.1
+Pipe,Copper,12,100,NONE,TRUE,,0.01946,1,0.1
+Tap,None,2,1,Pipe,,TRUE,0.01946,1,0.1

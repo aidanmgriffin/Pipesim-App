@@ -219,6 +219,9 @@ class simulation_window():
         self.set_step_time()
         manager = Manager()
         exception_holder = manager.Namespace()
+
+        molecular_diffusion_coefficient = molecular_diffusion_coefficient # / self.step_var
+
         if valid:
             self.generate_path()
             simulator = driver.Driver(self.Queue, step = self.step_size)
