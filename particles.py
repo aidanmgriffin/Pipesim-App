@@ -91,8 +91,11 @@ class ParticleManager():
         #self.pool = cf.ProcessPoolExecutor(max_workers = self.process_max)
 
     #creates a particle that is registered to the particle manager and
-    def particle(self, container):
-        return Particle(container, self)
+    def particle(self, container, freeChlorineInit):
+        global logfile
+
+        # logfile.write("particle made: " + str(freeChlorineInit) + str(counter.get_time()))
+        return Particle(container, self, freeChlorineInit)
 
     def setTimeStep(self, step: int):
             self.timeStep = step
@@ -117,6 +120,9 @@ class ParticleManager():
 
     # updates particle age data, particle positions, and aggregate particle data for particles in each pipe (every 1000 tics)
     def update_particles(self, time_since):
+        global logfile
+
+        # logfile.write("update\n")
         # print("Updating particles", time_since, "time: ", counter.get_time())
         self.time_since = time_since
         #pool = Pool(processes = cpu_count())
@@ -155,22 +161,37 @@ class ParticleManager():
     # each pipe tracks particles that are inside it and tracks their progress along it.
     # this function is meant to be called by the root pipe. fills pipe with particles
     # with one particle every 0.1 inches.
-    def add_particles(self, density: float, root):
+    def add_particles(self, density: float, root, time_since):
+        # global writer
+        global logfile 
+        # print("ap")
         particles = self.particlePositions.get(root.name)
+        
+        freeChlorineInit = 1.0
         if particles == None:
             self.particlePositions[root.name] = particles = []
         if len(particles) < 1:
+            freeChlorineInit = 0.0
             min_distance = root.length
+            
         else:
             min_distance = min(part.position for part in particles)
         current_distance = 0
+        # print("min_distance: ", min_distance, "root.length: ", root.length)
+        # part = self.particle(root)
+        # part.freechlorine = freeChlorineInit
         while current_distance < min_distance + density:
-            part = self.particle(root)
+            # print("add_particles", self.time_since, "time: ", counter.get_time())
+            part = self.particle(root, freeChlorineInit)
             part.position = current_distance
+            # logfile.write("part pos: " + str(part.position) +  str(part.container.name) + ", " + str(part.ID) + ", " + str(counter.get_time()) + "\n")
+            # print("fc:" , part.freechlorine, "fci:", freeChlorineInit)
             current_distance += density
+            # self.update_particles(time_since)
 
     # generates aggregate data about particles by pipe membership and assigns it to the pipeAggregates dictionary.
     def update_particle_info(self):
+    
         for pipeName in self.particlePositions.keys():
             contents = self.particlePositions.get(pipeName)
             ages = self.particle_age_builder(contents)
@@ -205,7 +226,7 @@ class Particle:
     # this constructor requires a container (pipe object) to instantiate, because particles should always be tied to one
     # pipe. upon creation, the particle assigns itself an id based on the global numParticles variable, adds itself to
     # the particle dictionary, stores it's parent object, and sets it's age at 0.
-    def __init__(self, container, manager):
+    def __init__(self, container, manager, freeChlorineInit):
         self.manager = manager
         self.ID: int = self.manager.numParticles
         self.manager.numParticles += 1
@@ -217,7 +238,7 @@ class Particle:
         self.sumDistance: float = 0 # stores total distance travelled by particle
         self.route: list = [container.name]
         self.age: int = 0
-        self.freechlorine: float = 1.0 #for now this is starting concentration
+        self.freechlorine : float = freeChlorineInit #1.0 #for now this is starting concentration
         self.manager.particleIndex[self.ID] = self
         # self.d_inf =  float(self.manager.infDiffusionCoefficient)
         self.d_m = self.manager.d_m
@@ -313,6 +334,7 @@ class Particle:
                 particleInfo.append(self.age)
                 particleInfo.append(self.freechlorine)
                 particleInfo.append(self.ID)
+                print("fc: ", self.freechlorine)
                 if self.manager.expelledParticleData.get(self.container.name) is None:
                     self.manager.expelledParticleData[self.container.name] = []
                 dataset = self.manager.expelledParticleData.get(self.container.name)
@@ -385,7 +407,7 @@ class Particle:
         containerName = self.container.name
         while remainingTime > self.manager.tolerance:  # calculate particle movement until flow consumes available time (1 second)
             if self.container.type != "endpoint":
-
+                # logfile.write("movin " +  str(counter.get_time()) + "\n")
                 flow = self.container.flow * remainingTime
 
                 flow_endpoint_list = list(self.manager.time_since.keys())
@@ -422,7 +444,7 @@ class Particle:
                 modifier = generator.normalvariate(mu=0.0, sigma=standard_dev)
                 # logfile.write("avg_distance: " + str(avg_distance) + "id: " + str(self.ID) + "modifier: " + str(modifier) + "timestep: " + str(counter.get_time()) + "time_since: " + str(min_t) + "timestep" + str(self.manager.timeStep) + "\n")
 
-                logfile.write("modifier : " + str(modifier) + " id : " + str(self.ID) + " \n")
+                # logfile.write("modifier : " + str(modifier) + " id : " + str(self.ID) + " \n")
                 position = self.position + modifier
                 newPosition = (flow * (CUBIC_INCHES_PER_GALLON / self.container.area)) + position
                 if newPosition > self.container.length:
@@ -447,7 +469,7 @@ class Particle:
                 time = self.manager.time.get_time()
                 particleInfo.append(time)
                 expelledTime = self.age + (1 - remainingTime)
-                logfile.write("expelled: " + str(expelledTime) + " age: " + str(self.age) + " remaining time: " + str( 1 - remainingTime) + " current time: " + str(counter.get_time()))
+                # logfile.write("expelled: " + str(expelledTime) + " age: " + str(self.age) + " remaining time: " + str( 1 - remainingTime) + " current time: " + str(counter.get_time()))
 
 
                 self.age = expelledTime
@@ -455,6 +477,7 @@ class Particle:
                 particleInfo.append(self.age)
                 particleInfo.append(self.freechlorine)
                 particleInfo.append(self.ID)
+                # logfile.write("fCd: " + str(self.freechlorine) + "\n")
                 if self.manager.expelledParticleData.get(self.container.name) is None:
                     self.manager.expelledParticleData[self.container.name] = []
                 dataset = self.manager.expelledParticleData.get(self.container.name)
@@ -569,8 +592,8 @@ class pipe:
         self.material: str = material
         self.parent: pipe = parent
         # print("before ", d_inf)
-        self.d_inf: float = d_inf #/ self.manager.timeStep # Set to 0.01946 in initial integration.
-        self.alpha: float = alpha #/ self.manager.timeStep # set to 114 in initial integration
+        self.d_inf: float = d_inf / self.manager.timeStep # Set to 0.01946 in initial integration.
+        self.alpha: float = alpha / self.manager.timeStep # set to 114 in initial integration
         # self.d_m: float = float(self.manager.molecularDiffusionCoefficient) #/ self.manager.timeStep
         # print("after ", self.d_inf)
         self.lambdaval: float = lambdaval

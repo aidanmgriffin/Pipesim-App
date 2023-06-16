@@ -220,7 +220,7 @@ class simulation_window():
         manager = Manager()
         exception_holder = manager.Namespace()
 
-        molecular_diffusion_coefficient = molecular_diffusion_coefficient # / self.step_var
+        molecular_diffusion_coefficient = molecular_diffusion_coefficient  #/ self.step_var
 
         if valid:
             self.generate_path()

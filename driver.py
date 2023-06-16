@@ -159,7 +159,7 @@ class graphing:
         xy = fig.add_subplot(111)
         # print("particleData: ", particleData)
         # data = [d for d in flowList]
-        print("flowList: ", flowList)
+        # print("flowList: ", flowList)
         data = [d for d in flowList.values()]
         names = [n for n in flowList.keys()]
        
@@ -298,7 +298,10 @@ class graphing:
         
         for i in list(values.values())[0]:
             # print("i: ", i)
-            newValues.append(i[1])
+
+            #Temporarily only allowing particles with expel times past 110 to fit the onepipe model. Contraining to 110+ removes the tail at the beginning of the graph.
+            if i[1] > 100:
+                newValues.append(i[1])
  
         # newValues = [i[1] for i in values.items()]
 
@@ -328,7 +331,6 @@ class graphing:
         except:
             pass
         plt.savefig(filename + '.png', format='png')
-
 
 # the simulation driver has been encapsulated in a class to make it easier to separate one simulation
 # run from the next and simpler to access from other modules.
@@ -369,7 +371,10 @@ class Driver:
         self.actives = None # list of active endpoints
         self.set_time_step(step)
         self.mode = step
+        self.mode_name = {1:"second", 2:"minute", 3:"hour"}
         self.flowList = {}
+        # self.modelfile = None
+        # self.presetsFile
 
     # updates the time step and related variables to allow for computation on seconds, minutes, or hours.
     def set_time_step(self, option: int):
@@ -536,8 +541,10 @@ class Driver:
                             endpoint.update_flow_rate(first_action[2])
                 else:
                     pass
+            # print("root active?", root.isActive, time_step)
             if root.isActive:
-                self.manager.add_particles(density, root)
+                self.manager.add_particles(density, root, time_since)
+            
             self.manager.update_particles(time_since)
             for endpoint in endpoints.values():
                 self.sim_endpoint_preset(endpoint)
@@ -556,7 +563,6 @@ class Driver:
     # the gui to update at regular intervals during execution.
     def progress_update(self, start_time, max_time, second):
         message = ""
-        mode_name = {1:"second", 2:"minute", 3:"hour"}
         if start_time == None:
             start_time = time.time()
         if second == 0:
@@ -567,7 +573,7 @@ class Driver:
         if second % 1000 == 0 and second > 0:
             end_time = time.time()
             elapsed = end_time - start_time
-            line1 = "Simulating " + mode_name.get(self.mode) + " " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
+            line1 = "Simulating " + self.mode_name.get(self.mode) + " " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
             message += line1
             pipe_particles = len(self.manager.particleIndex)
             expelled_particles = len(self.manager.expendedParticles)
@@ -648,9 +654,27 @@ class Driver:
 
         return ageDict
     
-        print("root: ", self.root)
+        # print("root: ", self.root)
         self.tree_helper(self.root, self.root.children)
+    
+    def write_run_data(self, filename, arguments: execution_arguments):
         
+        
+        try:
+            output = open(filename, 'w')
+        
+            #write the run data to a text file
+            output.write("run data\n")
+            output.write("pipe model file: " + arguments.modelfile + "\n")
+            output.write("flow preset file: " + arguments.presetsfile + "\n")
+            output.write("d_m: " + str(self.manager.d_m) + "\n")
+            output.write("granularity: " + str(self.mode_name.get(self.mode)) + "\n")
+            output.write("time: ")
+            output.write(str(self.counter.get_time()) + "\n")
+        except Exception as e:
+            print("error writing run data: ", e)
+
+
     def tree_helper(self, tree, iterable):
         if tree.type != "endpoint":
             print(tree.name)
@@ -875,6 +899,7 @@ class Driver:
                 g.write_expel_bins(pathname+"\expelled_histogram", self.manager.expelledParticleData)
                 g.write_expel_bins(".\static\plots\expelled_histogram", self.manager.expelledParticleData)
                 ageDict = self.write_pipe_ages(self.manager.expendedParticles, pathname+"\pipe_ages.csv")
+                self.write_run_data(pathname+"\sim_data.txt", arguments)
                 self.root.generate_tree()
                 self.root.show_tree(pathname + "/tree_graph.png", ageDict)
             except Exception as e:
