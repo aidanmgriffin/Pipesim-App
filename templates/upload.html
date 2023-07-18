@@ -2,9 +2,18 @@
 
 {% block content %}
 
-
 <br />
 
+{% if alert %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>Error!</strong> {{alert.message}}
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+{% endif %}
+
+<div class = "main-content">
 <h1> Run Simulation </h1>
 <p>Check documentation for additional information.</p>
 <div class="foreground-spacer-block"></div>
@@ -21,7 +30,6 @@
     </div>
 
     <button type="submit" class="btn" name="settings-submit">Upload</button>
-
 </form>
 <br />
 <div class="foreground-spacer-block"></div>
@@ -33,13 +41,13 @@
 <form method="POST" enctype="multipart/form-data" name="PresetsForm">
     <!--<label for="file" class="font-weight-bold">File:</label>-->
     <div class="mb-3">
-        <label for="pipe-network" class="form-label">Pipe Network</label>
-        <input class="form-control" type="file" id="pipe-network" name="pipe-network">
+        <label for="pipe-network" class="form-label">Pipe Network </label>
+        <input class="form-control" type="file" accept = ".csv" id="pipe-network" name="pipe-network">
     </div>
 
     <div class="mb-4">
         <label for="flow-preset" class="form-label">Flows Preset</label>
-        <input class="form-control" type="file" id="flow-preset" name="flow-preset">
+        <input class="form-control" type="file" accept = ".csv" id="flow-preset" name="flow-preset">
     </div>
 
     <div class="form-row align-items-center ml-3">
@@ -51,8 +59,8 @@
             </label>
 
         </div>
-        <div class="col-auto">
-            <input type="number" step="any" class="form-control" name="asymptotic-diffusion-coefficient" placeholder="Customize Diffusion">
+        <div class="col-md-2">
+            <input type="number" step="any" class="form-control" name="molecular-diffusion-coefficient" placeholder="Customize Molecular Diffusion">
         </div>
     </div>
     <br />
@@ -62,7 +70,7 @@
         </div>
 
         <div class="col-md-1">
-            <input type="number" step="any" class="form-control" id="density" name="density" placeholder="">
+            <input type="number" step=any class="form-control" id="density" name="density" placeholder="">
 
         </div>
     </div>
@@ -91,9 +99,10 @@
     </div>
     <br />
         <button type="submit" class="btn" name="preset-submit">Upload</button>
+    
+
 </form>
-
-
+</div>
 
 
 {% endblock %}

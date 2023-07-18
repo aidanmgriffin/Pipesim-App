@@ -1,14 +1,17 @@
 import driver
-import builder
-import preview
-import showimage
-import numpy as np
-from functools import partial
-import threading
-from multiprocessing import Queue, Process, Pool
+# import builder
+# import preview
+# import showimage
+# import numpy as np
+# from functools import partial
+# import threading
+from multiprocessing import Queue, Process
+import multiprocessing #, Manager
 import os
-import datetime
+# import datetime
 import csv
+import traceback
+import sys
 
 
 # this function takes in a dictionary containing one or more lists. each list contains the age of particles
@@ -30,8 +33,8 @@ class simulation_window():
         self.diffusion_status = False
         logfile = "ParticleDiffusion.log"
         logfile = open(logfile, 'w')
-        particlelogfile = "SingleParticle.csv"
-        particlelogfile = open(particlelogfile, 'w')
+        # particlelogfile = "SingleParticle.csv"
+        # particlelogfile = open(particlelogfile, 'w')
 
         self.options = {"Seconds":1, "Minutes":2, "Hours":3}
         self.step_size = 1
@@ -47,7 +50,7 @@ class simulation_window():
     # this loop runs the graphical interface once it has been configured as above
     def start(self):
         pass
-        #self.window.after(500, self.check_queue)
+        # self.window.after(500, self.check_queue)
         #self.window.mainloop()
 
     # in order to preserve data from subsequent executions of the simulator, a new save path is generated on each
@@ -69,34 +72,34 @@ class simulation_window():
     # as a consequence, processes must communicate across a messaging pipeline to update the user and the rest of the
     # application. This function receives messages (usually sent by the simulation) and updates the display or preview
     # accordingly.
-    #def check_queue(self):
-    #    ending = False
-    #    item = self.queue_get_next()
-    #    while item != None:
-    #        if item[0] == "status_completed":
-    #            self.status_update_handler(item[1])
-    #            self.enable()
-    #            ending = True
-    #        elif item[0] == "status_started":
-    #            self.disable()
-    #        elif item[0] == "graph_completed":
-    #            self.display_graph(item[1])
-    #            pass
-    #        elif item[0] == "progress_update":
-    #            self.status_update_handler(item[1])
-    #        elif item[0] == "start_preview":
-    #            model = item[1]
-    #            self.preview_manager.start(model)
-    #        elif item[0] == "status_update":
-    #            self.preview_manager.updater(item[1], self.outputLocation)
-    #        elif item[0] == "random_sim_configuration":
-    #            self.random_simulation_handler(item[1])
-    #        item = self.queue_get_next()
-    #    if ending:
-    #        return
-    #    else:
-    #        self.after(500, func=self.check_queue)
-    #        return
+    def check_queue(self):
+       ending = False
+       item = self.queue_get_next()
+       while item != None:
+           if item[0] == "status_completed":
+               self.status_update_handler(item[1])
+               self.enable()
+               ending = True
+           elif item[0] == "status_started":
+               self.disable()
+           elif item[0] == "graph_completed":
+               self.display_graph(item[1])
+               pass
+           elif item[0] == "progress_update":
+               self.status_update_handler(item[1])
+           elif item[0] == "start_preview":
+               model = item[1]
+               self.preview_manager.start(model)
+           elif item[0] == "status_update":
+               self.preview_manager.updater(item[1], self.outputLocation)
+           elif item[0] == "random_sim_configuration":
+               self.random_simulation_handler(item[1])
+           item = self.queue_get_next()
+       if ending:
+           return
+       else:
+           self.after(500, func=self.check_queue)
+           return
 
     # gets the next item from the message queue if it exists or returns None if empty.
     def queue_get_next(self):
@@ -127,8 +130,14 @@ class simulation_window():
 
         return rval
 
+    def exception_wrapper(self, func, exception_holder, *args):
+        try:
+            return func(*args)
+        except Exception as e:
+            traceback.print_exc()
+            exception_holder.exception = e
+
     def settings_preset_simulation_button_handler(self, filename):
-        print("valid")
         density = None
         valid = True
         f0 = None
@@ -155,38 +164,42 @@ class simulation_window():
             #self.step_var.set(self.options[contents[0][5]])
             self.step_var = self.options[contents[0][5]]
             self.set_step_time()
-
             self.generate_path()
+            # manager = Manager()
+            # exception_holder = manager.Namespace()
             simulator = driver.Driver(self.Queue, step = self.step_size)
 
-            print(" pathname : ", self.outputLocation)
+            # print(" pathname : ", self.outputLocation)
             #arguments = driver.execution_arguments(settingsfile = self.file0.get(), modelfile=contents[0][0], presetsfile=contents[0][1],
             #                                       density= float(contents[0][2]), pathname=self.outputLocation,
             #                                       diffuse=self.diffusion_status, diffusionCoefficient= float(contents[0][4]))
             arguments = driver.execution_arguments(settingsfile = filename, modelfile=contents[0][0], presetsfile=contents[0][1],
                                                    density= float(contents[0][2]), pathname=self.outputLocation,
-                                                   diffuse=self.diffusion_status, diffusionCoefficient= float(contents[0][4]))
+                                                   diffuse=self.diffusion_status, molecularDiffusionCoefficient= float(contents[0][4]))
             
-            sim = Process(target = simulator.exec_preset, args = (arguments,))
+            sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, arguments))
+            # sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, exception_holder, arguments))
             
-            # sim = threading.Thread(target = simulator.exec_preset, args = arguments)
             sim.start()
             sim.join()
 
-            return(1)
-
-
+            # if hasattr(exception_holder, 'exception'):
+            #     raise exception_holder.exception
+            
+            if sim.exitcode == 0:
+                return([1, self.diffusion_status])
+            else:
+                return(0)
+        
     # function validates file name input for the two preset configuration files and (if valid)
     # launches the simulation in preset mode.
-    def preset_simulation_button_handler(self, file1, file2, density1, diffusion_status, diffusion_coefficient, granularity):
+    def preset_simulation_button_handler(self, file1, file2, density1, diffusion_status, molecular_diffusion_coefficient, granularity):
         density = None
         valid = True
         f1 = None
         f2 = None
-       
         try:
             f1 = open(file1)
-            print(file1)
             f1.close()
         except:
             # tm.showerror(title = "Error", message = "invalid filename: pipes model")
@@ -205,19 +218,31 @@ class simulation_window():
             valid = False
         self.step_var = self.options[granularity]
         self.set_step_time()
+        
+        manager = multiprocessing.Manager()
+        exception_holder = manager.Namespace()
 
+        # molecular_diffusion_coefficient = molecular_diffusion_coefficient  #/ self.step_var
         if valid:
             self.generate_path()
             simulator = driver.Driver(self.Queue, step = self.step_size)
             arguments = driver.execution_arguments(settingsfile = None, modelfile=file1, presetsfile=file2,
                                                    density=density, pathname=self.outputLocation,
-                                                   diffuse=diffusion_status, diffusionCoefficient=diffusion_coefficient)
-            sim = Process(target = simulator.exec_preset, args = (arguments,))
-            # sim = threading.Thread(target = simulator.exec_preset, args = arguments)
+                                                   diffuse=diffusion_status, molecularDiffusionCoefficient=molecular_diffusion_coefficient)
+            
+            sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset,exception_holder, arguments))
+
             sim.start()
             sim.join()
 
-            return(1)
+            if hasattr(exception_holder, 'exception'):
+                raise exception_holder.exception
+            
+            if sim.exitcode == 0:
+                return(1)
+            else:
+                return(0)
+            
 
     # this function validates all the inputs int he window to ensure they are valid and will result in a successful
     # simulation. The function will raise an error describing the problem if there is one, allowing the user
@@ -303,12 +328,12 @@ class simulation_window():
             #self.parent.random_simulation_handler(configuration)
 
 # starts main window thread
-def main():
-    sim = simulation_window()
-    sim.start()
+# def main():
+#     sim = simulation_window()
+#     sim.start()
 
-# executes when python is run from the command line or executed.
-if __name__ == "__main__":
-    main()
+# # executes when python is run from the command line or executed.
+# if __name__ == "__main__":
+#     main()
 
 

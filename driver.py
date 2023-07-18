@@ -1,4 +1,5 @@
 import os
+# import app
 
 import builder
 import random
@@ -8,8 +9,11 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib.lines import Line2D
-from multiprocessing import Process, Pool, Queue
+# from multiprocessing import Process, Pool, Queue
 import random
+import copy
+import math
+import numpy as np
 
 # simple container object to store configuration options for simulation execution.
 # note that it performs no validation on input and may be created with improper values,
@@ -24,7 +28,7 @@ class execution_arguments:
                  activation_range = None,
                  length = None,
                  density = None,
-                 diffusionCoefficient = None,
+                 molecularDiffusionCoefficient = None,
                  instructions = None,
                  diffuse: bool = False):
         self.settingsfile = settingsfile
@@ -35,9 +39,10 @@ class execution_arguments:
         self.activation_range = activation_range
         self.length = length
         self.density = density
-        self.diffusionCoefficient = diffusionCoefficient
+        self.molecularDiffusionCoefficient = molecularDiffusionCoefficient
         self.instructions = instructions
         self.diffuse = diffuse
+        self.plt = None
 
 # The graphing functionality has been broken into it's own class to make it easier to call the graphing functions multiple times with different parameters.
 # now we can make the same graph at different resolution scales. The smaller one is displayed in the app, while the larger one is saved to the hard drive
@@ -50,8 +55,11 @@ class graphing:
         self.Queue = queue
         self.line_styles = ["-", "--", "-.", ":"]  # also "" is none
         self.line_markers = [".", "o", "v", "^", "<", ">", "p", "P", "*", "X", "D"]
-        colors = mcolors.get_named_colors_mapping()
-        self.line_colors = list(colors.keys())
+        # self.lowvisibilitycolors = 
+        self.colors = mcolors.get_named_colors_mapping()
+        self.line_colors = list(self.colors.keys())
+        for no_vis_color in ["white", "w", "snow", "whitesmoke", "seashell", "floralwhite", "ivory", "ghostwhite", "xkcd:pale lilac"]:
+            self.line_colors.remove(no_vis_color)
         self.mode = mode
         self.mode_name = {1:"Seconds", 2:"Minutes", 3:"Hours"}
 
@@ -62,18 +70,27 @@ class graphing:
         self.line_colors.remove(selected)
         return selected
 
-    # creates a new particle age graph, saves the image, and puts the filepath in the message queue.
-    def graph_age(self, particleInfo, counter, filename="/logs/"):
+    # creates a new particle age graph, saves the image, and puts the filepath in the message queue. 
+    # Seperated by display and log filename due to Flask's req for images to be placed in static folder.
+    def graph_age(self, particleInfo, counter, flowList, filename="/logs/"):
         age_display = './static/plots/age_graph.png'
         concentration_display = './static/plots/concentration_graph.png'
+        flows_display ='./static/plots/flow_graph.png'
         filename_concentration = filename + '/concentration_graph.png'
         filename_large = filename + '/age_graph_large.png'
         filename_standard = filename + '/age_graph.png'
+        filename_flows = filename + '/flow_graph.png'
 
         # print("displayname: ", displayname)
         self.graph_helper([16,12], 300, filename_large, particleInfo, counter)
         self.graph_helper([8,6], 92, filename_standard, particleInfo, counter)
         self.graph_helper([8,6], 92, age_display, particleInfo, counter)
+        try:
+            self.flow_graph_helper([8,6], 92, filename_flows, particleInfo, counter, flowList)
+            self.flow_graph_helper([8,6], 92, flows_display, particleInfo, counter, flowList)
+        except:
+            print("Flow Graph Failed")
+            pass
         self.concentration_graph_helper([8,6], 92, concentration_display, particleInfo, counter)
         self.concentration_graph_helper([8,6], 92, filename_concentration, particleInfo, counter) #Concentration
         # self.graph_helper([16,12], 300, filename, particleInfo, counter, 1) --- For Larger Graph / Better Quality
@@ -94,11 +111,15 @@ class graphing:
         names = [n for n in particleData.keys()]
         legend_names = []
         legend_lines = []
+        # print("Data  ", len(data))
         for i in range(len(data)):
             element = data[i]
             name = names[i]
             x = list(map(lambda a: a[0], element))
             y = list(map(lambda b: b[1], element))
+            # print("lax: ", len(x), "ly: ", len(y))
+
+            # print("g x: ", x, "y: ", y)
             line = Line2D(x,y)
             line.set_linestyle("")
             line.set_marker(self.line_markers[1])
@@ -123,6 +144,71 @@ class graphing:
             print("saving ", filename)
             plt.savefig(filename, facecolor='w', edgecolor='w',
                    orientation='portrait', format="png", pad_inches=0.1)
+            self.plt = plt
+            # plt.show()
+        except:
+            print("graph_helper called before containing folder has been created! Unable to create graph.")
+            pass
+
+    # assists graph_age by creating the actual graph image according to parameters specified in graph_age.
+    # typically, this is called twice to produce a low-resolution graph and a high-resolution graph.
+    def flow_graph_helper(self, size, res, filename, particleInfo, counter, flowList):
+        maxTime = 0
+        maxAge = 0
+        i = 0
+        particleData = particleInfo
+        fig = plt.figure(figsize = size, dpi=res)
+        xy = fig.add_subplot(111)
+        data = [d for d in flowList.values()]
+        names = [n for n in flowList.keys()]
+       
+        legend_names = []
+        legend_lines = []
+        for flow in data:
+            x = []
+            y = []
+
+            element = flow
+            
+            name = names[i]
+        
+            for j in element:
+                
+                x.append(j[0])
+                y.append(j[1])
+
+            line = Line2D(x,y)
+            line.set_linestyle("")
+            line.set_marker(self.line_markers[1])
+            line.set_markeredgewidth(0.0)
+            line.set_markerfacecolor(self.select_color())
+            line.set_markersize(3.0)
+            xy.add_line(line)
+            maxX = max(x)
+            maxY = max(y)
+            maxTime = max(maxX, maxTime)
+            maxAge = max(maxY, maxAge)
+            try:
+                legend_names.append(name)
+                # print("ln:" , legend_names)
+            except:
+                pass
+            legend_lines.append(line)
+            i += 1
+            # print("color: ", line.get_markerfacecolor())
+            
+        # print("legend lines", legend_lines)
+        xy.legend(legend_lines, legend_names)
+        xy.set_ylim(0, maxAge * 1.1)
+        xy.set_xlim(0, counter.get_time())
+        xy.set_xlabel("Simulation Time ({})".format(self.mode_name.get(self.mode)))
+        xy.set_ylabel("Flow Rate (Gallons per Minute)".format(self.mode_name.get(self.mode)))
+        try:
+            print("saving ", filename)
+            plt.savefig(filename, facecolor='w', edgecolor='w',
+                   orientation='portrait', format="png", pad_inches=0.1)
+            self.plt = plt
+            # plt.show()
         except:
             print("graph_helper called before containing folder has been created! Unable to create graph.")
             pass
@@ -161,7 +247,7 @@ class graphing:
         xy.set_ylim(0, maxAge * 1.1)
         xy.set_xlim(0, counter.get_time())
         xy.set_xlabel("Simulation Time ({})".format(self.mode_name.get(self.mode)))
-        xy.set_ylabel("Expelled Particle Age ({})".format(self.mode_name.get(self.mode)))
+        xy.set_ylabel("Expelled Particle Concentration (Percentage)".format(self.mode_name.get(self.mode)))
         try:
             print("saving ", filename)
             plt.savefig(filename, facecolor='w', edgecolor='w',
@@ -170,6 +256,63 @@ class graphing:
             print("graph_helper called before containing folder has been created! Unable to create graph.")
             pass
 
+    
+    #Plot a histogram of all particle modifers undertaken through diffusion/dispersion as particles undergo the simulation.
+    def write_modifier_bins(self, filename, values):
+
+        # plt.figure()
+        total = 0
+        j = 0
+        for i in values:
+            total += i
+            j += 1
+        
+        # color = self.select_color()
+        try:
+            # plt.hist(values, bins=60, color=color, ec = color, edgecolor='black')
+            # plt.title("Mean: " + str(total / j))
+            print("Mean of modifiers: ", total / j)
+        except:
+            pass
+        # plt.savefig(filename + '.png', format='png')
+    
+    #Create a histogram displaying the exit time of all particles that have been expelled from the system. This should closesely replicate the curve created by Dr. Ginn's model.
+    def write_expel_bins(self, filename, mean, var, values):
+        fig = plt.figure()
+        total = 0
+        j = 0
+        newValues = []
+
+        for i in list(values.values())[0]:
+
+            #Temporarily only allowing particles with expel times past 110 to fit the onepipe model. Contraining to 110+ removes the tail at the beginning of the graph.
+            # i[ time, age, concentration, id]
+            # if(i[0] > 70):
+            # print("i: ", i)
+            newValues.append(i[1])
+ 
+        for i in newValues:
+            total += i
+            j += 1
+        # topPer = len(newValues) * .2
+        # print("topPer: ", topPer)
+        # topValues = newValues[-int(topPer):]
+
+        # print("len1: ", len(newValues), "len2: ", len(topValues))
+        topValues = newValues
+        color = self.select_color()
+        try:
+            plt.hist(topValues, bins=60, color=color, ec = color, density=True, edgecolor='black')
+        except Exception as e:
+            raise Exception(e)
+
+        try:
+            plt.title("Mean: " + str(round(mean, 4)) + "  NP Mean: " + str(round(np.mean(newValues), 4)))
+            fig.text(0.5, 0.04, "Variance: " + str(round(var, 4)) + "  NP Variance: " + str(round(np.var(newValues), 4)), horizontalalignment='center')
+        except:
+            print("Error generating mean for expel bins.")
+            pass
+        plt.savefig(filename + '.png', format='png')
 
 # the simulation driver has been encapsulated in a class to make it easier to separate one simulation
 # run from the next and simpler to access from other modules.
@@ -210,10 +353,15 @@ class Driver:
         self.actives = None # list of active endpoints
         self.set_time_step(step)
         self.mode = step
+        self.mode_name = {1:"second", 2:"minute", 3:"hour"}
+        self.flowList = {}
+        # self.modelfile = None
+        # self.presetsFile
 
     # updates the time step and related variables to allow for computation on seconds, minutes, or hours.
     def set_time_step(self, option: int):
         step = 60 # setting for seconds
+        # step = float(option)
         if option == 1:
             step = 60
         elif option == 2:
@@ -221,8 +369,8 @@ class Driver:
         elif option == 3:
             step = 1.0 / 60.0
         self.TIME_STEP = step
-        self.ONE_DAY = step * 24 * 60
-        self.HOUR_LENGTH = step * 60
+        self.ONE_DAY = step * 24 * 60 
+        self.HOUR_LENGTH = step * 60 
 
 
     # this function adds an activation for an endpoint according to the activation time indicated.
@@ -254,10 +402,10 @@ class Driver:
         if active is not None and active > 0:
             active -= 1
             self.activations[endpointName] = active
-            #print("Endpoint", endpointName, "is active for", active, "seconds")
+            # print("Endpoint", endpointName, "is active for", active, "seconds")
         elif active <= 0:
             self.activations[endpointName] = active =  -1
-            #print("Endpoint", endpointName, "is deactivated")
+            # print("Endpoint", endpointName, "is deactivated")
         return active
 
     # this function simulates an endpoint while in preset mode. this function is simplified
@@ -307,9 +455,8 @@ class Driver:
     # class. once the initial variables are set, this function runs the simulation loop for the specified duration
     # only runs for preset mode, since the activations are handled differently.
     def sim_preset(self, root, endpoints, instructions, max_time, density):
-        print("sim preset", max_time)
         endpoints = self.dict_from_endpoints(endpoints)
-        print("e: ", endpoints, "i: ", instructions)
+        # print("e: ", endpoints, "i: ", instructions)
         start_time = None
         keys = instructions.keys()
         
@@ -317,7 +464,24 @@ class Driver:
         time_since_starts = {}
         for instruction in instructions:
             time_since_starts[instruction] = instructions[instruction][0][0]
+        
+        
+        flowInstructions = copy.deepcopy(instructions)     
+        for time_step in range(0, max_time):
+            for instruction in flowInstructions:
+                try:
+                    self.flowList.setdefault(instruction, [])
+                    if time_step >= flowInstructions[instruction][0][0] and time_step <= flowInstructions[instruction][0][1]:
+                        self.flowList[instruction].append([time_step, flowInstructions[instruction][0][2]])
+                    elif time_step > flowInstructions[instruction][0][1]:
+                        flowInstructions[instruction].pop(0)
+                        self.flowList[instruction].append([time_step, instructions[instruction][0][2]])
                 
+                except Exception as e: 
+                    # print("exception", e)
+                    pass
+        # print("flowlist", self.flowList)
+
         for time_step in range(0, max_time):
             start_time = self.progress_update(start_time, max_time, time_step)
             # TODO: multiprocessing
@@ -325,7 +489,7 @@ class Driver:
                 # print("key:", key)
                 endpoint = endpoints[key]
                 actions = instructions[key]
-        
+
                 if time_step >= time_since_starts[key]:
                     if key not in time_since:
                         time_since[key] = 0
@@ -334,34 +498,32 @@ class Driver:
 
                 if len(actions) > 0:
                     first_action = actions[0]
+
                     if time_step == first_action[0]:
                         first_action = actions.pop(0)
-                        #print(first_action)
                         length = first_action[1] - first_action[0]
                         self.add_activation(key, length)
                         if not endpoint.isActive:
                             endpoint.activate_pipes(first_action[2])
-        
+
                         else:
                             endpoint.update_flow_rate(first_action[2])
                 else:
                     pass
+
             if root.isActive:
-                self.manager.add_particles(density, root)
+                self.manager.add_particles(density, root, time_since)
+            
             self.manager.update_particles(time_since)
             for endpoint in endpoints.values():
                 self.sim_endpoint_preset(endpoint)
             self.counter.increment_time()
-
-            root.timeStep += 1
-            # print(root.length)
 
     # this function prints to the console with statistics about the simulation and the current simulation speed.
     # it also communicates with the display classes via message passing, allowing for
     # the gui to update at regular intervals during execution.
     def progress_update(self, start_time, max_time, second):
         message = ""
-        mode_name = {1:"second", 2:"minute", 3:"hour"}
         if start_time == None:
             start_time = time.time()
         if second == 0:
@@ -372,7 +534,10 @@ class Driver:
         if second % 1000 == 0 and second > 0:
             end_time = time.time()
             elapsed = end_time - start_time
-            line1 = "Simulating " + mode_name.get(self.mode) + " " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
+            print("second: ", type(second), "max_time: ", type(max_time), "elapsed: ", type(elapsed))# "mode: ", type(self.mode_name.get(self.mode)))
+            line1 = "Simulating " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
+            # line1 = "Simulating " + self.mode_name.get(self.mode) + " " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
+            # line1 = "Simulating " + self.mode_name.get(self.mode) + " " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
             message += line1
             pipe_particles = len(self.manager.particleIndex)
             expelled_particles = len(self.manager.expendedParticles)
@@ -430,33 +595,64 @@ class Driver:
                 writer.writerow([name, value[0], value[1], value[2], value[3]])
         results.close()
 
-    #temporary testing function to create a csv file and write all of modifiers of a particular particle
-    #to determine normal distribution.
-    def write_bins(self, filename):
-        binput = open(filename + '.log', 'w')
-        plt.figure()
+    def write_pipe_ages(self, particles, filename):
+        results = open(filename, 'w')
+        writer = csv.writer(results, 'excel')
+        ageDict = {}
+        endpointNames = [endpoint.name for endpoint in self.endpoints]
+        # names = particleAges.keys()
+        for key in particles:
+            particle = particles[key]
+            data = particle.getOutput()
+            for pipe in data[4]:
+                if pipe[0] not in endpointNames:
+                    ageDict.setdefault(pipe[0], [0,0])
+                    ageDict[pipe[0]][0] += pipe[1]
+                    ageDict[pipe[0]][1] += 1
 
-        plt.hist(self.manager.bins)
-        plt.savefig(filename + '.png')
+        #Column containing the pipe name, the total age of particles in that pipe (summed time spent in that pipe value for each particle), the number of particles that have flowed through that pipe,
+        # and the result of those two values divided from one another ( assumed to be the average age of particles in that pipe. )
+        for entry in ageDict:
+            writer.writerow([str(entry), str(ageDict[entry]), str(ageDict[entry][0] / ageDict[entry][1])])
 
-        total = 0
-        j = 0
-        for i in self.manager.bins:
-            total += i
-            j += 1
+        return ageDict
+    
+        # print("root: ", self.root)
+        self.tree_helper(self.root, self.root.children)
+    
+    def write_run_data(self, filename, arguments: execution_arguments):
         
-        # print("mean = ", total / j)
+        
+        try:
+            output = open(filename, 'w')
+        
+            #write the run data to a text file
+            output.write("run data\n")
+            output.write("pipe model file: " + arguments.modelfile + "\n")
+            output.write("flow preset file: " + arguments.presetsfile + "\n")
+            output.write("d_m: " + str(self.manager.d_m) + "\n")
+            output.write("d_inf: " + str(self.root.d_inf) + "\n")
+            output.write("granularity: " + str(self.mode_name.get(self.mode)) + "\n")
+            output.write("time: ")
+            output.write(str(self.counter.get_time()) + "\n")
+        except Exception as e:
+            print("error writing run data: ", e)
 
-        # try:
-        #     plt.savefig('testhisto', facecolor='w', edgecolor='w',
-        #            orientation='portrait', format="png", pad_inches=0.1)
-        # except:
-        #     print("write_bins called before containing folder has been created! Unable to create graph.")
-        #     pass
 
+    def tree_helper(self, tree, iterable):
+        if tree.type != "endpoint":
+            print(tree.name)
+        if iterable is not None:
+            for each in iterable:
+                if each is not None:
+                    if each.type != "endpoint":
+                        self.tree_helper(each, each.children)
+                        
 
-        for i in self.manager.bins:
-            binput.write(str(i)+"\n")
+            # print(data)
+            # values = particleAges.get(name)
+            # print(values)
+        
 
     
     # not currently functional as updates to the particle simulation module have broken functionality.
@@ -562,9 +758,10 @@ class Driver:
         self.write_output(logpath + "\expelled.csv",self.manager.expendedParticles)
         self.write_output(logpath + "\pipe_contents.csv", self.manager.particleIndex)
         self.write_age_and_FreeChlorine_data(logpath + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
-        self.write_bins(logpath + "\inputbin")
+        if(self.manager.diffusionActive):
+            g.write_modifier_bins(logpath + "./static/plots/histogram.png", self.manager.bins)
 
-    #this function executes the simulation in random mode. It first establishes flow rates and other simulation variables.
+    #this function executes the simulation in random mode. It first establishes flow rates and other simulation variables. 
     def exec_randomized(self, arguments: execution_arguments):
         modelfile = arguments.modelfile
         pathname = arguments.pathname
@@ -603,48 +800,102 @@ class Driver:
         self.write_output(pathname + "\expelled.csv", self.manager.expendedParticles)
         self.write_output(pathname + "\pipe_contents.csv", self.manager.particleIndex)
         self.write_age_and_FreeChlorine_data(pathname + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
-        self.write_bins(pathname + "\inputbin")
+        if self.manager.diffusionActive:
+            g.write_modifier_bins(pathname + "\inputbin", self.manager.bins)
         # self.controller.event_generate("<<sim_finished>>", when = "tail")
         send = ("status_completed", "Simulation complete.")
         self.Queue.put(send)
 
-    #this function executes the simulation in preset mode. This changes how pipes are activated and enables different
+    # This function executes the simulation in preset mode. This changes how pipes are activated and enables different
     # flow rates for each activation.
     def exec_preset(self, arguments: execution_arguments):
-        modelfile = arguments.modelfile
-        presetsfile = arguments.presetsfile
-        density = arguments.density
-        pathname = arguments.pathname
-        self.manager.diffusionCoefficient = arguments.diffusionCoefficient
-        self.manager.diffusionActive = arguments.diffuse
-        # self.controller.event_generate("<<sim_started>>", when = "tail")
-        send = ("status_started", "Simulation started.")
-        self.Queue.put(send)
-        self.root, self.endpoints = builder.build(modelfile, self.manager)
-        self.manager.setTimeStep(self.TIME_STEP)
-        # tree_model = self.root.generate_tree()
-        self.Queue.put(send)
-        #self.controller.preview_manager.start(self.root, self.manager)
-        # send = ("start_preview", tree_model)
-        self.Queue.put(send)
-        maxTime, instructions = builder.load_sim_preset(presetsfile)
+        try:
+            modelfile = arguments.modelfile
+            presetsfile = arguments.presetsfile
+            density = arguments.density
+            pathname = arguments.pathname
+            self.manager.diffusionActive = arguments.diffuse
+            send = ("status_started", "Simulation started.")
+            self.Queue.put(send)
 
-        # print(instructions)
-        maxTime, instructions = self.parse_instructions(maxTime, instructions)
-        # print(instructions)
-        self.sim_preset(self.root, self.endpoints, instructions, maxTime, density)
-        if not os.path.isdir(pathname):
-            os.mkdir(pathname)
-        g = graphing(self.Queue, self.mode)
-        g.graph_age(self.manager.expelledParticleData, self.counter, pathname)
+            self.manager.setTimeStep(self.TIME_STEP)
+            self.manager.setDiffusionCoefficient(arguments.molecularDiffusionCoefficient)
+            try:
+                self.root, self.endpoints = builder.build(modelfile, self.manager)
+            except Exception as e:
+                raise Exception("Error building model. Check model file for errors. [" + str(e) + "]")
+            
+            self.Queue.put(send)
+      
+            try:
+                maxTime, instructions = builder.load_sim_preset(presetsfile)
+                maxTime, instructions = self.parse_instructions(maxTime, instructions)
+                
+            except Exception as e:
+                raise Exception("Error loading preset file. Check preset file for errors. [" + str(e) + "]")
+            
+            try:
+                self.sim_preset(self.root, self.endpoints, instructions, maxTime, density)
+            except Exception as e:
+                raise Exception("Error running simulation. Check uploaded files for errors. [" + str(e) + "]" )
+            
+            try:
+                if not os.path.isdir(pathname):
+                    os.mkdir(pathname)
+                g = graphing(self.Queue, self.mode)
+                
+                g.graph_age(self.manager.expelledParticleData, self.counter, self.flowList, pathname)
+            except Exception as e:
+                raise Exception("Error generating graphs. [" + str(e) + "]") 
+            
+            try:        
+                self.write_output(pathname+"\expelled.csv", self.manager.expendedParticles)
+                self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
+                self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
+                # start timing
+                time_1 = time.time()
 
-        self.write_output(pathname+"\expelled.csv", self.manager.expendedParticles)
-        self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
-        self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
-        self.write_bins(pathname + "\inputbin")
-        # self.controller.event_generate("<<sim_finished>>", when = "tail")
-        send = ("status_completed", "Simulation complete.")
-        self.Queue.put(send)
+                if self.manager.diffusionActive:
+                    g.write_modifier_bins(".\static\plots\modifier_histogram", self.manager.bins)
+                    # g.write_modifier_bins(pathname + "\modifier_histogram", self.manager.bins)
+
+              
+                #Calculating mean, var, and skew to be added to the histogram of expelled particles. Designed to validate values of onpipe model.
+            
+                fr = list(self.flowList.values())[0][0][1]
+                lengthFeet = self.root.length / 12
+                areaFeet = math.pi * math.pow((self.root.radius / 12), 2)
+                frCFS = fr / 448.309
+                velocity = (frCFS / areaFeet) * 60
+                mean = lengthFeet / velocity
+                var = (2 * lengthFeet * (self.manager.molecularDiffusionCoefficient /144)) / math.pow(velocity, 3)
+                skew = 3 * math.sqrt((2 * (self.manager.molecularDiffusionCoefficient /144)) / (lengthFeet * velocity))
+                mean *= self.TIME_STEP
+                time_end1 = time.time() - time_1
+                time_2 = time.time()
+                g.write_expel_bins(pathname+"\expelled_histogram", mean, var, self.manager.expelledParticleData)
+                g.write_expel_bins(".\static\plots\expelled_histogram", mean, var,  self.manager.expelledParticleData)
+                time_end2 = time.time() - time_2
+                time_3 = time.time()
+                ageDict = self.write_pipe_ages(self.manager.expendedParticles, pathname+"\pipe_ages.csv")
+                time_end3 = time.time() - time_3
+                time_4 = time.time()
+                self.write_run_data(pathname+"\sim_data.txt", arguments)
+                time_end4 = time.time() - time_4
+                time_5 = time.time()
+                self.root.generate_tree()
+                self.root.show_tree(pathname + "/tree_graph.png", ageDict)
+                time_end5 = time.time() - time_5
+                print("1: " + str(time_end1), "2: " + str(time_end2), "3: " + str(time_end3), "4: " + str(time_end4), "5: " + str(time_end5))
+            except Exception as e:
+                raise Exception("Error writing output files. Check uploaded files for errors and ensure that the output directory is not open in another program. [" + str(e) + "]" )
+            # tree_model.render(".\static\plots\pipe_tree.png")
+            # self.controller.event_generate("<<sim_finished>>", when = "tail")
+            send = ("status_completed", "Simulation complete.")
+            self.Queue.put(send) 
+        except Exception as e:
+            raise Exception(e)
+        
 
     # this function translates the instructions from the instructions file (recorded as minutes)
     # into the appropriate time scale (seconds, minutes, or hours) as selected.

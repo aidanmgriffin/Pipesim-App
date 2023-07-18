@@ -1,0 +1,5 @@
+endpoint,starttime (minutes),endtime (minutes),flowrate (gallons per minute),simlifetime (days)
+SNK-1ST-02-endpoint,0,30,10,0.02083
+SNK-2ND-02-endpoint,0,30,10,
+SNK-3RD-02-endpoint,0,30,10,
+SNK-4TH-02-endpoint,0,30,10,

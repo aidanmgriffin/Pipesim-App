@@ -1,21 +1,22 @@
 import csv
 import particles
-import numpy as np
+# import numpy as np
 
 # function imports a csv file containing data about the pipe network to be simulated.
 # skips first line (where header information is stored)
 # loads data from each line into a list. creates a list of lists.
 def load_csv(filename):
-    file = open(filename,"r")
-    csvfile = csv.reader(file,dialect="excel")
-    start = 0
-    rval = []
-    for line in csvfile:
-        if start == 0:
-            start = 1
-            continue
-        rval.append(line)
-    return rval
+    with open(filename,"r") as file:
+        csvfile = csv.reader(file,dialect="excel")
+        start = 0
+        rval = []
+        for line in csvfile:
+            # print("line: ", line)
+            if start == 0:
+                start = 1
+                continue
+            rval.append(line)
+        return rval
 
 # creates a pipe using the pipe data stored in the csv file. Note that at this point,
 # each pipe is separate so parent and child pipes (connections) are filled with strings
@@ -28,13 +29,16 @@ def create_node(np, manager):
     name = np[0]
     isRoot = np[5]
     isEnd = np[6]
+    d_inf = float(np[7])
+    alpha = float(np[8])
+    lambdaval = float(np[9])
     if parent == "NONE" or isRoot == "TRUE":
         parent = None
     if isEnd == "TRUE":
         node = particles.endpoint(parent, name, manager)
         endpointStatus = True
     else:
-        node = particles.pipe(name, length, width, np[1], parent, manager)
+        node = particles.pipe(name, length, width, np[1], parent, d_inf, alpha, lambdaval, manager)
     return node, endpointStatus
 
 # this function performs a tree search beginning at the root on the network
@@ -92,6 +96,7 @@ def build(filename, man = None):
     endpoints = []
     type = None
     for each in contents:
+        # print("each: ", each)
         # the first node in the file is created as the root node
         if root == None:
             root, type = create_node(each, manager)
@@ -104,8 +109,10 @@ def build(filename, man = None):
         success = insert_node(root, node)
         #print(success, node.name)
         if not success:
-            print("Error in file at" , node.name + ". Malformed pipes file. Aborting.")
-            raise Exception
+            message = "Error in file at" , node.name + ". Malformed pipes file. Aborting."
+            print(message)
+            return message
+            # raise Exception
     # the file includes all pipes, but not control spigots.
     # the endpoints are added here, which provide a way to control each pipe fork.
     #endpoints = add_endpoints(root, [])

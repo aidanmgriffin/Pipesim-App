@@ -1,0 +1,6 @@
+Name,Material,Width (inches),Length (feet),Parent,Root,Endpoint,D_INF,Alpha,Lambda
+root,Pex,12,60,NONE,TRUE,,0.01946,114,0.1
+Arterial-1,Pex,12,40,root,,,0.01946,114,0.1
+Arterial-2,Pex,12,40,root,,,0.01946,114,0.1
+Tap,None,2,1,Arterial-1,,TRUE,0.01946,114,0.1
+Tap2,None,2,1,Arterial-2,,TRUE,0.01946,114,0.1

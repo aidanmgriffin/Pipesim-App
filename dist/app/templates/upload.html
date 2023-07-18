@@ -1,0 +1,121 @@
+{% extends 'base-upload.html' %}
+
+{% block content %}
+
+<br />
+
+{% if alert %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>Error!</strong> {{alert.message}}
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+{% endif %}
+
+<div class = "main-content">
+<h1> Run Simulation </h1>
+<p>Check documentation for additional information.</p>
+<div class="foreground-spacer-block"></div>
+<br />
+
+<h3>Using Settings Preset File</h3>
+<p>Upload a CSV file with all of the system/flow information included. To find out how to create this form, click <a href="{{url_for('documentation')}}">here!</a></p>
+
+<form method="POST" enctype="multipart/form-data" name="SettingsForm">
+    <!--<label for="file" class="font-weight-bold">File:</label>-->
+    <div class="mb-3">
+        <label for="setting-preset" class="form-label">Settings Preset</label>
+        <input class="form-control" type="file" id="setting-preset" name="setting-preset">
+    </div>
+
+    <button type="submit" class="btn" name="settings-submit">Upload</button>
+</form>
+<br />
+<div class="foreground-spacer-block"></div>
+<br />
+
+<h3>Build Simulation Preset</h3>
+<p>Upload separate CSV files: one containing a pipe network description and one containing flow preset. To learn more about format requirements, click <a href="{{url_for('documentation')}}">here!</a></p>
+
+<form method="POST" enctype="multipart/form-data" name="PresetsForm">
+    <!--<label for="file" class="font-weight-bold">File:</label>-->
+    <div class="mb-3">
+        <label for="pipe-network" class="form-label">Pipe Network </label>
+        <input class="form-control" type="file" accept = ".csv" id="pipe-network" name="pipe-network">
+    </div>
+
+    <div class="mb-4">
+        <label for="flow-preset" class="form-label">Flows Preset</label>
+        <input class="form-control" type="file" accept = ".csv" id="flow-preset" name="flow-preset">
+    </div>
+
+    <div class="form-row align-items-center ml-3">
+        <div class="col-auto">
+
+            <input class="form-check-input" type="checkbox" value="" name = "flex-check" id="flexCheckDefault">
+            <label class="form-check-label" for="flexCheckDefault" name="diffusion-enabled">
+                Diffusion Enabled
+            </label>
+
+        </div>
+        <div class="col-md-2">
+            <input type="number" step="any" class="form-control" name="molecular-diffusion-coefficient" placeholder="Customize Molecular Diffusion">
+        </div>
+    </div>
+    <br />
+    <div class="form-row align-items-center">
+        <div class="col-auto">
+            Particle Density [0-1] :
+        </div>
+
+        <div class="col-md-1">
+            <input type="number" step=any class="form-control" id="density" name="density" placeholder="">
+
+        </div>
+    </div>
+
+    <br />
+
+    <div class="form-row align-items-center">
+
+        <div class="col-auto">
+            Time Granularity: 
+        </div>
+        <div class="col-auto">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1" value="option1">
+                <label class="form-check-label" for="inlineRadio1">Seconds</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2" value="option2">
+                <label class="form-check-label" for="inlineRadio2">Minutes</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio3" value="option3">
+                <label class="form-check-label" for="inlineRadio2">Hours</label>
+            </div>
+        </div>
+    </div>
+    <br />
+
+    <div class="form-row align-items-center">
+        <div class="col-auto">
+            Custom Granularity [Test]:
+        </div>
+
+        <div class="col-md-1">
+            <input type="number" step=any class="form-control" id="granularityCustom" name="granularityCustom" placeholder="">
+
+        </div>
+    </div>
+
+    <br />
+        <button type="submit" class="btn" name="preset-submit">Upload</button>
+    
+
+</form>
+</div>
+
+
+{% endblock %}

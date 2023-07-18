@@ -5,8 +5,8 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, send_file
 from display import simulation_window
 from datetime import datetime
-from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileRequired
+# from flask_wtf import FlaskForm
+# from flask_wtf.file import FileField, FileRequired
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import sys
@@ -14,38 +14,36 @@ import math
 from io import BytesIO
 import zipfile
 import pathlib
-import webbrowser
+import builder
+import webview
+import multiprocessing
+import cairo
+
 
 
 # pylint: disable=C0103
-app = Flask(__name__)
-app.config['SECRET_KEY'] = "pipesimunlock"
-
-#Get current time
-now = datetime.now()
-date_time =now.strftime("%d/%m/%Y, %H:%M:%S")
+# template_folder = os.path.join(os.getcwd(), 'templates')
+app = Flask(__name__)#, template_folder=template_folder)
+app.config['SECRET_KEY'] = os.urandom(12).hex()
 
 #Create a form class (file)
-class SettingsForm(FlaskForm):
-    photo = FileField(validators=[FileRequired()])
+# class SettingsForm(FlaskForm):
+#     photo = FileField(validators=[FileRequired()])
 
 #Default route
 @app.route('/')
 def index():
     return render_template("index.html")
 
+class alert:
+    def __init__(self, message, type):
+        self.type = type
+        self.message = message
 #Custom routes
 
 #route to documentation page
 @app.route('/documentation', methods = ['GET', 'POST'])
 def documentation():
-    name = None
-    # form = NamerForm()
-
-    # if form.validate_on_submit():
-    #     name = form.name.data
-    #     form.name.data = ''
-
     return render_template("documentation.html")
 
 #route to learn more page
@@ -60,9 +58,21 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 #Upload files
+
+#route to upload page
+@app.route('/upload_page')
+def upload_page():
+    return render_template("upload_page.html")
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
-    form = SettingsForm()
+
+    #Get current time
+    now = datetime.now()
+    date_time =now.strftime("%m/%d/%Y, %H:%M:%S")
+
+    # form = SettingsForm()
+    alertDanger = alert("Running Simulation Failed", "Danger")
    
     if request.method == 'POST':
 
@@ -70,7 +80,6 @@ def upload():
             file = request.files['setting-preset']
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                print("filename: ", filename)
                 save_location = os.path.join('input', filename)
                 file.save(save_location)
 
@@ -82,27 +91,39 @@ def upload():
                 #return send_from_directory('output', output_file)
 
                 if(output_file):
-                    return redirect(url_for('download'))
+                    return redirect(url_for('download', diffusion_status = output_file[1] , date_time = date_time))
         
             return 'uploaded'
+        
+        # User is not electing to run a settings preset simulation. 
+        # Thus, running a custom simulation with selected files/settings.
         elif 'preset-submit' in request.form:
-
+            # try:
+            # Get pipe network and flows files from form
             pipes = request.files['pipe-network']
             flows = request.files['flow-preset']
-            print("request.values", request.values)
-            # print(request.values['asymptotic-diffusion-coefficient'])
 
-            # asymptotic_diffusion_coefficient = request.values['asymptotic-diffusion-coefficient']
-            density = request.values['density']
-            req_radio = request.values['inlineRadioOptions']
-
-            asymptotic_diffusion_coefficient = request.values['asymptotic-diffusion-coefficient']
-            if any(char.isdigit() for char in asymptotic_diffusion_coefficient):
-                pass
-            else:
-                asymptotic_diffusion_coefficient =  9.3 * math.pow(10, -5) # change name asymptotic_diffusion_coefficient to molecular diffusion coefficient
+            #Validating density input. Input must be a number between 0 and 1 inclusive.
+            try:
+                density = request.values['density']
+                density = float(density)
+                if density < 0 or density > 1:
+                    alertDanger.message = "Density must be between 0 and 1"
+                    raise Exception
+            except:
+                alertDanger.message = "Density must be a number between 0 and 1"
+                raise Exception
                 
             
+            # Validate that granularity option is selected. If none is selected, default to minutes.
+            # In case of no selection, error will be shown to the user.
+            try:
+                req_radio = request.values['inlineRadioOptions']
+            except:
+                alertDanger.message = "Granularity option not selected."
+                raise Exception
+                
+
             if req_radio == 'option1':
                 granularity = 'Seconds'
             elif req_radio == 'option2':
@@ -112,42 +133,93 @@ def upload():
             else:
                 granularity = 'Minutes'
 
-            if pipes and allowed_file(pipes.filename) and flows and allowed_file(flows.filename):
-                pipes_filename = secure_filename(pipes.filename)
-                pipes_save_location = os.path.join('input', pipes_filename)
-                pipes.save(pipes_save_location)
-
-                flows_filename = secure_filename(flows.filename)
-                flows_save_location = os.path.join('input', flows_filename)
-                flows.save(flows_save_location)
-
-            # print("request vals ", request.values, file = sys.stderr)
+            
+            
+            # Check if diffusion is enabled (flexbox is checked). If so, set diffusion status to 1. Else, set to 0.
+            # If diffusion is not enabled (flexbox not checked), molecular diffusion coefficient (d_m) will be set to default value.
+            # Otherwise, validate that molecular diffusion coefficient is a number. If not, d_m will be set to default value.
             if('flex-check' in request.values):
                 diffusion_status = 1                    
             else:
                 diffusion_status = 0
+            
+            molecular_diffusion_coefficient = request.values['molecular-diffusion-coefficient']
+            if any(char.isdigit() for char in molecular_diffusion_coefficient):
+                pass
+            else:
+                molecular_diffusion_coefficient = 9.3 * math.pow(10, -5) 
+
+            # Attempt to save pipe network and flows files to input folder. If unsuccessful (most likely due to incorrect file type),
+            # an error will be shown to the user.
+
+            try:
+                if pipes and allowed_file(pipes.filename) and flows and allowed_file(flows.filename):
+                    # print("1")
+                    pipes_filename = secure_filename(pipes.filename)
+                    pipes_save_location = os.path.join("input", pipes_filename)
+                    # print("2", pipes_save_location)
+                    pipes.save(pipes_save_location)
+                    # print("3")
+                    flows_filename = secure_filename(flows.filename)
+                    flows_save_location = os.path.join("input", flows_filename)
+                    flows.save(flows_save_location)
+                    # print("4")
+            except Exception as e:
+                alertDanger.message = "Pipe Network File Could Not Uploaded. Is file type CSV?" + e
+                raise Exception
+            
+            # Attempts to build pipe network. 
+            # If builder.build successfully returns a single value, an error will be shown to the user.
+            try:
+                message = builder.build(pipes_save_location)
+                alertDanger.message = message
+                raise Exception
+            except:
+                pass
 
             sim = simulation_window()
 
-            print("run: ", pipes_save_location, flows_save_location, density, diffusion_status, asymptotic_diffusion_coefficient, granularity)
-
-            output_file = 0
-            output_file = sim.preset_simulation_button_handler(pipes_save_location, flows_save_location, density, diffusion_status, asymptotic_diffusion_coefficient, granularity)
-
+            # Catches and alerts users of errors in the simulation. These include errors involving output files being open,
+            # errors involving the input files, and errors involving the simulation itself.
+            try:
+                output_file = 0
+                output_file = sim.preset_simulation_button_handler(pipes_save_location, flows_save_location, density, diffusion_status, molecular_diffusion_coefficient, granularity)
+            except Exception as e:
+                alertDanger.message = e
+                raise Exception
+            # print("output file? ", output_file)
+            # except:
+            #     # alertDanger.message = e
+            #     return render_template("upload.html", form=form, alert = alertDanger)
+            
+            #If simulation is successful, redirect to download page. If failed, show error message.
             if(output_file):
-                print("output", file = sys.stderr)
-                return render_template("download.html", files=os.listdir('output'), date_time = date_time)
-                # return redirect(url_for('download'))
-            print("no output", file = sys.stderr)
-            # return asymptotic_diffusion_coefficient
-            return render_template("upload.html", form=form)
+                print("Simulation Complete...")
+                return redirect(url_for('download' , diffusion_status = diffusion_status, date_time = date_time))
 
-        #return redirect(url_for('download'))
-    return render_template("upload.html", form=form)
+                # print("dir: ", os.listdir('static/plots'))
+                # return render_template("download.html",  diffusion_status = diffusion_status, date_time = date_time)
+            else:
+                alertDanger.message = "Simulation Failed. Do the files contain the correct data?"
+                return render_template("upload.html", alert = alertDanger)
+                # return render_template("upload.html", form=form, alert = alertDanger)
+            
+    return render_template("upload.html")
+    # return render_template("upload.html", form=form)
 
+#Route to download page accessed by running a simulation from upload. If not redirected from the upload page, redirect to upload page.
+#  Therefore, it is not possible to search pipesim.com/download directly. It will just make you upload.
 @app.route('/download')
 def download():
-    return render_template('download.html', files=os.listdir('logs'), date_time = date_time)
+
+    try: 
+        date_time = request.args['date_time']
+        diffusion_status = request.args['diffusion_status']
+    except:
+        return redirect(url_for('upload'))
+
+    return render_template('download.html', diffusion_status = diffusion_status, date_time = date_time)
+    #pass current time, and list of files in output folder to download page. Load download page.
     
     # path = pathlib.Path('logs\output_batch')
     # memory_file = BytesIO()
@@ -198,6 +270,10 @@ def page_not_found_500(e):
     return render_template("500.html"), 500
 
 if __name__ == '__main__':
-    server_port = os.environ.get('PORT', '8080')
-    webbrowser.open('http://localhost:8080/', new=2)
-    app.run(debug=False, port=server_port, host='0.0.0.0')
+    multiprocessing.freeze_support()
+    print("App Running...")
+    webview.create_window("PipeSim", app)
+    webview.start()
+    # input("Press Enter to continue...")
+    # server_port = os.environ.get('PORT', '8080')
+    # app.run(debug=False, port=server_port, host='0.0.0.0')
