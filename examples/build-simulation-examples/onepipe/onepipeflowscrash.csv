@@ -1,0 +1,2 @@
+Pex,Material,Width (inches),Length (feet),Parent,Root,Endpoint,D_INF,Alpha,Lambda
+Pipe,Copper,12,100,NONE,TRUE,TRUE,0.01946,1,0.1

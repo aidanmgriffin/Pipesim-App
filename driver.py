@@ -1,4 +1,5 @@
 import os
+# import app
 
 import builder
 import random
@@ -11,7 +12,9 @@ from matplotlib.lines import Line2D
 # from multiprocessing import Process, Pool, Queue
 import random
 import copy
+import math
 import numpy as np
+
 # simple container object to store configuration options for simulation execution.
 # note that it performs no validation on input and may be created with improper values,
 # missing values, or incorrect types.
@@ -122,7 +125,6 @@ class graphing:
             line.set_marker(self.line_markers[1])
             line.set_markeredgewidth(0.0)
             line.set_markerfacecolor(self.select_color())
-            print("color: ", line.get_markerfacecolor())
             line.set_markersize(3.0)
             xy.add_line(line)
             maxX = max(x)
@@ -157,43 +159,29 @@ class graphing:
         particleData = particleInfo
         fig = plt.figure(figsize = size, dpi=res)
         xy = fig.add_subplot(111)
-        # print("particleData: ", particleData)
-        # data = [d for d in flowList]
-        # print("flowList: ", flowList)
         data = [d for d in flowList.values()]
         names = [n for n in flowList.keys()]
        
         legend_names = []
         legend_lines = []
-        # print("flow ", len(flowList))
-        # for i in range(len(data)):
         for flow in data:
             x = []
             y = []
-            # if flow != 'Endpoint-3':
-            # print("flow: ", names[i], flow)
+
             element = flow
             
-            # print("goodname")
             name = names[i]
         
-        # print("element: ", element)
-            
             for j in element:
+                
                 x.append(j[0])
                 y.append(j[1])
 
-            # print("fg x : ",x , "y: ", y)
-            # print("lx: ", len(x), "ly: ", len(y))
-
-            # x = list(map(lambda a: print(a), element))
-            # y = list(lambda b: b[0], element)
             line = Line2D(x,y)
             line.set_linestyle("")
             line.set_marker(self.line_markers[1])
             line.set_markeredgewidth(0.0)
             line.set_markerfacecolor(self.select_color())
-            print("color: ", line.get_markerfacecolor())
             line.set_markersize(3.0)
             xy.add_line(line)
             maxX = max(x)
@@ -245,7 +233,6 @@ class graphing:
             line.set_marker(self.line_markers[1])
             line.set_markeredgewidth(0.0)
             line.set_markerfacecolor(self.select_color())
-            print("color: ", line.get_markerfacecolor())
             line.set_markersize(3.0)
             xy.add_line(line)
             maxX = max(x)
@@ -270,65 +257,60 @@ class graphing:
             pass
 
     
-    #temporary testing function to create a csv file and write the average of modifiers on all particles.
-    #to determine normal distribution.
+    #Plot a histogram of all particle modifers undertaken through diffusion/dispersion as particles undergo the simulation.
     def write_modifier_bins(self, filename, values):
 
-        plt.figure()
+        # plt.figure()
         total = 0
         j = 0
         for i in values:
             total += i
             j += 1
         
-        color = self.select_color()
-        plt.hist(values, bins=30, color=color, ec = color, edgecolor='black')
+        # color = self.select_color()
         try:
-            plt.title("Mean: " + str(total / j))
+            # plt.hist(values, bins=60, color=color, ec = color, edgecolor='black')
+            # plt.title("Mean: " + str(total / j))
+            print("Mean of modifiers: ", total / j)
         except:
             pass
-        plt.savefig(filename + '.png', format='png')
+        # plt.savefig(filename + '.png', format='png')
     
-    def write_expel_bins(self, filename, values):
-        plt.figure()
+    #Create a histogram displaying the exit time of all particles that have been expelled from the system. This should closesely replicate the curve created by Dr. Ginn's model.
+    def write_expel_bins(self, filename, mean, var, values):
+        fig = plt.figure()
         total = 0
         j = 0
-        # print("VV: ", values.items())
         newValues = []
-        
+
         for i in list(values.values())[0]:
-            # print("i: ", i)
 
             #Temporarily only allowing particles with expel times past 110 to fit the onepipe model. Contraining to 110+ removes the tail at the beginning of the graph.
-            if i[1] > 100:
-                newValues.append(i[1])
- 
-        # newValues = [i[1] for i in values.items()]
-
-        # print("nv: ", newValues, "\n\n")
-        
-        for i in newValues:
+            # i[ time, age, concentration, id]
+            # if(i[0] > 70):
             # print("i: ", i)
+            newValues.append(i[1])
+ 
+        for i in newValues:
             total += i
             j += 1
-        
-        #Find the highest value in the newValues list.
-        #Multiply it by 0.1 to get the number of bins.
-        # print("newValues: ", newValues)
-        # numBins = int(round(max(newValues) * 0.1, 0))
-        # print("numBins: ", numBins)
+        # topPer = len(newValues) * .2
+        # print("topPer: ", topPer)
+        # topValues = newValues[-int(topPer):]
 
+        # print("len1: ", len(newValues), "len2: ", len(topValues))
+        topValues = newValues
         color = self.select_color()
-        plt.hist(newValues, bins=40, color=color, ec = color, density=True, edgecolor='black')
-        
-        #label the bins in the matplotlib histogram
-        # plt.xticks(np.arange(-3, 3, 1))
-
-        print("total: ", total)
+        try:
+            plt.hist(topValues, bins=60, color=color, ec = color, density=True, edgecolor='black')
+        except Exception as e:
+            raise Exception(e)
 
         try:
-            plt.title("Mean: " + str(total / j))
+            plt.title("Mean: " + str(round(mean, 4)) + "  NP Mean: " + str(round(np.mean(newValues), 4)))
+            fig.text(0.5, 0.04, "Variance: " + str(round(var, 4)) + "  NP Variance: " + str(round(np.var(newValues), 4)), horizontalalignment='center')
         except:
+            print("Error generating mean for expel bins.")
             pass
         plt.savefig(filename + '.png', format='png')
 
@@ -379,6 +361,7 @@ class Driver:
     # updates the time step and related variables to allow for computation on seconds, minutes, or hours.
     def set_time_step(self, option: int):
         step = 60 # setting for seconds
+        # step = float(option)
         if option == 1:
             step = 60
         elif option == 2:
@@ -386,8 +369,8 @@ class Driver:
         elif option == 3:
             step = 1.0 / 60.0
         self.TIME_STEP = step
-        self.ONE_DAY = step * 24 * 60
-        self.HOUR_LENGTH = step * 60
+        self.ONE_DAY = step * 24 * 60 
+        self.HOUR_LENGTH = step * 60 
 
 
     # this function adds an activation for an endpoint according to the activation time indicated.
@@ -472,7 +455,6 @@ class Driver:
     # class. once the initial variables are set, this function runs the simulation loop for the specified duration
     # only runs for preset mode, since the activations are handled differently.
     def sim_preset(self, root, endpoints, instructions, max_time, density):
-        # print("sim preset", max_time)
         endpoints = self.dict_from_endpoints(endpoints)
         # print("e: ", endpoints, "i: ", instructions)
         start_time = None
@@ -484,64 +466,51 @@ class Driver:
             time_since_starts[instruction] = instructions[instruction][0][0]
         
         
-        flowInstructions = copy.deepcopy(instructions) 
-        # print("flow instructions lol ", flowInstructions)    
+        flowInstructions = copy.deepcopy(instructions)     
         for time_step in range(0, max_time):
             for instruction in flowInstructions:
                 try:
                     self.flowList.setdefault(instruction, [])
-                    # print("timestep: ", time_step, "ins: ", instruction, "inin: ", instructions[instruction])
                     if time_step >= flowInstructions[instruction][0][0] and time_step <= flowInstructions[instruction][0][1]:
-                        # print("append", flowInstructions[instruction][0][2])
                         self.flowList[instruction].append([time_step, flowInstructions[instruction][0][2]])
                     elif time_step > flowInstructions[instruction][0][1]:
-                        # pass
-                        # print("pop")
                         flowInstructions[instruction].pop(0)
                         self.flowList[instruction].append([time_step, instructions[instruction][0][2]])
-                except: 
-                    print("exception")
+                
+                except Exception as e: 
+                    # print("exception", e)
                     pass
+        # print("flowlist", self.flowList)
 
         for time_step in range(0, max_time):
-            # print("its: ", instructions[time_step])
             start_time = self.progress_update(start_time, max_time, time_step)
             # TODO: multiprocessing
             for key in keys:
                 # print("key:", key)
                 endpoint = endpoints[key]
                 actions = instructions[key]
-        
+
                 if time_step >= time_since_starts[key]:
                     if key not in time_since:
                         time_since[key] = 0
                     else: 
                         time_since[key] += 1 
 
-                # print("ep:", endpoint.flowRate)
-                # print("a: ", actions, "\n")
-                # if endpoint.flowRate:
-                #     self.flowList.append(endpoint)
-
-                # for i in range(len(actions)):
-                #     self.flowList.append(actions[0][2]) 
-                # print(actions)
                 if len(actions) > 0:
                     first_action = actions[0]
 
                     if time_step == first_action[0]:
                         first_action = actions.pop(0)
-                        print("fa: ", first_action[2])
                         length = first_action[1] - first_action[0]
                         self.add_activation(key, length)
                         if not endpoint.isActive:
                             endpoint.activate_pipes(first_action[2])
-        
+
                         else:
                             endpoint.update_flow_rate(first_action[2])
                 else:
                     pass
-            # print("root active?", root.isActive, time_step)
+
             if root.isActive:
                 self.manager.add_particles(density, root, time_since)
             
@@ -549,14 +518,6 @@ class Driver:
             for endpoint in endpoints.values():
                 self.sim_endpoint_preset(endpoint)
             self.counter.increment_time()
-        
-        # print("flowlist init: ", self.flowList)
-
-        # print("FL:", len(self.flowList))
-
-            # root.timeStep += 1
-            # print("Root time step: ", root.timeStep)
-            # print(root.length)
 
     # this function prints to the console with statistics about the simulation and the current simulation speed.
     # it also communicates with the display classes via message passing, allowing for
@@ -573,7 +534,10 @@ class Driver:
         if second % 1000 == 0 and second > 0:
             end_time = time.time()
             elapsed = end_time - start_time
-            line1 = "Simulating " + self.mode_name.get(self.mode) + " " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
+            print("second: ", type(second), "max_time: ", type(max_time), "elapsed: ", type(elapsed))# "mode: ", type(self.mode_name.get(self.mode)))
+            line1 = "Simulating " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
+            # line1 = "Simulating " + self.mode_name.get(self.mode) + " " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
+            # line1 = "Simulating " + self.mode_name.get(self.mode) + " " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
             message += line1
             pipe_particles = len(self.manager.particleIndex)
             expelled_particles = len(self.manager.expendedParticles)
@@ -637,7 +601,6 @@ class Driver:
         ageDict = {}
         endpointNames = [endpoint.name for endpoint in self.endpoints]
         # names = particleAges.keys()
-        print("endpointNames: ", endpointNames)
         for key in particles:
             particle = particles[key]
             data = particle.getOutput()
@@ -668,6 +631,7 @@ class Driver:
             output.write("pipe model file: " + arguments.modelfile + "\n")
             output.write("flow preset file: " + arguments.presetsfile + "\n")
             output.write("d_m: " + str(self.manager.d_m) + "\n")
+            output.write("d_inf: " + str(self.root.d_inf) + "\n")
             output.write("granularity: " + str(self.mode_name.get(self.mode)) + "\n")
             output.write("time: ")
             output.write(str(self.counter.get_time()) + "\n")
@@ -797,7 +761,7 @@ class Driver:
         if(self.manager.diffusionActive):
             g.write_modifier_bins(logpath + "./static/plots/histogram.png", self.manager.bins)
 
-    #this function executes the simulation in random mode. It first establishes flow rates and other simulation variables.
+    #this function executes the simulation in random mode. It first establishes flow rates and other simulation variables. 
     def exec_randomized(self, arguments: execution_arguments):
         modelfile = arguments.modelfile
         pathname = arguments.pathname
@@ -842,7 +806,7 @@ class Driver:
         send = ("status_completed", "Simulation complete.")
         self.Queue.put(send)
 
-    #this function executes the simulation in preset mode. This changes how pipes are activated and enables different
+    # This function executes the simulation in preset mode. This changes how pipes are activated and enables different
     # flow rates for each activation.
     def exec_preset(self, arguments: execution_arguments):
         try:
@@ -850,9 +814,7 @@ class Driver:
             presetsfile = arguments.presetsfile
             density = arguments.density
             pathname = arguments.pathname
-            # self.manager.molecularDiffusionCoefficient = arguments.molecularDiffusionCoefficient
             self.manager.diffusionActive = arguments.diffuse
-            # self.controller.event_generate("<<sim_started>>", when = "tail")
             send = ("status_started", "Simulation started.")
             self.Queue.put(send)
 
@@ -864,10 +826,7 @@ class Driver:
                 raise Exception("Error building model. Check model file for errors. [" + str(e) + "]")
             
             self.Queue.put(send)
-            
-            #self.controller.preview_manager.start(self.root, self.manager)
-            # send = ("start_preview", tree_model)
-            # self.Queue.put(send)
+      
             try:
                 maxTime, instructions = builder.load_sim_preset(presetsfile)
                 maxTime, instructions = self.parse_instructions(maxTime, instructions)
@@ -888,26 +847,52 @@ class Driver:
                 g.graph_age(self.manager.expelledParticleData, self.counter, self.flowList, pathname)
             except Exception as e:
                 raise Exception("Error generating graphs. [" + str(e) + "]") 
-
+            
             try:        
                 self.write_output(pathname+"\expelled.csv", self.manager.expendedParticles)
                 self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
                 self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
+                # start timing
+                time_1 = time.time()
+
                 if self.manager.diffusionActive:
                     g.write_modifier_bins(".\static\plots\modifier_histogram", self.manager.bins)
-                    g.write_modifier_bins(pathname + "\modifier_histogram", self.manager.bins)
-                g.write_expel_bins(pathname+"\expelled_histogram", self.manager.expelledParticleData)
-                g.write_expel_bins(".\static\plots\expelled_histogram", self.manager.expelledParticleData)
+                    # g.write_modifier_bins(pathname + "\modifier_histogram", self.manager.bins)
+
+              
+                #Calculating mean, var, and skew to be added to the histogram of expelled particles. Designed to validate values of onpipe model.
+            
+                fr = list(self.flowList.values())[0][0][1]
+                lengthFeet = self.root.length / 12
+                areaFeet = math.pi * math.pow((self.root.radius / 12), 2)
+                frCFS = fr / 448.309
+                velocity = (frCFS / areaFeet) * 60
+                mean = lengthFeet / velocity
+                var = (2 * lengthFeet * (self.manager.molecularDiffusionCoefficient /144)) / math.pow(velocity, 3)
+                skew = 3 * math.sqrt((2 * (self.manager.molecularDiffusionCoefficient /144)) / (lengthFeet * velocity))
+                mean *= self.TIME_STEP
+                time_end1 = time.time() - time_1
+                time_2 = time.time()
+                g.write_expel_bins(pathname+"\expelled_histogram", mean, var, self.manager.expelledParticleData)
+                g.write_expel_bins(".\static\plots\expelled_histogram", mean, var,  self.manager.expelledParticleData)
+                time_end2 = time.time() - time_2
+                time_3 = time.time()
                 ageDict = self.write_pipe_ages(self.manager.expendedParticles, pathname+"\pipe_ages.csv")
+                time_end3 = time.time() - time_3
+                time_4 = time.time()
                 self.write_run_data(pathname+"\sim_data.txt", arguments)
+                time_end4 = time.time() - time_4
+                time_5 = time.time()
                 self.root.generate_tree()
                 self.root.show_tree(pathname + "/tree_graph.png", ageDict)
+                time_end5 = time.time() - time_5
+                print("1: " + str(time_end1), "2: " + str(time_end2), "3: " + str(time_end3), "4: " + str(time_end4), "5: " + str(time_end5))
             except Exception as e:
                 raise Exception("Error writing output files. Check uploaded files for errors and ensure that the output directory is not open in another program. [" + str(e) + "]" )
             # tree_model.render(".\static\plots\pipe_tree.png")
             # self.controller.event_generate("<<sim_finished>>", when = "tail")
             send = ("status_completed", "Simulation complete.")
-            self.Queue.put(send)
+            self.Queue.put(send) 
         except Exception as e:
             raise Exception(e)
         

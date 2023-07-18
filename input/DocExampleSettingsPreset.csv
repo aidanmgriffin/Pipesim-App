@@ -1,2 +1,0 @@
-Path of Pipes File,Flows Preset File,Density [0-1],Diffusion Status [Yes/No],Molecular Diffusion Coefficient,Granularity
-examples\build-simulation-examples\docexample\example-model.csv,examples\build-simulation-examples\docexample\example-preset.csv,0.5,Yes,2.14,Minutes

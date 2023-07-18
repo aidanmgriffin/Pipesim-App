@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!--<h3 id="index-heading">Python Pipe Simulation Modeling</h3>-->
+
+<div class="main-content">
+
+    <div class="foreground-image-block">
+        <img src="static/images/wsu-campus.jpg" class="img-fluid" alt="Responsive image">
+
+        <div class="foreground-spacer-block"></div>
+    </div>
+    <div class="main-content">
+        <h1 id="get-started"> Get Started </h1>
+        <h5>Welcome to the PipeSim Pythons Web App. Read our <a href="{{url_for('documentation')}}">Documentation</a>,
+            or
+            click the "Upload" button to get started.</h5>
+        <!--<a class="btn btn-primary" href="{{url_for('documentation')}}" role="button">Documentation</a>-->
+        <br />
+        <a class="btn btn-dark" href="{{url_for('upload')}}" role="button">Upload</a>
+        <br /><br />
+        <p>Check out our <a href="https://github.com/aidanmgriffin/Pipesim-App">Github!</a></p>
+        <!-- <div class="foreground-spacer-block"></div> -->
+        <br />
+       
+    </div>
+
+</div>
+
+{% endblock %}

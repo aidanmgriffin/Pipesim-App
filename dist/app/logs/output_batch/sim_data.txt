@@ -1,0 +1,7 @@
+run data
+pipe model file: input\PACCAR-kitchens-extended.csv
+flow preset file: input\PACCAR-kitchens-presets.csv
+d_m: 0.01946
+d_inf: 0.01946
+granularity: minute
+time: 1007

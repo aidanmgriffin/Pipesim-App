@@ -5,7 +5,8 @@ import driver
 # import numpy as np
 # from functools import partial
 # import threading
-from multiprocessing import Queue, Process, Pool, Event, Manager
+from multiprocessing import Queue, Process
+import multiprocessing #, Manager
 import os
 # import datetime
 import csv
@@ -164,8 +165,8 @@ class simulation_window():
             self.step_var = self.options[contents[0][5]]
             self.set_step_time()
             self.generate_path()
-            manager = Manager()
-            exception_holder = manager.Namespace()
+            # manager = Manager()
+            # exception_holder = manager.Namespace()
             simulator = driver.Driver(self.Queue, step = self.step_size)
 
             # print(" pathname : ", self.outputLocation)
@@ -176,13 +177,14 @@ class simulation_window():
                                                    density= float(contents[0][2]), pathname=self.outputLocation,
                                                    diffuse=self.diffusion_status, molecularDiffusionCoefficient= float(contents[0][4]))
             
-            sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, exception_holder, arguments))
+            sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, arguments))
+            # sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, exception_holder, arguments))
             
             sim.start()
             sim.join()
 
-            if hasattr(exception_holder, 'exception'):
-                raise exception_holder.exception
+            # if hasattr(exception_holder, 'exception'):
+            #     raise exception_holder.exception
             
             if sim.exitcode == 0:
                 return([1, self.diffusion_status])
@@ -196,7 +198,6 @@ class simulation_window():
         valid = True
         f1 = None
         f2 = None
-       
         try:
             f1 = open(file1)
             f1.close()
@@ -217,11 +218,11 @@ class simulation_window():
             valid = False
         self.step_var = self.options[granularity]
         self.set_step_time()
-        manager = Manager()
+        
+        manager = multiprocessing.Manager()
         exception_holder = manager.Namespace()
 
-        molecular_diffusion_coefficient = molecular_diffusion_coefficient  #/ self.step_var
-
+        # molecular_diffusion_coefficient = molecular_diffusion_coefficient  #/ self.step_var
         if valid:
             self.generate_path()
             simulator = driver.Driver(self.Queue, step = self.step_size)
@@ -327,12 +328,12 @@ class simulation_window():
             #self.parent.random_simulation_handler(configuration)
 
 # starts main window thread
-def main():
-    sim = simulation_window()
-    sim.start()
+# def main():
+#     sim = simulation_window()
+#     sim.start()
 
-# executes when python is run from the command line or executed.
-if __name__ == "__main__":
-    main()
+# # executes when python is run from the command line or executed.
+# if __name__ == "__main__":
+#     main()
 
 

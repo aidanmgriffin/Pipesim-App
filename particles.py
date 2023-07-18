@@ -1,7 +1,7 @@
 #1/23 todo: calculate histogram for all particles.
 
 
-import numpy as np
+# import numpy as np
 import math
 import copy
 import random
@@ -14,7 +14,7 @@ from multiprocessing import cpu_count
 # from ete3.treeview.faces import TextFace
 # from multiprocessing import Lock
 # import multiprocessing as mp
-# from multiprocessing import Pool, Process
+from multiprocessing import Pool, Process
 # from multiprocessing.pool import ThreadPool
 # import threading
 # import time
@@ -55,6 +55,7 @@ class counter:
 
 class ParticleManager():
     def __init__(self, time):
+
         # global variables to track number of particles generated. Each particle is given a unique particle ID based on this number.
         # it should not be decremented if we want an accurate count of the number of particles generated. Note it is redundant
         # to create more than one particle per second at the root.
@@ -73,7 +74,8 @@ class ParticleManager():
         self.time = time
         self.time.reset()
         self.tolerance = math.pow(2, -16)
-        self.process_max = cpu_count()
+        # self.process_max = cpu_count()
+        # print("process max: ", self.process_max)
         self.timeStep: int = 60
         self.molecularDiffusionCoefficient: float = None #stores molecular diffusion coefficient.
         # self.infDiffusionCoefficient: float = None #stores d_inf coefficient.
@@ -87,6 +89,11 @@ class ParticleManager():
         self.pipeString: str = ""
         self.edgeList: list = []
         self.endpointList: list = []
+
+        self.rootarea = 0
+        self.rootflow = 0
+        self.newpos = 0
+        self.rootlength = 0
 
         #self.pool = cf.ProcessPoolExecutor(max_workers = self.process_max)
 
@@ -103,7 +110,7 @@ class ParticleManager():
 
     def setDiffusionCoefficient(self, diffusionCoefficient: float):
         self.molecularDiffusionCoefficient = float(diffusionCoefficient)
-        self.d_m = self.molecularDiffusionCoefficient # / self.timeStep
+        self.d_m = self.molecularDiffusionCoefficient / self.timeStep
         # self.d_m = 2.14
         # print("dm : ", self.d_m)
 
@@ -125,24 +132,26 @@ class ParticleManager():
         # logfile.write("update\n")
         # print("Updating particles", time_since, "time: ", counter.get_time())
         self.time_since = time_since
-        #pool = Pool(processes = cpu_count())
+        # pool = Pool(self.process_max)
         index = self.particleIndex.copy()
         particles = list(index.values())
         #start = time.time()
         # the following line is slow or deadlocks
-        #particlePositions = self.pool.map(self.update_caller, particles)
+        # rval = pool.imap(self.update_caller, particles)
         # the following line is fast
+
         rval = map(self.update_caller, particles)
+
         # particles[0].age += 1
         # try:
-        #     print("particles 0 age: ", particles[0].age)
+            # print("particles 0 age: ", particles[0].age)
         # except:
         #     pass
         #elapsed = time.time()
         #elapsed = elapsed - start
         #print("particle updates completed in ", elapsed, "seconds.")
-        #pool.close()
-        #pool.join()
+        # pool.close()
+        # pool.join()
         self.particlePositions = self.particle_update_helper(rval)
         if self.time.get_time() % 1000 == 999:
             self.update_particle_info()
@@ -171,8 +180,10 @@ class ParticleManager():
         if particles == None:
             self.particlePositions[root.name] = particles = []
         if len(particles) < 1:
-            freeChlorineInit = 0.0
+            freeChlorineInit = 1.0
             min_distance = root.length
+            # min_distance = 0
+            # min_distance = min(part.position for part in particles)
             
         else:
             min_distance = min(part.position for part in particles)
@@ -250,7 +261,7 @@ class Particle:
     # the update function increments the particle age and increments contact record according to the current container
     # material type. If the particle container is active (flowing) then calls the movement function to compute particle flow.
     def update(self):
-        # self.age += 1
+        self.age += 1
         # print("age: ", self.age, "time: ", self.manager.time.get_time())
         timeStep = self.manager.timeStep
         #lambda will change depending on the pipe it is in (area and material)
@@ -278,6 +289,8 @@ class Particle:
         
         self.ages.setdefault(containerName, 0)
         self.ages[containerName] += 1
+
+        # self.age += 1
         # Originally checks if container is active (water is flowing) before checking diffusion value. With issue 165
         # this is reversed. If diffusion is active then dispersion function will be called in lieu of movement. 
         # (The two are similar, but dispersion includes diffusive activity.)
@@ -292,7 +305,7 @@ class Particle:
 
         
         
-        self.age += 1
+        # self.age += 1
         
         return containerName, self
     
@@ -334,7 +347,6 @@ class Particle:
                 particleInfo.append(self.age)
                 particleInfo.append(self.freechlorine)
                 particleInfo.append(self.ID)
-                print("fc: ", self.freechlorine)
                 if self.manager.expelledParticleData.get(self.container.name) is None:
                     self.manager.expelledParticleData[self.container.name] = []
                 dataset = self.manager.expelledParticleData.get(self.container.name)
@@ -398,16 +410,17 @@ class Particle:
         
         return self.container.name
 
-#Advection, diffusion-dispersion during flow events.
+    #Advection, diffusion-dispersion during flow events. Combines movement of particle with diffusive actions. Calculates age of particle through each flow event.
+
     def disperse(self):
         global writer
         global logfile
 
         remainingTime = 1
         containerName = self.container.name
+        area = self.container.area
         while remainingTime > self.manager.tolerance:  # calculate particle movement until flow consumes available time (1 second)
             if self.container.type != "endpoint":
-                # logfile.write("movin " +  str(counter.get_time()) + "\n")
                 flow = self.container.flow * remainingTime
 
                 flow_endpoint_list = list(self.manager.time_since.keys())
@@ -418,42 +431,25 @@ class Particle:
                 else:
                     min_t = (counter.get_time() - (counter.get_time() - self.age))
                 
-                # d_inf = 0.01946
-                # alpha = 114
-                # print("container vals: ", self.container.d_inf, self.container.alpha)
-
-                # 5/24 Adding division by timeStep
-                d_inf = self.container.d_inf #/ self.manager.timeStep # Set to 0.01946 in initial integration.
-                alpha = self.container.alpha #/ self.manager.timeStep # set to 114 in initial integration
-                # print(alpha)
-                d_m = self.d_m #/ self.manager.timeStep
-
-                # print("d_M: ", d_m)
-                # diffusion_rate_i = (d_inf - d_m) * (1 - math.exp((-min_t / 114))) + d_m
+                d_inf = self.container.d_inf 
+                alpha = self.container.alpha 
+                d_m = self.d_m 
+                
+                #Diffusion rate for particle i during the kth flow event considering the d_inf and d_m values for the pipe segment.
                 diffusion_rate_i = (d_inf - d_m) * (1 - math.exp((-min_t / alpha))) + d_m
-                # logfile.write(str(d_inf - d_m) + "d_i " + str(diffusion_rate_i) + " \n")
-                # Aidan and Tim's waste of time integration 2/22/23
-                #  d_time = (asymptotic_diffusion_rate - diffusion_rate) * (-1 + 2 * factor_scale * math.exp(-self.container.timeStep/(2 * factor_scale))) + (asymptotic_diffusion_rate * self.container.timeStep) #integrated 2/22
-                # d_time = asymptotic_diffusion_rate
 
                 # initialize with a random seed for added randomness
-                # avg_distance = 4 * diffusion_rate_i * self.manager.timeStep #Taken out the time step for running in minutes. #D_time is the integral of D / flowtime
-                avg_distance = 4 * diffusion_rate_i #Taken out the time step for running in minutes. #D_time is the integral of D / flowtime
+                avg_distance = 4 * diffusion_rate_i 
                 generator = random.Random()
                 standard_dev = math.sqrt(avg_distance)
                 modifier = generator.normalvariate(mu=0.0, sigma=standard_dev)
-                # logfile.write("avg_distance: " + str(avg_distance) + "id: " + str(self.ID) + "modifier: " + str(modifier) + "timestep: " + str(counter.get_time()) + "time_since: " + str(min_t) + "timestep" + str(self.manager.timeStep) + "\n")
-
-                # logfile.write("modifier : " + str(modifier) + " id : " + str(self.ID) + " \n")
                 position = self.position + modifier
                 newPosition = (flow * (CUBIC_INCHES_PER_GALLON / self.container.area)) + position
                 if newPosition > self.container.length:
-                    # travelledDistance = newPosition - self.container.length
                     travelledDistance = self.container.length - self.position
                     partialFlow = remainingTime * (travelledDistance / CUBIC_INCHES_PER_GALLON) * self.container.area
                     elapsedTime = partialFlow / flow
                     remainingTime = remainingTime - elapsedTime
-
                 else:
                     travelledDistance = newPosition - position
                     remainingTime = 0
@@ -463,21 +459,26 @@ class Particle:
                     self.container = self.container.select_child()
                     self.position = 0 
                     containerName = self.container.name
+                    
+                self.manager.prevFlow = self.container.flow
+                self.manager.prevArea =   math.pi * (1/2)**2
+                self.manager.newpos = newPosition
+                if self.container.length > 0:
+                    self.manager.prevLength = self.container.length
                 
             elif self.container.type == "endpoint":
                 particleInfo = []
                 time = self.manager.time.get_time()
                 particleInfo.append(time)
                 expelledTime = self.age + (1 - remainingTime)
-                # logfile.write("expelled: " + str(expelledTime) + " age: " + str(self.age) + " remaining time: " + str( 1 - remainingTime) + " current time: " + str(counter.get_time()))
 
-
+                # Remove the time that the particle has been accounted for while being expelled from the system. The length, flow, and area of the endpoint is irrelevant and not used in the calculation.
+                em = ( self.manager.newpos - self.manager.prevLength) / (self.manager.prevFlow / self.manager.prevArea) 
+                expelledTime -= em
                 self.age = expelledTime
-                # print(expelledTime)
                 particleInfo.append(self.age)
                 particleInfo.append(self.freechlorine)
                 particleInfo.append(self.ID)
-                # logfile.write("fCd: " + str(self.freechlorine) + "\n")
                 if self.manager.expelledParticleData.get(self.container.name) is None:
                     self.manager.expelledParticleData[self.container.name] = []
                 dataset = self.manager.expelledParticleData.get(self.container.name)
@@ -488,10 +489,6 @@ class Particle:
                 
                 break
 
-            
-        
-        
-            # writer.writerow([self.ID, position, modifier])
             self.manager.bins.append(modifier)
                
         return containerName
@@ -591,24 +588,17 @@ class pipe:
         self.radius = self.width / 2
         self.material: str = material
         self.parent: pipe = parent
-        # print("before ", d_inf)
         self.d_inf: float = d_inf / self.manager.timeStep # Set to 0.01946 in initial integration.
         self.alpha: float = alpha / self.manager.timeStep # set to 114 in initial integration
-        # self.d_m: float = float(self.manager.molecularDiffusionCoefficient) #/ self.manager.timeStep
-        # print("after ", self.d_inf)
         self.lambdaval: float = lambdaval
-        self.area: float = np.pi * math.pow((self.radius), 2) #cross-sectional-area
+        self.area: float = math.pi * math.pow((self.radius), 2) #cross-sectional-area
         self.children: list[pipe] = []
         self.isActive = False
         self.activity = 0
         self.type = "pipe"
         self.flowRate: int = 0  # gallons per minute
-        self.flow: np.long = 0  # gallons per time unit
+        self.flow: float = 0  # gallons per time unit
         pipeIndex[self.name] = self
-
-        # self.d_inf = self.container.d_inf / self.manager.timeStep # Set to 0.01946 in initial integration.
-        # self.alpha = self.container.alpha / self.manager.timeStep # set to 114 in initial integration
-        # self.d_m = self.d_m / self.manager.timeStep
 
         # self.timeSpent = 1
         # pipe no longer tracks member particles
@@ -689,9 +679,7 @@ class pipe:
     # create a graphical representation of the model.
     def generate_tree(self):
         if self.children is not None:
-            # print("self: " + self.name + " children: " + str(len(self.children)))
             for child in self.children:
-                # print("child: " + child.name, child.type)
                 if child is not None and child.type != "endpoint":
                     level = [self.name, child.name]
                     self.manager.edgeList.append(level)
@@ -724,15 +712,14 @@ class pipe:
         g = Graph(edges = self.manager.edgeList)
         pipeEdges.pop(0)
         ages = [0.0] * len(pipeEdges)
-        print("pipeEdges: ", pipeEdges, "ageDict: ", ageDict)
+        # print("pipeEdges: ", pipeEdges, "ageDict: ", ageDict)
         for entry in ageDict.keys():
             ages[pipeEdges.index(entry)] = round(ageDict[entry][0] / ageDict[entry][1], 2)
         
         x = 0
-        print("endpoints: ", self.manager.endpointList, "Pipe Edges: ", pipeEdges, "el: ", self.manager.edgeList)
+        # print("endpoints: ", self.manager.endpointList, "Pipe Edges: ", pipeEdges, "el: ", self.manager.edgeList)
         
         for i in range(1, len(pipeEdges) + 1):
-                print("i: ", i, "degree: ", g.degree(i))
                 if(g.degree(i) == 1):
                     g.vs(i)["label"] = self.manager.endpointList[x]
                     g.vs(i)["color"] = "blue"
