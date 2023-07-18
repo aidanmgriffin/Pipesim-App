@@ -118,8 +118,6 @@ def upload():
             # Validate that granularity option is selected. If none is selected, default to minutes.
             # In case of no selection, error will be shown to the user.
             try:
-                # granularity = request.values['granularityCustom']
-
                 req_radio = request.values['inlineRadioOptions']
             except:
                 alertDanger.message = "Granularity option not selected."
