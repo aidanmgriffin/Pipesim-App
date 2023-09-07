@@ -193,7 +193,7 @@ class simulation_window():
         
     # function validates file name input for the two preset configuration files and (if valid)
     # launches the simulation in preset mode.
-    def preset_simulation_button_handler(self, file1, file2, density1, diffusion_status, molecular_diffusion_coefficient, granularity):
+    def preset_simulation_button_handler(self, file1, file2, density1, diffusion_status, stagnant_diffusion_status, advective_diffusion_status, molecular_diffusion_coefficient, granularity):
         density = None
         valid = True
         f1 = None
@@ -228,7 +228,7 @@ class simulation_window():
             simulator = driver.Driver(self.Queue, step = self.step_size)
             arguments = driver.execution_arguments(settingsfile = None, modelfile=file1, presetsfile=file2,
                                                    density=density, pathname=self.outputLocation,
-                                                   diffuse=diffusion_status, molecularDiffusionCoefficient=molecular_diffusion_coefficient)
+                                                   diffuse=diffusion_status, diffuse_stagnant =stagnant_diffusion_status, diffuse_advective = advective_diffusion_status, molecular_diffusion_coefficient=molecular_diffusion_coefficient)
             
             sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset,exception_holder, arguments))
 

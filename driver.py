@@ -28,9 +28,11 @@ class execution_arguments:
                  activation_range = None,
                  length = None,
                  density = None,
-                 molecularDiffusionCoefficient = None,
-                 instructions = None,
-                 diffuse: bool = False):
+                 diffuse: bool = False,
+                 diffuse_stagnant: bool = False,
+                 diffuse_advective: bool = False,
+                 molecular_diffusion_coefficient = None,
+                 instructions = None):
         self.settingsfile = settingsfile
         self.modelfile = modelfile
         self.presetsfile = presetsfile
@@ -39,9 +41,11 @@ class execution_arguments:
         self.activation_range = activation_range
         self.length = length
         self.density = density
-        self.molecularDiffusionCoefficient = molecularDiffusionCoefficient
+        self.molecularDiffusionCoefficient = molecular_diffusion_coefficient
         self.instructions = instructions
         self.diffuse = diffuse
+        self.diffuse_advective = diffuse_advective
+        self.diffuse_stagnant = diffuse_stagnant
         self.plt = None
 
 # The graphing functionality has been broken into it's own class to make it easier to call the graphing functions multiple times with different parameters.
@@ -462,9 +466,11 @@ class Driver:
         
         time_since = {}
         time_since_starts = {}
+        # print("1")
         for instruction in instructions:
             time_since_starts[instruction] = instructions[instruction][0][0]
         
+        # print("2")
         
         flowInstructions = copy.deepcopy(instructions)     
         for time_step in range(0, max_time):
@@ -481,11 +487,13 @@ class Driver:
                     # print("exception", e)
                     pass
         # print("flowlist", self.flowList)
+        # print("3")
 
         for time_step in range(0, max_time):
             start_time = self.progress_update(start_time, max_time, time_step)
             # TODO: multiprocessing
             for key in keys:
+                # print("4")
                 # print("key:", key)
                 endpoint = endpoints[key]
                 actions = instructions[key]
@@ -511,13 +519,19 @@ class Driver:
                 else:
                     pass
 
+            # print("5")
             if root.isActive:
                 self.manager.add_particles(density, root, time_since)
-            
+            # print("6")
             self.manager.update_particles(time_since)
+            # print("6.25")
             for endpoint in endpoints.values():
                 self.sim_endpoint_preset(endpoint)
             self.counter.increment_time()
+            # print("7")
+
+        # print("4")
+
 
     # this function prints to the console with statistics about the simulation and the current simulation speed.
     # it also communicates with the display classes via message passing, allowing for
@@ -815,6 +829,9 @@ class Driver:
             density = arguments.density
             pathname = arguments.pathname
             self.manager.diffusionActive = arguments.diffuse
+            self.manager.diffusionActiveStagnant = arguments.diffuse_stagnant
+            self.manager.diffusionActiveAdvective = arguments.diffuse_advective
+
             send = ("status_started", "Simulation started.")
             self.Queue.put(send)
 

@@ -31,14 +31,29 @@ def create_node(np, manager):
     isEnd = np[6]
     d_inf = float(np[7])
     alpha = float(np[8])
-    lambdaval = float(np[9])
+    try:
+        freeChlorineLambda = float(np[9])
+    except: freeChlorineLambda = 0
+    try: 
+        monochloramineLambda = float(np[10])
+    except: monochloramineLambda = 0
+    try:
+        hypochlorousAcidLambda = float(np[11])
+    except: hypochlorousAcidLambda = 0
+    try:
+        doc1Lambda = float(np[12])
+    except: doc1Lambda = 0   
+    try: 
+        doc2Lambda = float(np[13])
+    except: doc2Lambda = 0
+
     if parent == "NONE" or isRoot == "TRUE":
         parent = None
     if isEnd == "TRUE":
         node = particles.endpoint(parent, name, manager)
         endpointStatus = True
     else:
-        node = particles.pipe(name, length, width, np[1], parent, d_inf, alpha, lambdaval, manager)
+        node = particles.pipe(name, length, width, np[1], parent, d_inf, alpha, manager,    freeChlorineLambda, monochloramineLambda, hypochlorousAcidLambda, doc1Lambda, doc2Lambda)
     return node, endpointStatus
 
 # this function performs a tree search beginning at the root on the network

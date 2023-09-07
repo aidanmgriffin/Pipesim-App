@@ -51,6 +51,11 @@ def documentation():
 def learn_more():
     return render_template("learn_more.html")
 
+#route to expiremental html5 canvas
+@app.route('/canvas')
+def canvas():
+    return render_template("canvas.html")
+
 ALLOWED_EXTENSIONS = set(['csv'])
 
 def allowed_file(filename):
@@ -143,6 +148,17 @@ def upload():
             else:
                 diffusion_status = 0
             
+            if('flexCheckStagnant' in request.values):
+                stagnant_diffusion_status = 1                    
+            else:
+                stagnant_diffusion_status = 0
+            
+            if('flexCheckAdvective' in request.values):
+                advective_diffusion_status = 1                    
+            else:
+                advective_diffusion_status = 0
+            
+            
             molecular_diffusion_coefficient = request.values['molecular-diffusion-coefficient']
             if any(char.isdigit() for char in molecular_diffusion_coefficient):
                 pass
@@ -183,7 +199,7 @@ def upload():
             # errors involving the input files, and errors involving the simulation itself.
             try:
                 output_file = 0
-                output_file = sim.preset_simulation_button_handler(pipes_save_location, flows_save_location, density, diffusion_status, molecular_diffusion_coefficient, granularity)
+                output_file = sim.preset_simulation_button_handler(pipes_save_location, flows_save_location, density, diffusion_status, stagnant_diffusion_status, advective_diffusion_status, molecular_diffusion_coefficient, granularity)
             except Exception as e:
                 alertDanger.message = e
                 raise Exception
