@@ -36,7 +36,7 @@ class simulation_window():
         # particlelogfile = "SingleParticle.csv"
         # particlelogfile = open(particlelogfile, 'w')
 
-        self.options = {"Seconds":1, "Minutes":2, "Hours":3}
+        self.options = {"Seconds":1, "Minutes":2, "Hours":3, "Custom":4}
         self.step_size = 1
         self.step_var = 1
 
@@ -160,7 +160,7 @@ class simulation_window():
             else:
                 self.diffusion_status = False
                 
-            self.options = {"Seconds":1, "Minutes":2, "Hours":3}
+            self.options = {"Seconds":1, "Minutes":2, "Hours":3, "Custom":4}
             #self.step_var.set(self.options[contents[0][5]])
             self.step_var = self.options[contents[0][5]]
             self.set_step_time()
@@ -216,9 +216,11 @@ class simulation_window():
         except:
             # tm.showerror(title = "Error", message = "Invalid argument: non-numeric density")
             valid = False
-        self.step_var = self.options[granularity]
-        self.set_step_time()
-        
+        # self.step_var = self.options[granularity]
+        # self.set_step_time()
+        print("granularity: ", granularity)
+        self.step_size = granularity
+
         manager = multiprocessing.Manager()
         exception_holder = manager.Namespace()
 

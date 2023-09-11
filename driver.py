@@ -65,7 +65,7 @@ class graphing:
         for no_vis_color in ["white", "w", "snow", "whitesmoke", "seashell", "floralwhite", "ivory", "ghostwhite", "xkcd:pale lilac"]:
             self.line_colors.remove(no_vis_color)
         self.mode = mode
-        self.mode_name = {1:"Seconds", 2:"Minutes", 3:"Hours"}
+        self.mode_name = {-1:"Seconds", -2:"Minutes", -3:"Hours", 4: "Custom"}
 
 
     # returns a random color from among the available color options (all named colors in matplotlib.colors)
@@ -142,6 +142,8 @@ class graphing:
         xy.legend(legend_lines, legend_names)
         xy.set_ylim(0, maxAge * 1.1)
         xy.set_xlim(0, counter.get_time())
+        if self.mode > 0:
+            self.mode = 4
         xy.set_xlabel("Simulation Time ({})".format(self.mode_name.get(self.mode)))
         xy.set_ylabel("Expelled Particle Age ({})".format(self.mode_name.get(self.mode)))
         try:
@@ -357,7 +359,7 @@ class Driver:
         self.actives = None # list of active endpoints
         self.set_time_step(step)
         self.mode = step
-        self.mode_name = {1:"second", 2:"minute", 3:"hour"}
+        self.mode_name = {1:"second", 2:"minute", 3:"hour", 4: "custom"}
         self.flowList = {}
         # self.modelfile = None
         # self.presetsFile
@@ -366,12 +368,17 @@ class Driver:
     def set_time_step(self, option: int):
         step = 60 # setting for seconds
         # step = float(option)
-        if option == 1:
+        if option == -1:
             step = 60
-        elif option == 2:
+        elif option == -2:
             step = 1
-        elif option == 3:
+        elif option == -3:
             step = 1.0 / 60.0
+        else: 
+            print("option: ", option)
+            step = 1.0 / float(option)
+            print("step: ", step)
+
         self.TIME_STEP = step
         self.ONE_DAY = step * 24 * 60 
         self.HOUR_LENGTH = step * 60 

@@ -305,14 +305,71 @@
       </table>
 
       <div class="alert alert-secondary align-middle" role="alert">
-        <h1><i class="bi bi-exclamation"></i> <span class = "align-middle">Note that a pipe must appear after it's parent pipe in the pipe network file. </span></h1>
+        <h1><i class="bi bi-exclamation"></i> <span class = "align-middle">The first row of the pipe network spreadsheet must describe the root of the pipe network. </span></h1>
       </div>
       
       <p>The columns of this table describe the following: </p>
       <strong>Name </strong>
       <p>The name of an individual pipe. Each name must be unique. </p>
 
+      <strong>Material </strong>
+      <p>The Material of the given pipe.</p>
+
+      <p> Pipes with the same material type must be given the same name. The program will group pipes by material type in order to measure residence times by material.</p>
+        
+       <p> If describing an endpoint, input "NONE" into the pipe's corresponding material cell. </p>
+
+      <strong>Width </strong>
+      <p>The width of the given pipe in inches. </p>
+     
+      <strong>Length </strong>
+      <p>The length of the given pipe in feet.</p>
+
+      <strong>Parent </strong>
+      <p>The name of the pipe that is the parent of the given pipe. Multiple pipes may be connected to the same parent. Each individual pipe must have a single parent. </p>
+
+      <p>If describing the root of a pipe network, input "NONE" into the pipe's corresponding parent cell. This row must be the first of the spreadsheet. </p>
+
+      <p>Note that each pipe must appear below its parent in the pipe network file.</p>
+
+      <strong>Root? </strong>
+      <p>Indicates whether the given pipe is the root of the pipe network. Indicate "TRUE" in the Root? column of the first row of the spreadsheet, as this describes the root of the pipe network.</p>
+
+      <strong>Endpoint? </strong>
+      <p>Indicates whether the given pipe is an endpoint of the pipe network. Indicate "TRUE" in the Endpoint? column of each row describing an endpoint. Pipes designated as endpoints must not act as the parents of any other pipes in the network.</p>
+
+      <strong id = "D_INF">D_INF </strong>
+      <p>The molecular diffusion coefficient of the given pipe. This value is used to calculate the diffusion of particles in the pipe network. This should be entered in units: gallons/minute </p>
+
+      <strong id = "Alpha">Alpha </strong>
+      <p>The alpha value of the given pipe. This value is used in the calculation of diffusion for particles in the pipe network. This should be given in units: x/x </p>
+
+      <strong>Lambda </strong>
+      <p>Lambdas for the given pipe affecting various chemical decay formulas given here. </p>
+
      <h3 id = "flow-description">Flow Description</h3>
+     <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th scope="col" class="table-widths">endpoint</th>
+          <th scope="col" class="table-widths">Start Time</th>
+          <th scope="col" class="table-widths">End Time</th>
+          <th scope="col" class="table-widths">Flowrate</th>
+          <th scope="col" class="table-widths">Sim Lifetime</th>
+        
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-1</th>
+          <td scope="col" class="table-widths">0</th>
+          <td scope="col" class="table-widths">120</th>
+          <td scope="col" class="table-widths">5</th>
+          <td scope="col" class="table-widths">1</th>
+        </tr>
+      
+      </tbody>
+    </table>
 
      <h2 id = "simulation-arguments">Simulation Arguments</h2>
      <h3 id = "diffusion">Diffusion</h3>

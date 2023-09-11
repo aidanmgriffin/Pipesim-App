@@ -272,19 +272,18 @@ class Particle:
         freeChlorineLambda = self.container.freeChlorineLambda
         containerName = self.container.name
 
-        self.velocity = self.container.flow / self.container.area
         # print("Free Chlorine b4: " + str(self.freechlorine))
         self.freechlorine = self.freechlorine * math.exp(-freeChlorineLambda*timeStep) 
-        # self.hypochlorousAcid = self.hypochlorousAcid + self.age * (-(self.hypochlorousAcid * self.ammonia) + self.monochloramine - (self.hypochlorousAcid * self.monochloramine) )
-        # self.ammonia = self.ammonia + self.age * (-(self.hypochlorousAcid * self.ammonia) + self.monochloramine + math.pow(self.monochloramine, 2) + (self.hypochlorousAcid * self.monochloramine) )
-        # self.monochloramine = self.monochloramine + self.age * (-(self.hypochlorousAcid * self.monochloramine)  - self.monochloramine - (self.hypochlorousAcid * self.monochloramine) - (2 * math.pow(self.monochloramine, 2)) - (self.hypochlorousAcid * self.monochloramine) - ((self.container.area / self.velocity) * self.hypochlorousAcid * self.monochloramine) )
-        # # self.dichloramine = self.dichloramine + self.age * ( ( self.hypochlorousAcid * self.monochloramine) + math.pow(self.monochloramine, 2) - self.dichloramine)
-        # self.iodine = self.iodine + self.age * ( self.dichloramine )
-        # self.docb = self.docb + self.age * ( - (self.hypochlorousAcid * self.monochloramine))
-        # self.docbox = self.docbox + self.age * ( self.hypochlorousAcid * self.monochloramine)
-        # self.docw = self.docw + self.age * ( - ((self.container.area / self.velocity) * self.hypochlorousAcid * self.monochloramine))
-        # self.docwox = self.docwox + self.age * ((self.container.area / self.velocity) * self.hypochlorousAcid * self.monochloramine)
-        # self.chlorine = self.chlorine + self.age * ( (self.hypochlorousAcid * self.monochloramine) + ((self.container.area / self.velocity) * self.hypochlorousAcid * self.monochloramine)) 
+        self.hypochlorousAcid = self.hypochlorousAcid + self.age * (-(self.hypochlorousAcid * self.ammonia) + self.monochloramine - (self.hypochlorousAcid * self.monochloramine) )
+        self.ammonia = self.ammonia + self.age * (-(self.hypochlorousAcid * self.ammonia) + self.monochloramine + (self.hypochlorousAcid * self.monochloramine) )#math.pow(self.monochloramine, 2) + (self.hypochlorousAcid * self.monochloramine) )
+        self.monochloramine = self.monochloramine + self.age * (-(self.hypochlorousAcid * self.monochloramine)  - self.monochloramine - (self.hypochlorousAcid * self.monochloramine)) - (self.hypochlorousAcid * self.monochloramine) - (self.container.areavelocity * self.hypochlorousAcid * self.monochloramine) #(2 * math.pow(self.monochloramine, 2)) - (self.hypochlorousAcid * self.monochloramine) - (self.container.areavelocity * self.hypochlorousAcid * self.monochloramine) )
+        # self.dichloramine = self.dichloramine + self.age * ( ( self.hypochlorousAcid * self.monochloramine) + math.pow(self.monochloramine, 2) - self.dichloramine)
+        self.iodine = self.iodine + self.age * ( self.dichloramine )
+        self.docb = self.docb + self.age * ( - (self.hypochlorousAcid * self.monochloramine))
+        self.docbox = self.docbox + self.age * ( self.hypochlorousAcid * self.monochloramine)
+        self.docw = self.docw + self.age * ( - (self.container.areavelocity * self.hypochlorousAcid * self.monochloramine))
+        self.docwox = self.docwox + self.age * (self.container.areavelocity * self.hypochlorousAcid * self.monochloramine)
+        self.chlorine = self.chlorine + self.age * ( (self.hypochlorousAcid * self.monochloramine) + (self.container.areavelocity * self.hypochlorousAcid * self.monochloramine)) 
 
         # print("Free Chlorine af: " + str(self.freechlorine), math.exp(-lamb*timeStep))
         
@@ -623,6 +622,17 @@ class pipe:
         self.flowRate: int = 0  # gallons per minute
         self.flow: float = 0  # gallons per time unit
         pipeIndex[self.name] = self
+        print("WidtH: ", self.width, "Radius: ", self.radius, "Area: ", self.area)
+        if self.area == 0:
+            self.velocity = 0
+        else: 
+            self.velocity = self.flow / self.area
+        
+        if self.velocity == 0:
+            self.areavelocity = 0
+        else:
+            self.areavelocity = self.area / self.velocity
+
 
         # self.timeSpent = 1
         # pipe no longer tracks member particles

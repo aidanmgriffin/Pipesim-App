@@ -119,24 +119,29 @@ def upload():
                 alertDanger.message = "Density must be a number between 0 and 1"
                 raise Exception
                 
-            
-            # Validate that granularity option is selected. If none is selected, default to minutes.
-            # In case of no selection, error will be shown to the user.
+    
+            # Choose between minute granularity options. If custom tick is chosen, get custom tick value from form.
+            # In case of no selection, error is shown to user.
             try:
                 req_radio = request.values['inlineRadioOptions']
             except:
                 alertDanger.message = "Granularity option not selected."
                 raise Exception
-                
-
+            
             if req_radio == 'option1':
-                granularity = 'Seconds'
+                granularity = -1
             elif req_radio == 'option2':
-                granularity = 'Minutes'
+                granularity = -2
             elif req_radio == 'option3':
-                granularity = 'Hours'
+                granularity = -3
+            elif req_radio == 'option4':
+                # If custom tick is chosen and box is not filled in, default to minutes.
+                try:
+                    granularity = request.values['custom-granularity']
+                except:
+                    granularity = -2
             else:
-                granularity = 'Minutes'
+                granularity = -2
 
             
             
