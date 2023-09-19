@@ -260,33 +260,33 @@ class Particle:
         self.docwox : float = self.manager.docwoxBase
         self.chlorine : float = self.manager.chlorineBase
         global logfile
+
+    def monochloramine_network(self):
+        self.hypochlorousAcid = self.hypochlorousAcid + self.age * (- self.container.kv1Lambda * (self.hypochlorousAcid * self.ammonia) + (self.container.kv2Lambda * self.monochloramine) - ( self.container.kv3Lambda * self.hypochlorousAcid * self.monochloramine) )
+        self.ammonia = self.ammonia + self.age * ((-self.container.kv1Lambda * self.hypochlorousAcid * self.ammonia) + (self.container.kv2Lambda * self.monochloramine) + (self.container.kv5Lambda * math.pow(self.monochloramine, 2)) + (self.container.doc1Lambda * self.hypochlorousAcid * self.monochloramine) )#math.pow(self.monochloramine, 2) + (self.hypochlorousAcid * self.monochloramine) )
+        self.monochloramine = self.monochloramine + self.age * ((self.container.kv1Lambda * self.hypochlorousAcid * self.monochloramine)  - self.container.kv2Lambda * self.monochloramine - (self.container.kv3Lambda * self.hypochlorousAcid * self.monochloramine)) - (2 * self.container.kv5Lambda * math.pow(self.monochloramine, 2)) - (self.container.doc1Lambda * self.hypochlorousAcid * self.monochloramine) - (self.container.doc1Lambda * self.container.areavelocity * self.hypochlorousAcid * self.monochloramine) #(2 * math.pow(self.monochloramine, 2)) - (self.hypochlorousAcid * self.monochloramine) - (self.container.areavelocity * self.hypochlorousAcid * self.monochloramine) )
+        self.dichloramine = self.dichloramine + self.age * ( (self.container.kv3Lambda * self.hypochlorousAcid * self.monochloramine) + (self.container.doc1Lambda * math.pow(self.monochloramine, 2)) - (self.container.kv7Lambda * self.dichloramine))
+        self.iodine = self.iodine + self.age * ( self.container.kv7Lambda * self.dichloramine )
+        self.docb = self.docb + self.age * ( - ( self.container.doc1Lambda * self.hypochlorousAcid * self.monochloramine))
+        self.docbox = self.docbox + self.age * ( self.container.doc1Lambda * self.hypochlorousAcid * self.monochloramine)
+        self.docw = self.docw + self.age * ( - self.container.doc1Lambda * self.container.areavelocity * self.hypochlorousAcid * self.monochloramine)
+        self.docwox = self.docwox + self.age * (self.container.doc1Lambda * self.container.areavelocity * self.hypochlorousAcid * self.monochloramine)
+        self.chlorine = self.chlorine + self.age * ( (self.container.doc1Lambda * self.hypochlorousAcid * self.monochloramine) + (self.container.doc1Lambda * self.container.areavelocity * self.hypochlorousAcid * self.monochloramine)) 
         
     # the update function increments the particle age and increments contact record according to the current container
     # material type. If the particle container is active (flowing) then calls the movement function to compute particle flow.
     def update(self):
         self.age += 1
-        # print("age: ", self.age, "time: ", self.manager.time.get_time())
+
         timeStep = self.manager.timeStep
         #lambda will change depending on the pipe it is in (area and material)
         #eventually display graph of the concentration and later density in each pipe
         freeChlorineLambda = self.container.freeChlorineLambda
         containerName = self.container.name
-
-        # print("Free Chlorine b4: " + str(self.freechlorine))
         self.freechlorine = self.freechlorine * math.exp(-freeChlorineLambda*timeStep) 
-        self.hypochlorousAcid = self.hypochlorousAcid + self.age * (-(self.hypochlorousAcid * self.ammonia) + self.monochloramine - (self.hypochlorousAcid * self.monochloramine) )
-        self.ammonia = self.ammonia + self.age * (-(self.hypochlorousAcid * self.ammonia) + self.monochloramine + (self.hypochlorousAcid * self.monochloramine) )#math.pow(self.monochloramine, 2) + (self.hypochlorousAcid * self.monochloramine) )
-        self.monochloramine = self.monochloramine + self.age * (-(self.hypochlorousAcid * self.monochloramine)  - self.monochloramine - (self.hypochlorousAcid * self.monochloramine)) - (self.hypochlorousAcid * self.monochloramine) - (self.container.areavelocity * self.hypochlorousAcid * self.monochloramine) #(2 * math.pow(self.monochloramine, 2)) - (self.hypochlorousAcid * self.monochloramine) - (self.container.areavelocity * self.hypochlorousAcid * self.monochloramine) )
-        # self.dichloramine = self.dichloramine + self.age * ( ( self.hypochlorousAcid * self.monochloramine) + math.pow(self.monochloramine, 2) - self.dichloramine)
-        self.iodine = self.iodine + self.age * ( self.dichloramine )
-        self.docb = self.docb + self.age * ( - (self.hypochlorousAcid * self.monochloramine))
-        self.docbox = self.docbox + self.age * ( self.hypochlorousAcid * self.monochloramine)
-        self.docw = self.docw + self.age * ( - (self.container.areavelocity * self.hypochlorousAcid * self.monochloramine))
-        self.docwox = self.docwox + self.age * (self.container.areavelocity * self.hypochlorousAcid * self.monochloramine)
-        self.chlorine = self.chlorine + self.age * ( (self.hypochlorousAcid * self.monochloramine) + (self.container.areavelocity * self.hypochlorousAcid * self.monochloramine)) 
 
-        # print("Free Chlorine af: " + str(self.freechlorine), math.exp(-lamb*timeStep))
-        
+        self.monochloramine_network()
+
         #For Free chlorine decay: Get the Time Granularity for Delta T. Use rate of decay. Cnew = self.freechlorine
         #Use function Cnew = Cold * exp(-rate*deltaT). update the freechlorine (self.freechlorine = Cnew)
         containerName = self.container.name
@@ -597,7 +597,7 @@ class Particle:
 class pipe:
 
     # the constructor takes in the pipe name, dimensions, and parent.
-    def __init__(self, name, length, width, material, parent, d_inf, alpha, manager, freeChlorineLambda, monochloramineLambda, hypochlorousAcidLambda, doc1Lambda, doc2Lambda):
+    def __init__(self, name, length, width, material, parent, d_inf, alpha, manager, freeChlorineLambda, kv1Lambda, kv2Lambda, kv3Lambda, kv5Lambda, kv7Lambda, doc1Lambda, doc2Lambda):
         # print("init pipe")
         global pipeIndex
         self.manager = manager
@@ -610,8 +610,11 @@ class pipe:
         self.d_inf: float = d_inf / self.manager.timeStep # Set to 0.01946 in initial integration.
         self.alpha: float = alpha / self.manager.timeStep # set to 114 in initial integration
         self.freeChlorineLambda: float = freeChlorineLambda
-        self.monochloramineLambda: float = monochloramineLambda
-        self.hypochlorousAcidLambda: float = hypochlorousAcidLambda
+        self.kv1Lambda: float = kv1Lambda
+        self.kv2Lambda: float = kv2Lambda
+        self.kv3Lambda: float = kv3Lambda
+        self.kv5Lambda: float = kv5Lambda
+        self.kv7Lambda: float = kv7Lambda
         self.doc1Lambda: float = doc1Lambda
         self.doc2Lambda: float = doc2Lambda
         self.area: float = math.pi * math.pow((self.radius), 2) #cross-sectional-area
@@ -853,7 +856,7 @@ class endpoint(pipe):
     # constructor function is simplified from the standard pipe because it has no need for usual pipe properties
     # such as storing and tracking position of particles.
     def __init__(self, parent, name, manager):
-        super().__init__(name, 0, 0, None, parent, 0, 0, manager, 0, 0, 0, 0, 0)
+        super().__init__(name, 0, 0, None, parent, 0, 0, manager, 0, 0, 0,0, 0, 0, 0, 0)
         self.type = "endpoint"
 
     # overrides the function in the parent class to produce an error and otherwise do nothing

@@ -49,20 +49,54 @@
         <label for="flow-preset" class="form-label">Flows Preset</label>
         <input class="form-control" type="file" accept = ".csv" id="flow-preset" name="flow-preset">
     </div>
+    <script src = "/static/js/frontend.js"></script>
 
     <div class="form-row align-items-center ml-3">
         <div class="col-auto">
 
-            <input class="form-check-input" type="checkbox" value="" name = "flex-check" id="flexCheckDefault">
+            <input class="form-check-input" type="checkbox" value="" name = "flex-check" id="flexCheckDefault" onclick="CheckAll()">
             <label class="form-check-label" for="flexCheckDefault" name="diffusion-enabled">
                 Diffusion Enabled
             </label>
-
+            <p id = "text" style="display: none;">Checked!</p>
+         
         </div>
         <div class="col-md-2">
             <input type="number" step="any" class="form-control" name="molecular-diffusion-coefficient" placeholder="Customize Molecular Diffusion">
         </div>
+
+        <div class = "col-auto">
+            gallons / minute
+        </div>
     </div>
+    <div class="form-row align-items-center ml-3">
+        <div class="col-auto">
+
+            <input class="form-check-input" type="checkbox" value="" name = "flexCheckStagnant" id="flexCheckStagnant" style = "display: none" onclick="UncheckAll()">
+            <label class="form-check-label" for="flexCheckStagnant" name="stagnant-periods" id = "stagnant-periods" style = " display: none; margin-right: 50px;">
+                Diffusion During Stagnant Periods
+
+        </div>
+    </div> 
+    <div class="form-row align-items-center ml-3">
+        <div class="col-auto">
+
+            <input class="form-check-input" type="checkbox" value="" name = "flexCheckAdvective" id="flexCheckAdvective" style = "display: none;" onclick="UncheckAll()">
+            <label class="form-check-label" for="flexCheckAdvective" name="advective-periods" id= "advective-periods" style = "margin-right: 50px; display: none;">
+                Diffusion & Dispersion During Advective Periods 
+        
+        </div>
+    </div> 
+
+
+    <br />
+
+
+
+    <div class="alert alert-secondary align-middle" role="alert">
+       <!--<i class="bi bi-exclamation"></i>--> <span class = "align-middle"> Set <a href = Documentation.html>D_INF</a> and <a href = documentation#run-simulation>Alpha</a> Values in Pipe Network File </span> </div>
+    
+
     <br />
     <div class="form-row align-items-center">
         <div class="col-auto">
@@ -74,8 +108,18 @@
 
         </div>
     </div>
+    <br/>
+    <!-- <div class="form-row align-items-center">
+        <div class="col-auto">
+            Time Granularity (Custom):
+        </div>
 
-    <br />
+        <div class="col-md-1">
+            <input type="number" step=any class="form-control" id="density" name="density" placeholder="1">
+
+        </div>
+    </div>
+    <br /> -->
 
     <div class="form-row align-items-center">
 
@@ -93,23 +137,18 @@
             </div>
             <div class="form-check form-check-inline">
                 <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio3" value="option3">
-                <label class="form-check-label" for="inlineRadio2">Hours</label>
+                <label class="form-check-label" for="inlineRadio3">Hours</label>
             </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio4" value="option4">
+                <label class="form-check-label" for="inlineRadio4">Custom</label>
+            </div>
+            
+        </div>
+        <div class = "col-auto">
+            <input type="number" step=any class="form-control" id="custom-granularity" name="custom-granularity" placeholder="">
         </div>
     </div>
-    <br />
-
-    <div class="form-row align-items-center">
-        <div class="col-auto">
-            Custom Granularity [Test]:
-        </div>
-
-        <div class="col-md-1">
-            <input type="number" step=any class="form-control" id="granularityCustom" name="granularityCustom" placeholder="">
-
-        </div>
-    </div>
-
     <br />
         <button type="submit" class="btn" name="preset-submit">Upload</button>
     

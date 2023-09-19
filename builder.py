@@ -35,16 +35,25 @@ def create_node(np, manager):
         freeChlorineLambda = float(np[9])
     except: freeChlorineLambda = 0
     try: 
-        monochloramineLambda = float(np[10])
-    except: monochloramineLambda = 0
+        kv1Lambda = float(np[10])
+    except: kv1Lambda = 0
     try:
-        hypochlorousAcidLambda = float(np[11])
-    except: hypochlorousAcidLambda = 0
-    try:
-        doc1Lambda = float(np[12])
-    except: doc1Lambda = 0   
+        kv2Lambda = float(np[11])
+    except: kv2Lambda = 0
     try: 
-        doc2Lambda = float(np[13])
+        kv3Lambda = float(np[12])
+    except: kv1Lambda = 0
+    try:
+        kv5Lambda = float(np[13])
+    except: kv2Lambda = 0
+    try: 
+        kv7Lambda = float(np[14])
+    except: kv1Lambda = 0
+    try:
+        doc1Lambda = float(np[15])
+    except: kv3Lambda = 0   
+    try: 
+        doc2Lambda = float(np[16])
     except: doc2Lambda = 0
 
     if parent == "NONE" or isRoot == "TRUE":
@@ -53,7 +62,7 @@ def create_node(np, manager):
         node = particles.endpoint(parent, name, manager)
         endpointStatus = True
     else:
-        node = particles.pipe(name, length, width, np[1], parent, d_inf, alpha, manager,    freeChlorineLambda, monochloramineLambda, hypochlorousAcidLambda, doc1Lambda, doc2Lambda)
+        node = particles.pipe(name, length, width, np[1], parent, d_inf, alpha, manager, freeChlorineLambda, kv1Lambda, kv2Lambda, kv3Lambda, kv5Lambda, kv7Lambda, doc1Lambda, doc2Lambda)
     return node, endpointStatus
 
 # this function performs a tree search beginning at the root on the network

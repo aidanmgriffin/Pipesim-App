@@ -20,7 +20,6 @@ import multiprocessing
 import cairo
 
 
-
 # pylint: disable=C0103
 # template_folder = os.path.join(os.getcwd(), 'templates')
 app = Flask(__name__)#, template_folder=template_folder)
@@ -168,7 +167,7 @@ def upload():
             if any(char.isdigit() for char in molecular_diffusion_coefficient):
                 pass
             else:
-                molecular_diffusion_coefficient = 9.3 * math.pow(10, -5) 
+                molecular_diffusion_coefficient = 8.28 * math.pow(10, -4) #9.3 * math.pow(10, -5) 
 
             # Attempt to save pipe network and flows files to input folder. If unsuccessful (most likely due to incorrect file type),
             # an error will be shown to the user.

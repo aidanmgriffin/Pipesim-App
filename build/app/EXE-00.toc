@@ -2,7 +2,7 @@
  False,
  False,
  True,
- 'C:\\Users\\mauda\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\bootloader\\images\\icon-windowed.ico',
+ ['C:\\Users\\mauda\\source\\repos\\Pipesim-App\\static\\images\\block-logo.ico'],
  None,
  False,
  False,
@@ -60,7 +60,7 @@
  [],
  False,
  False,
- 1689202182,
+ 1694553510,
  [('runw.exe',
    'C:\\Users\\mauda\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',
    'EXECUTABLE')])
