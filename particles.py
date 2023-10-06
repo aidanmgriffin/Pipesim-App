@@ -7,27 +7,20 @@ from multiprocessing import cpu_count
 from multiprocessing import Pool, Process
 import collections
 
-
-
-# test log file
 logfile = "ParticleDiffusion.log"
 logfile = open(logfile, 'a')
 
-# test single particle log
-# particlelogfile = "SingleParticle.csv"
-# particlelogfile = open(particlelogfile, 'a')
-# writer = csv.writer(particlelogfile, 'excel')
-# writer.writerow(["ParticleID", "Modifier"])
-
 pipeIndex: dict = {}  # this stores all the pipes in the pipe system. pipes can be accessed by name, which must be unique.
 random.seed(a=None, version=float)
-  # minute/timestep. 60 = 1 sec. we assume that input rates are "gallons per minute" units, but we
 CUBIC_INCHES_PER_GALLON = 231
 
-# this is intended to be used as a static class to count the passage of time
-# within the simulation environment. this was implemented so that
-# the time value could be accessed more easily across modules (files).
 class counter:
+    """
+    this is intended to be used as a static class to count the passage of time
+    within the simulation environment. this was implemented so that
+    the time value could be accessed more easily across modules (files).
+    """
+
     t = 0
     @staticmethod
     def get_time():
@@ -40,54 +33,59 @@ class counter:
         counter.t = 0
 
 class ParticleManager():
-    def __init__(self, time):
+    """
+    A class that manages particles in a pipe system. It keeps track of particle positions, ages, and aggregate data by pipe membership.
+    """
 
+    def __init__(self, time):
         # global variables to track number of particles generated. Each particle is given a unique particle ID based on this number.
         # it should not be decremented if we want an accurate count of the number of particles generated. Note it is redundant
         # to create more than one particle per second at the root.
         self.numParticles: int = 0
-        # deletedparticles counts the number of particles that have been garbage collected.
         self.deletedParticles: int = 0
-        # elapsedTime: int = 0  # time unit? assuming seconds.
-        # want to calculate one second intervals.
         self.particleIndex: dict = {}  # this stores all the particles in the pipe system. Particle objects can be accessed by ID.
         self.expendedParticles: dict = {}  # stores all particles that have passed through an endpoint, for data collection.
         self.expelledParticleData: dict = {} # stores data about which particles were expelled from which endpoints and
         self.particlePositions: dict = {} # stores lists of which particles are in which pipes. keys are pipe names.
-        self.pipeAggregates: dict = {} # stores details about the particles in each pipe in a tuple of the following
-                                       # form: (min_age, max_age, average_age, num_particles). Keys are pipe names.
+        self.pipeAggregates: dict = {} # stores details about the particles in each pipe in a tuple of the following. form: (min_age, max_age, average_age, num_particles). Keys are pipe names.
+
+       #Run Preferences (specified by user)
         self.diffusionActive = False
         self.diffusionActiveStagnant = False
-        self.diffusionActiveAdvective = False  
+        self.diffusionActiveAdvective = False 
+        self.decayActiveFreeChlorine = False
+        self.decayActiveMonochloramine = False
+
+        # Timestep vars
         self.time = time
         self.time.reset()
         self.tolerance = math.pow(2, -16)
         self.timeStep: int = 60
-        self.molecularDiffusionCoefficient: float = None #stores molecular diffusion coefficient.
-        self.monochloramineBase: float = 1 #stores starting monochloramine value inputted from the pipes file.
-        self.dichloramineBase: float = 1 #stores starting dichloramine value inputted from the pipes file.
-        self.ammoniaBase: float = 1 #stores starting ammonium value inputted from the pipes file.
-        self.chlorideBase: float = 1 #stores starting chloride value inputted from the pipes file.
-        self.iodineBase: float = 1 #stores starting iodine value inputted from the pipes file.
-        # self.nitrogenBase: float = None #stores starting nitrogen value inputted from the pipes file.
-        self.hypochlorousAcidBase: float = 1 #stores starting hypochlorous acid value inputted from the pipes file.
-        # self.doc1Base: float = None #stores starting doc1 value inputted from the pipes file.
-        # self.doc2Base: float = None #stores starting doc2 value inputted from the pipes file.
-        # self.diacetoxyiodoBenzeneBase: float = None #stores starting diacetoxyiodo benzene value inputted from the pipes file. 
-        self.docbBase: float = 1 #stores starting docb value inputted from the pipes file.
-        self.docboxBase: float = 1 #stores starting docbox value inputted from the pipes file.
-        self.docwBase: float = 1 #stores starting docw value inputted from the pipes file.
-        self.docwoxBase: float = 1 #stores starting docwox value inputted from the pipes file.
-        self.chlorineBase: float = 1 #stores starting chlorine value inputted from the pipes file.
-        # self.temperatureBase: float = None #stores starting temperature value inputted from the pipes file.
+
+        #Decay function vars
+        self.molecularDiffusionCoefficient: float = None
+        self.monochloramineBase: float = 1
+        self.dichloramineBase: float = 1
+        self.ammoniaBase: float = 1
+        self.chlorideBase: float = 1
+        self.iodineBase: float = 1
+        self.hypochlorousAcidBase: float = 1
+        self.docbBase: float = 1
+        self.docboxBase: float = 1
+        self.docwBase: float = 1
+        self.docwoxBase: float = 1
+        self.chlorineBase: float = 1
         self.d_m : float = None
+
+        #Particle accumulation vars
         self.bins = []
         self.flowNum: int = 0 
         self.time_since = {}
         self.pipeString: str = ""
         self.edgeList: list = []
         self.endpointList: list = []
-
+        
+        # Vars affecting pipe class
         self.rootarea = 0
         self.rootflow = 0
         self.newpos = 0
@@ -96,71 +94,57 @@ class ParticleManager():
         self.prevArea = 0
         self.prevLength = 0
 
-
-        #self.pool = cf.ProcessPoolExecutor(max_workers = self.process_max)
-
-    #creates a particle that is registered to the particle manager and
     def particle(self, container, freeChlorineInit):
+        """
+        Creates a new particle object and registers it with the particle manager.
+        """
+        
         global logfile
-
-        # logfile.write("particle made: " + str(freeChlorineInit) + str(counter.get_time()))
         return Particle(container, self, freeChlorineInit)
 
-    def setTimeStep(self, step: int):
-            self.timeStep = step
-            # print("Step = ", step)
-
     def setDiffusionCoefficient(self, diffusionCoefficient: float):
+        """
+        Sets the molecular diffusion coefficient of the particle and calculates the diffusion coefficient
+        based on the time step.
+        """
+        
         self.molecularDiffusionCoefficient = float(diffusionCoefficient)
         self.d_m = self.molecularDiffusionCoefficient / self.timeStep
-        # self.d_m = 2.14
-        # print("dm : ", self.d_m)
+    
+    def setTimeStep(self, timeStep: int):
+        """
+        Sets the time step of the particle manager. Called from Driver
+        """
+
+        self.timeStep = timeStep
 
     def update_caller(self, particle):
-        # if(counter.get_time() < 50):
-        #     print("Updating particle", particle.ID, "time: ", counter.get_time())
+        """
+        Calls the update function of the particle object.
+        """
+
         name, part = particle.update()
-        #rval.append((name, part))
         return name, part
 
-    # def diffusionVars(self, diffusionCoefficient):
-    #     self.diffusionCoefficient = diffusionCoefficient
-    #     return diffusionCoefficient
-
-    # updates particle age data, particle positions, and aggregate particle data for particles in each pipe (every 1000 tics)
     def update_particles(self, time_since):
+        """
+        updates particle age data, particle positions, and aggregate particle data for particles in each pipe (every 1000 tics)
+        """
         global logfile
-
-        # logfile.write("update\n")
-        # print("Updating particles", time_since, "time: ", counter.get_time())
         self.time_since = time_since
-        # pool = Pool(self.process_max)
         index = self.particleIndex.copy()
         particles = list(index.values())
-        #start = time.time()
-        # the following line is slow or deadlocks
-        # rval = pool.imap(self.update_caller, particles)
-        # the following line is fast
-
         rval = map(self.update_caller, particles)
-
-        # particles[0].age += 1
-        # try:
-            # print("particles 0 age: ", particles[0].age)
-        # except:
-        #     pass
-        #elapsed = time.time()
-        #elapsed = elapsed - start
-        #print("particle updates completed in ", elapsed, "seconds.")
-        # pool.close()
-        # pool.join()
         self.particlePositions = self.particle_update_helper(rval)
         if self.time.get_time() % 1000 == 999:
             self.update_particle_info()
 
-    # an assistant function for the update_particles function that helps to assign particles to the correct list
-    # within the pipe dictionary (or creates a new list if the correct dictionary entry does not exist)
     def particle_update_helper(self, particlePositions):
+        """
+        an assistant function for the update_particles function that helps to assign particles to the correct list
+        within the pipe dictionary (or creates a new list if the correct dictionary entry does not exist)
+        """
+
         dic = {}
         for key, value in particlePositions:
             if dic.get(key) is None:
@@ -169,41 +153,37 @@ class ParticleManager():
                 dic[key].append(value)
         return dic
 
-    # each pipe tracks particles that are inside it and tracks their progress along it.
-    # this function is meant to be called by the root pipe. fills pipe with particles
-    # with one particle every 0.1 inches.
     def add_particles(self, density: float, root, time_since):
-        # global writer
+        """
+        each pipe tracks particles that are inside it and tracks their progress along it.
+        this function is meant to be called by the root pipe. fills pipe with particles
+        with one particle every 0.1 inches.
+        """
+        
         global logfile 
-        # print("ap")
+
         particles = self.particlePositions.get(root.name)
         
         freeChlorineInit = 1.0
         if particles == None:
             self.particlePositions[root.name] = particles = []
+
         if len(particles) < 1:
             freeChlorineInit = 1.0
             min_distance = root.length
-            # min_distance = 0
-            # min_distance = min(part.position for part in particles)
-            
         else:
             min_distance = min(part.position for part in particles)
         current_distance = 0
-        # print("min_distance: ", min_distance, "root.length: ", root.length)
-        # part = self.particle(root)
-        # part.freechlorine = freeChlorineInit
+
         while current_distance < min_distance + density:
-            # print("add_particles", self.time_since, "time: ", counter.get_time())
             part = self.particle(root, freeChlorineInit)
             part.position = current_distance
-            # logfile.write("part pos: " + str(part.position) +  str(part.container.name) + ", " + str(part.ID) + ", " + str(counter.get_time()) + "\n")
-            # print("fc:" , part.freechlorine, "fci:", freeChlorineInit)
             current_distance += density
-            # self.update_particles(time_since)
 
-    # generates aggregate data about particles by pipe membership and assigns it to the pipeAggregates dictionary.
     def update_particle_info(self):
+        """
+        generates aggregate data about particles by pipe membership and assigns it to the pipeAggregates dictionary.
+        """
     
         for pipeName in self.particlePositions.keys():
             contents = self.particlePositions.get(pipeName)
@@ -212,13 +192,19 @@ class ParticleManager():
             num_particles = len(ages)
             self.pipeAggregates[pipeName] = (min_age, max_age, average_age, num_particles)
 
-    # builds a list with the age values of particles given a list of them.
     def particle_age_builder(self, particles):
+        """
+        builds a list with the age values of particles given a list of them.
+        """
+        
         ages = [x.age for x in particles]
         return ages
 
-    # calculates minimum, maximum, and average age values given a list of particle ages.
     def particle_age_calculator(self, input):
+        """
+        calculates minimum, maximum, and average age values given a list of particle ages.
+        """
+        
         minimum = 0
         maximum = 0
         avg = 0
@@ -233,13 +219,19 @@ class ParticleManager():
     def output_status(self):
         return self.pipeAggregates
 
-# the particle class tracks what happens when water flows through the pipe network. Each particle stores information
-# about the pipes it travels through and about how long it remains in contact with each pipe.
 class Particle:
-    # this constructor requires a container (pipe object) to instantiate, because particles should always be tied to one
-    # pipe. upon creation, the particle assigns itself an id based on the global numParticles variable, adds itself to
-    # the particle dictionary, stores it's parent object, and sets it's age at 0.
+    """
+    the particle class tracks what happens when water flows through the pipe network. Each particle stores information
+    about the pipes it travels through and about how long it remains in contact with each pipe.
+    """
+    
     def __init__(self, container, manager, freeChlorineInit):
+        """
+        this constructor requires a container (pipe object) to instantiate, because particles should always be tied to one
+        pipe. upon creation, the particle assigns itself an id based on the global numParticles variable, adds itself to
+        the particle dictionary, stores it's parent object, and sets it's age at 0.
+        """
+
         self.manager = manager
         self.ID: int = self.manager.numParticles
         self.manager.numParticles += 1
@@ -265,7 +257,12 @@ class Particle:
         self.chlorine : float = self.manager.chlorineBase
         global logfile
 
-    def monochloramine_network(self):
+    
+    def monochloramine_network_decay(self):
+        """
+        This function calculates the decay of monochloramine network based on the given parameters.
+        """
+        
         self.hypochlorousAcid = self.hypochlorousAcid + self.age * (- self.container.kv1Lambda * (self.hypochlorousAcid * self.ammonia) + (self.container.kv2Lambda * self.monochloramine) - ( self.container.kv3Lambda * self.hypochlorousAcid * self.monochloramine) )
         self.ammonia = self.ammonia + self.age * ((-self.container.kv1Lambda * self.hypochlorousAcid * self.ammonia) + (self.container.kv2Lambda * self.monochloramine) + (self.container.kv5Lambda * math.pow(self.monochloramine, 2)) + (self.container.doc1Lambda * self.hypochlorousAcid * self.monochloramine) )#math.pow(self.monochloramine, 2) + (self.hypochlorousAcid * self.monochloramine) )
         self.monochloramine = self.monochloramine + self.age * ((self.container.kv1Lambda * self.hypochlorousAcid * self.monochloramine)  - self.container.kv2Lambda * self.monochloramine - (self.container.kv3Lambda * self.hypochlorousAcid * self.monochloramine)) - (2 * self.container.kv5Lambda * math.pow(self.monochloramine, 2)) - (self.container.doc1Lambda * self.hypochlorousAcid * self.monochloramine) - (self.container.doc1Lambda * self.container.areavelocity * self.hypochlorousAcid * self.monochloramine) #(2 * math.pow(self.monochloramine, 2)) - (self.hypochlorousAcid * self.monochloramine) - (self.container.areavelocity * self.hypochlorousAcid * self.monochloramine) )
@@ -275,70 +272,67 @@ class Particle:
         self.docbox = self.docbox + self.age * ( self.container.doc1Lambda * self.hypochlorousAcid * self.monochloramine)
         self.docw = self.docw + self.age * ( - self.container.doc1Lambda * self.container.areavelocity * self.hypochlorousAcid * self.monochloramine)
         self.docwox = self.docwox + self.age * (self.container.doc1Lambda * self.container.areavelocity * self.hypochlorousAcid * self.monochloramine)
-        self.chlorine = self.chlorine + self.age * ( (self.container.doc1Lambda * self.hypochlorousAcid * self.monochloramine) + (self.container.doc1Lambda * self.container.areavelocity * self.hypochlorousAcid * self.monochloramine)) 
+        self.chlorine = self.chlorine + self.age * ( (self.container.doc1Lambda * self.hypochlorousAcid * self.monochloramine) + (self.container.doc1Lambda * self.container.areavelocity * self.hypochlorousAcid * self.monochloramine))
+
+    def free_chlorine_decay(self):
+        """
+        Calculates the decay of free chlorine in the container based on the lambda value of the container and the time step.
+        The lambda value is specific to the area and material of the pipe.
+        """
+
+        freeChlorineLambda = self.container.freeChlorineLambda
+        self.freechlorine = self.freechlorine * math.exp(-freeChlorineLambda*timeStep)
         
-    # the update function increments the particle age and increments contact record according to the current container
-    # material type. If the particle container is active (flowing) then calls the movement function to compute particle flow.
     def update(self):
+        """
+        The update function increments the particle age and increments contact record according to the current container material type. If the particle container is active (flowing) then calls the movement function to compute particle flow.
+        """
+
         self.age += 1
 
-        timeStep = self.manager.timeStep
-        #lambda will change depending on the pipe it is in (area and material)
-        #eventually display graph of the concentration and later density in each pipe
-        freeChlorineLambda = self.container.freeChlorineLambda
-        containerName = self.container.name
-        self.freechlorine = self.freechlorine * math.exp(-freeChlorineLambda*timeStep) 
+        if self.manager.decayActiveMonochloramine:
+            self.monochloramine_network_decay()
 
-        self.monochloramine_network()
-
-        #For Free chlorine decay: Get the Time Granularity for Delta T. Use rate of decay. Cnew = self.freechlorine
-        #Use function Cnew = Cold * exp(-rate*deltaT). update the freechlorine (self.freechlorine = Cnew)
         containerName = self.container.name
-        
-        #Track pipes (including pipe type) of pipes that the particle has been in contact with.
-        if (self.contact.get(self.container.material) is not None):
+
+        # Track pipes (including pipe type) of pipes that the particle has been in contact with.
+        if self.contact.get(self.container.material) is not None:
             self.contact[self.container.material] += 1
-        elif(self.contact.get(self.container.material) is None):
+        else:
             self.contact.update({self.container.material: 0})
             self.contact[self.container.material] += 1
-            
-        if self.route.count(self.container.name) < 1:
+
+        if self.container.name not in self.route:
             self.route.append(self.container.name)
-        
+
         self.ages.setdefault(containerName, 0)
         self.ages[containerName] += 1
 
-        # self.age += 1
         # Originally checks if container is active (water is flowing) before checking diffusion value. With issue 165
         # this is reversed. If diffusion is active then dispersion function will be called in lieu of movement. 
         # (The two are similar, but dispersion includes diffusive activity.)
         if self.manager.diffusionActive:
-            # logfile.write(str(timeStep) + str(self.manager.diffusionActiveAdvective) + str(self.manager.diffusionActiveStagnant) + "\n")
             if self.container.isActive:
                 if self.manager.diffusionActiveAdvective:
                     containerName = self.disperse()
                 else:
                     containerName = self.movement()
-            else:
-                if self.manager.diffusionActiveStagnant:
-                    containerName = self.diffuse()
-
+            elif self.manager.diffusionActiveStagnant:
+                containerName = self.diffuse()
         elif self.container.isActive:
             containerName = self.movement()
 
-        
-        
-        # self.age += 1
-        
         return containerName, self
-    
 
-    # The particle movement code is really the heart of this entire application. Everything depends on this being accurate and
-    # performant because scientific results are drawn from how and when particles traverse the network. This function
-    # is intended to simulate how a particle might be carried along with a stream of water and updates the particle according
-    # to how much flow should occur within a given time segment. Every particle traveling through the network will call
-    # this function every time-step that it flows down the network.
     def movement(self):
+        """
+        The particle movement code is really the heart of this entire application. Everything depends on this being accurate and
+        performant because scientific results are drawn from how and when particles traverse the network. This function
+        is intended to simulate how a particle might be carried along with a stream of water and updates the particle according
+        to how much flow should occur within a given time segment. Every particle traveling through the network will call
+        this function every time-step that it flows down the network.
+        """
+        
         remainingTime = 1
         containerName = self.container.name
         while remainingTime > self.manager.tolerance:  # calculate particle movement until flow consumes available time (1 second)
@@ -380,11 +374,14 @@ class Particle:
                 break
         return containerName
 
-    # diffusion math is very tricky because it depends on the strength of the concentration gradient, on the current
-    # temperature, and on the types of liquids involved. For simplicity, some assumptions have been made. If needed,
-    # this function could be expanded in future to take in some of the data mentioned above. For now, assumptions are
-    # made. Diffusion coefficient is originally assumed to be 2.14 * 10^-6
     def diffuse(self):
+        """
+        Diffusion math is very tricky because it depends on the strength of the concentration gradient, on the current
+        temperature, and on the types of liquids involved. For simplicity, some assumptions have been made. If needed,
+        this function could be expanded in future to take in some of the data mentioned above. For now, assumptions are
+        made. Diffusion coefficient is originally assumed to be 2.14 * 10^-6
+        """
+
         global logfile
         d_m = self.d_m
 
@@ -433,9 +430,11 @@ class Particle:
         
         return self.container.name
 
-    #Advection, diffusion-dispersion during flow events. Combines movement of particle with diffusive actions. Calculates age of particle through each flow event.
-
     def disperse(self):
+        """
+        Advection, diffusion-dispersion during flow events. Combines movement of particle with diffusive actions. Calculates age of particle through each flow event.
+        """
+
         global writer
         global logfile
 
@@ -457,7 +456,7 @@ class Particle:
                 d_inf = self.container.d_inf 
                 alpha = self.container.alpha 
                 d_m = self.d_m 
-                
+
                 #Diffusion rate for particle i during the kth flow event considering the d_inf and d_m values for the pipe segment.
                 diffusion_rate_i = (d_inf - d_m) * (1 - math.exp((-min_t / alpha))) + d_m
 
@@ -517,16 +516,16 @@ class Particle:
                
         return containerName
 
-    # function to select random children of pipes. Note that the functionality is different than the pipe
-    # select_child function because this can select active or inactive pipes but will not select endpoints.
-    # the assumption here is that this function is called by diffuse function, which in turn only activates on
-    # inactive pipes. thus downstream endpoints should be "off" and allowing particles to enter the endpoint
-    # would be like simulating a leaky faucet.
     def select_random_child(self):
+        """
+        function to select random children of pipes. Note that the functionality is different than the pipe
+        select_child function because this can select active or inactive pipes but will not select endpoints.
+        the assumption here is that this function is called by diffuse function, which in turn only activates on
+        inactive pipes. thus downstream endpoints should be "off" and allowing particles to enter the endpoint
+        would be like simulating a leaky faucet.
+        """
         selected = False
-        # choices = copy(self.container.children)
         choices = self.container.children.copy()
-        # print("choices: ", choices)
         
         while not selected:
             if len(choices) < 1:
@@ -541,11 +540,12 @@ class Particle:
             else:
                 return selection
 
-
-    # this function can create a deep copy of a particle object, but assigns it a new unique particle id.
-    # this is used when particles arrive at a fork with two active (flowing) pipes, a duplicate should be made
-    # to simulate water traveling down both pipes.
     def __copy__(self, container):
+        """
+        this function can create a deep copy of a particle object, but assigns it a new unique particle id.
+        this is used when particles arrive at a fork with two active (flowing) pipes, a duplicate should be made
+        to simulate water traveling down both pipes.
+        """
         global numParticles
         p = Particle(container)
         p.ID = self.manager.numParticles
@@ -560,11 +560,6 @@ class Particle:
     # this function deletes the particle and increments the deletedparticles count.
     def __del__(self):
         self.manager.deletedParticles += 1
-        #print('lifetime: ' + str(self.age))
-        #for each in self.contact:
-        #    print('contacted materials: ' + each + " " + str(self.contact[each]))
-        # particleIndex.pop(self.ID)
-        # numParticles -= 1 # cannot decrement numParticles because this will create duplicate particle IDs
 
     # getOutput returns a tuple that contains the data stored in the particle. can be used to read out at the end
     # of the particle's journey, or query along the way for testing.
@@ -577,12 +572,8 @@ class Particle:
         for key in keys:
             add_contacts.append([key, self.contact[key]])
         rval.append(add_contacts)
-        # for elem in self.route:
-        #     rval.append(elem)
         for pipe in self.ages.keys():
             add_ages.append([pipe, self.ages[pipe]])
-            # rval.append(pipe)
-            # rval.append(self.ages[pipe])
         rval.append(add_ages)
         rval.append(self.freechlorine)
         return rval
@@ -595,11 +586,13 @@ class Particle:
             output = output + " | " + str(each)
         print(output)
 
-# the pipe class is basically a tree data structure, but it is an n-way tree. on top of that, each pipe has properties
-# necessary for plumbing, such as a diameter, material type, length, diameter, cross-sectional-area (CSA) and an activated
-# flag. this last one is used to track whether the pipe is part of a series of pipes that are currently flowing, or
-# whether it contains stagnant water.
 class pipe:
+    """
+    the pipe class is basically a tree data structure, but it is an n-way tree. on top of that, each pipe has properties
+    necessary for plumbing, such as a diameter, material type, length, diameter, cross-sectional-area (CSA) and an activated
+    flag. this last one is used to track whether the pipe is part of a series of pipes that are currently flowing, or
+    whether it contains stagnant water.
+    """
 
     # the constructor takes in the pipe name, dimensions, and parent.
     def __init__(self, name, length, width, material, parent, d_inf, alpha, manager, freeChlorineLambda, kv1Lambda, kv2Lambda, kv3Lambda, kv5Lambda, kv7Lambda, doc1Lambda, doc2Lambda):
@@ -641,53 +634,60 @@ class pipe:
         else:
             self.areavelocity = self.area / self.velocity
 
-
-        # self.timeSpent = 1
-        # pipe no longer tracks member particles
-        #self.particles: dict = {} #particle id = position
-        #self.average_age = 0
-        #self.min_age = 0
-        #self.max_age = 0
-    # to create a root, initialize with parent = None.
-
-    # function to track activations for a pipe. if activity is positive,
-    # one or more endpoints downstream from this pipe are active (flowing)
-    # so this pipe contains flowing water.
     def activate(self):
+        """
+        function to track activations for a pipe. if activity is positive,
+        one or more endpoints downstream from this pipe are active (flowing)
+        so this pipe contains flowing water.
+        """
+
         self.activity += 1
         self.set_activity()
 
-    # does not actually deactivate the pipe, but decrements activity when
-    # an endpoint is shut off.
     def deactivate(self):
+        """
+        does not actually deactivate the pipe, but decrements activity when
+        an endpoint is shut off.
+        """
         self.activity -= 1
         self.set_activity()
 
-    # if activity is nonpositive, deactivates pipe (no downstream endpoints are flowing).
-    # pipe contains stagnant water.
     def set_activity(self):
+        """
+        if activity is nonpositive, deactivates pipe (no downstream endpoints are flowing).
+        pipe contains stagnant water.
+        """
+
         if self.activity > 0:
             self.isActive = True
         else:
             self.isActive = False
 
-    # this function is used by the builder. creates a pipe and inserts it as a child
-    # of the parent pipe, with this pipe as the parent of the child pipe.
     def create_child(self,name,length,diameter,material):
+        """
+        this function is used by the builder. creates a pipe and inserts it as a child
+        of the parent pipe, with this pipe as the parent of the child pipe.
+        """
         p = pipe(name,length,diameter,material,self)
         self.children.append(p)
         return p
 
-    # this function is used by the builder to create an endpoint as a child the current pipe object.
     def create_end(self, name):
+        """
+        this function is used by the builder to create an endpoint as a child the current pipe object.
+        """
+
         p = endpoint(self, name)
         self.children.append(p)
         return p
 
-    # this function randomly selects from available active child pipes and returns the selected child.
-    # used to randomly assign particle paths at branches down the pipe, but only along branches with
-    # active flow.
     def select_child(self):
+        """
+        this function randomly selects from available active child pipes and returns the selected child.
+        used to randomly assign particle paths at branches down the pipe, but only along branches with
+        active flow.
+        """
+
         selected = None
         candidates = []
         for child in self.children:
@@ -695,19 +695,24 @@ class pipe:
                 candidates.append(child)
         if len(candidates) > 0:
             selected = random.choice(candidates)
-            #selected.lock.acquire()
         return selected
 
-    # compiles a list where each node reports it's depth in the tree, returns that list.
     def peek_helper(self, dim, depth):
+        """
+        compiles a list where each node reports it's depth in the tree, returns that list.
+        """
+
         dim.append(depth)
         for each in self.children:
             each.peek_helper(dim, depth + 1)
         return dim
 
-    # returns the depth of the tree, and the maximum number of nodes at the same depth.
-    # used for establishing the size of the grid to lay out the graph on.
     def peek_children(self):
+        """
+        returns the depth of the tree, and the maximum number of nodes at the same depth.
+        used for establishing the size of the grid to lay out the graph on.
+        """
+
         if self.parent != None:
             return self.parent.peek_children()
         dim = []
@@ -717,9 +722,12 @@ class pipe:
         depth = max(dim)
         return depth, height
 
-    # this function creates and returns a list of edges forming a tree based on the current pipes model. This tree is used to
-    # create a graphical representation of the model.
     def generate_tree(self):
+        """
+        this function creates and returns a list of edges forming a tree based on the current pipes model. This tree is used to
+        create a graphical representation of the model.
+        """
+
         if self.children is not None:
             for child in self.children:
                 if child is not None and child.type != "endpoint":
@@ -735,10 +743,13 @@ class pipe:
                     self.manager.endpointList.append(child.name)
                 
 
-    # Take list of edges and creates an igraph tree and visual representation. Graph edges are labeled with (Pipe name, average age))
-    # The graph is saved as graph_scaled.png and takes on a tree structure of the pipe network.       
+           
     def show_tree(self, path, ageDict):
-        # try:
+        """
+        Take list of edges and creates an igraph tree and visual representation. Graph edges are labeled with (Pipe name, average age))
+        The graph is saved as graph_scaled.png and takes on a tree structure of the pipe network.
+        """
+        
         pipeEdges = ['Base']
         for edge in self.manager.edgeList:
             for num, pipe in enumerate(edge):
@@ -754,12 +765,10 @@ class pipe:
         g = Graph(edges = self.manager.edgeList)
         pipeEdges.pop(0)
         ages = [0.0] * len(pipeEdges)
-        # print("pipeEdges: ", pipeEdges, "ageDict: ", ageDict)
         for entry in ageDict.keys():
             ages[pipeEdges.index(entry)] = round(ageDict[entry][0] / ageDict[entry][1], 2)
         
         x = 0
-        # print("endpoints: ", self.manager.endpointList, "Pipe Edges: ", pipeEdges, "el: ", self.manager.edgeList)
         
         for i in range(1, len(pipeEdges) + 1):
                 if(g.degree(i) == 1):
@@ -768,118 +777,50 @@ class pipe:
                     x += 1
         
         pipeTuples = zip(pipeEdges, ages)
-        # pipeTuples = pipeEdges
         g.es["pipeTuples"] = list(pipeTuples)
         g.es["label"] = g.es["pipeTuples"]
         plot(g, "static/plots/graph_scaled.png", bbox = (800,800), margin = 150, layout= g.layout_reingold_tilford(root=[0]))
         plot(g, path, bbox = (800,800), margin = 150, layout= g.layout_reingold_tilford(root=[0]))
-        # except Exception as e:
-        #     print(e, "Error generating graph")
 
-    # the tree_builder function does the actual creation of the ete3 tree. It recursively explores the current pipe
-    # model and transcribes relevant properties of the model into new ete3 tree nodes and inserts them into the
-    # representative model.
-    def tree_builder(self, root, ageDict):
-        pass
-        # t = Tree()
-        # style = NodeStyle()
-        # style["size"] = int(max(self.width*5,10))
-        # style["fgcolor"] = "#3f7c00"
-        # style["shape"] = "sphere"
-        # style["vt_line_type"] = 0
-        # style["hz_line_type"] = 0
-        # style.show_branch_length=True
-        # style.show_leaf_name=True
-        # # treestyle = ete3.TreeStyle()
-        # # treestyle.show_leaf_name = True
-        # # treestyle.show_branch_length = True
-        # # treestyle.show_branch_support = True
-        # t.add_feature("num_particles", 0)
-        # t.add_feature("avg_age", 0)
-        # t.add_feature("max_age", 0)
-        # t.add_feature("min_age", 0)
-        # t.add_feature("length",root.length)
-        # t.add_feature("active", 0)
-        # t.set_style(style)
-        # self.tree_helper(t, root.children, ageDict)
-        # return t
-
-    # the tree_helper class performs the recursive exploration of the pipes model for tree_builder. It also adds more
-    # properties to each node and creates differentiation between endpoints and non-endpoints. Note that ete3 tree nodes
-    # inherit properties from parent nodes, which is why some properties are set by tree_builder (these apply to the
-    # entire tree) and more are set by tree_helper. These apply to individual nodes. Tree_helper inserts data about
-    # each pipe in the pipe model into the node data, but also assists with creating the first layer of layout data
-    # (formatting). the layout data is later augmented just before rendering so that it can reflect the current state
-    # of the model.
-    # def tree_helper(self, tree, iterable, ageDict):
-    #     if iterable is not None:
-    #         for each in iterable:
-    #             if each is not None:
-    #                 child = tree.add_child(name=each.name)
-    #                 child.dist = each.length
-    #                 style = NodeStyle()
-    #                 if each.type != "endpoint":
-    #                     child.add_face(TextFace(each.name), column=0, position="branch-right")
-    #                     if each.name in  ageDict.keys():
-    #                         child.add_face(TextFace(str(round((ageDict[each.name][0] / ageDict[each.name][1]), 3))), column=0, position="branch-bottom")
-
-    #                     self.tree_helper(child, each.children, ageDict)
-    #                     style["fgcolor"] = "#3f7c00"
-    #                 else:
-    #                     style["fgcolor"] = "#f9dc00"
-    #                     # label = AttrFace("name")
-    #                     # label.margin_top=1
-    #                     # label.margin_bottom=1
-    #                     # label.margin_left=1
-    #                     # label.margin_right=1
-    #                     # label.fsize=6
-    #                     # label.fgcolor="blue"
-    #                     # child.add_face(label, column=2, position="branch-right")
-    #                 style["shape"] = "circle"
-    #                 style["size"] = int(max(each.width*5,10))
-    #                 style["vt_line_type"] = 0
-    #                 style["hz_line_type"] = 0
-    #                 child.add_feature("num_particles", 0)
-    #                 child.add_feature("avg_age", 0)
-    #                 child.add_feature("max_age", 0)
-    #                 child.add_feature("min_age", 0)
-    #                 child.add_feature("length", each.length)
-    #                 child.add_feature("active",0)
-    #                 # active = AttrFace("active")
-    #                 # active.margin_top = 1
-    #                 # active.margin_bottom = 1
-    #                 # active.margin_left = 1
-    #                 # active.margin_right = 1
-    #                 # active.fsize = 6
-    #                 # active.fgcolor = "gray"
-    #                 # child.add_face(active, column=1, position="branch-right")
-    #                 child.set_style(style)
-
-# the endpoint class is the control class for the pipe and initiates or ends flow events, sets flow rates,
-# and triggers activation for all other pipes upstream from it. inherits from pipe.
 class endpoint(pipe):
-    # constructor function is simplified from the standard pipe because it has no need for usual pipe properties
-    # such as storing and tracking position of particles.
+    """
+    the endpoint class is the control class for the pipe and initiates or ends flow events, sets flow rates,
+    and triggers activation for all other pipes upstream from it. inherits from pipe.  
+    """
+
     def __init__(self, parent, name, manager):
+        """
+        constructor function is simplified from the standard pipe because it has no need for usual pipe properties
+        such as storing and tracking position of particles.
+        """
+        
         super().__init__(name, 0, 0, None, parent, 0, 0, manager, 0, 0, 0,0, 0, 0, 0, 0)
         self.type = "endpoint"
 
-    # overrides the function in the parent class to produce an error and otherwise do nothing
-    # endpoints should not have pipes downstream from them.
     def create_child(self, name, length, diameter, material):
+        """
+        overrides the function in the parent class to produce an error and otherwise do nothing
+        endpoints should not have pipes downstream from them.
+        """
+
         print("Cannot create child pipes past an endpoint.")
         pass
 
-    # endpoints should not have more endpoints downstream from them. overrides the pipe class to
-    # instead produce an error and otherwise do nothing.
     def create_end(self, name):
+        """
+        endpoints should not have more endpoints downstream from them. overrides the pipe class to
+        instead produce an error and otherwise do nothing.
+        """
+        
         print("Cannot create endpoint past an endpoint.")
         pass
 
-    # function to increase activation for self and upstream pipes to make water flow possible.
     def activate_pipes(self, newFlow=None):
+        """
+        function to increase activation for self and upstream pipes to make water flow possible.
+        """
+        
         self.manager.flowNum += 1
-        # print("Activate_pipes: ", newFlow)
         self.activate()
         if newFlow is not None:
             self.update_flow_rate(newFlow)
@@ -890,23 +831,24 @@ class endpoint(pipe):
             p.activate()
             p = p.parent
 
-    # deactivates self and reduces activation for upstream pipes.
     def deactivate_pipes(self):
+        """
+        deactivates self and reduces activation for upstream pipes.   
+        """
+
         self.deactivate()
-        #old_flow = self.flow
-        #self.flowRate = 0
-        #self.flow = 0
-        #self.update_pipe_flow_rates(old_flow)
         self.update_flow_rate(0)
         p = self.parent
         while p is not None:
             p.deactivate()
             p = p.parent
 
-    # function to change the flow rate of this pipe. currently, the endpoint flow rates
-    # dictate the flow rates through all upstream pipes.
     def update_flow_rate(self, new_flow: float):
-        # print("update_flow_rate: ", new_flow)
+        """
+        dictate the flow rates through all upstream pipes.
+        function to change the flow rate of this pipe. currently, the endpoint flow rates
+        """
+        
         flow_change = new_flow - self.flowRate
         rate_change = flow_change / self.manager.timeStep
         self.flowRate = new_flow
@@ -925,10 +867,13 @@ class endpoint(pipe):
                     print("negative flow rate error: pipe ", p.name, "has flow rate of", p.flowRate)
             p = p.parent
 
-    # when deactivating, we want to decrease the flow rate of all the parent pipes by the
-    # flow rate of the endpoint that has deactivated (
-    # so we instead update the flow rates of all of the parent pipes to subtract the flow
     def update_pipe_flow_rates(self, old_flow: float):
+        """
+        when deactivating, we want to decrease the flow rate of all the parent pipes by the
+        flow rate of the endpoint that has deactivated (
+        so we instead update the flow rates of all of the parent pipes to subtract the flow
+        """
+
         global timeStep
         flow_change = self.flowRate - old_flow
         rate_change = flow_change / timeStep
