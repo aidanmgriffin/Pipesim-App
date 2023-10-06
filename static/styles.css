@@ -28,6 +28,10 @@ p{
     color: #404E77;
 }
 
+.linked-text {
+    text-decoration: none;
+   
+}
 .row {
     display: flex;
 }
@@ -38,10 +42,6 @@ p{
 
 .table-widths {
     width: 10%;
-}
-.header{
-/*    border-bottom: 1px solid #404E77;*/
-/*    margin: 0em 2em 0em 0em;*/
 }
 
 .header-col{
@@ -161,6 +161,8 @@ p{
 #docs-sidebar {
     /* position: sticky;
     top: 0; */
+    /* position: absolute; */
+    /* overflow: scroll; */
     border-right: 1px solid #404E77; 
     /* padding: 0; */
 }

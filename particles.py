@@ -92,6 +92,10 @@ class ParticleManager():
         self.rootflow = 0
         self.newpos = 0
         self.rootlength = 0
+        self.prevFlow = 0
+        self.prevArea = 0
+        self.prevLength = 0
+
 
         #self.pool = cf.ProcessPoolExecutor(max_workers = self.process_max)
 
@@ -484,6 +488,7 @@ class Particle:
                 self.manager.newpos = newPosition
                 if self.container.length > 0:
                     self.manager.prevLength = self.container.length
+                    
                 
             elif self.container.type == "endpoint":
                 particleInfo = []

@@ -54,7 +54,7 @@ class execution_arguments:
 class graphing:
 
     # initializes a new graphing class instance when provided with a reference to the process messaging queue
-    def __init__(self, queue, mode):
+    def __init__(self, queue):
         # self.controller = source
         self.Queue = queue
         self.line_styles = ["-", "--", "-.", ":"]  # also "" is none
@@ -64,8 +64,8 @@ class graphing:
         self.line_colors = list(self.colors.keys())
         for no_vis_color in ["white", "w", "snow", "whitesmoke", "seashell", "floralwhite", "ivory", "ghostwhite", "xkcd:pale lilac"]:
             self.line_colors.remove(no_vis_color)
-        self.mode = mode
-        self.mode_name = {-1:"Seconds", -2:"Minutes", -3:"Hours", 4: "Custom"}
+        self.mode = 4
+        # self.mode_name = {-1:"Seconds", -2:"Minutes", -3:"Hours", 4: "Custom"}
 
 
     # returns a random color from among the available color options (all named colors in matplotlib.colors)
@@ -142,10 +142,11 @@ class graphing:
         xy.legend(legend_lines, legend_names)
         xy.set_ylim(0, maxAge * 1.1)
         xy.set_xlim(0, counter.get_time())
-        if self.mode > 0:
-            self.mode = 4
-        xy.set_xlabel("Simulation Time ({})".format(self.mode_name.get(self.mode)))
-        xy.set_ylabel("Expelled Particle Age ({})".format(self.mode_name.get(self.mode)))
+        # if self.mode > 0:
+        #     self.mode = 4
+
+        xy.set_xlabel("Simulation Time (Minutes)")
+        xy.set_ylabel("Expelled Particle Age (Minutes)")
         try:
             print("saving ", filename)
             plt.savefig(filename, facecolor='w', edgecolor='w',
@@ -207,8 +208,8 @@ class graphing:
         xy.legend(legend_lines, legend_names)
         xy.set_ylim(0, maxAge * 1.1)
         xy.set_xlim(0, counter.get_time())
-        xy.set_xlabel("Simulation Time ({})".format(self.mode_name.get(self.mode)))
-        xy.set_ylabel("Flow Rate (Gallons per Minute)".format(self.mode_name.get(self.mode)))
+        xy.set_xlabel("Simulation Time (Minutes)")
+        xy.set_ylabel("Flow Rate (Gallons per Minute)")
         try:
             print("saving ", filename)
             plt.savefig(filename, facecolor='w', edgecolor='w',
@@ -252,8 +253,8 @@ class graphing:
         xy.legend(legend_lines, legend_names)
         xy.set_ylim(0, maxAge * 1.1)
         xy.set_xlim(0, counter.get_time())
-        xy.set_xlabel("Simulation Time ({})".format(self.mode_name.get(self.mode)))
-        xy.set_ylabel("Expelled Particle Concentration (Percentage)".format(self.mode_name.get(self.mode)))
+        xy.set_xlabel("Simulation Time (Minutes)")
+        xy.set_ylabel("Expelled Particle Concentration (Percentage)")
         try:
             print("saving ", filename)
             plt.savefig(filename, facecolor='w', edgecolor='w',
@@ -359,25 +360,25 @@ class Driver:
         self.actives = None # list of active endpoints
         self.set_time_step(step)
         self.mode = step
-        self.mode_name = {1:"second", 2:"minute", 3:"hour", 4: "custom"}
+        # self.mode_name = {1:"second", 2:"minute", 3:"hour", 4: "custom"}
         self.flowList = {}
         # self.modelfile = None
         # self.presetsFile
 
     # updates the time step and related variables to allow for computation on seconds, minutes, or hours.
     def set_time_step(self, option: int):
-        step = 60 # setting for seconds
+        # step = 60 # setting for seconds
         # step = float(option)
-        if option == -1:
-            step = 60
-        elif option == -2:
-            step = 1
-        elif option == -3:
-            step = 1.0 / 60.0
-        else: 
-            print("option: ", option)
-            step = 1.0 / float(option)
-            print("step: ", step)
+        # if option == -1:
+        #     step = 60
+        # elif option == -2:
+        #     step = 1
+        # elif option == -3:
+        #     step = 1.0 / 60.0
+        # else: 
+        print("option: ", option)
+        step = 1.0 / float(option)
+        print("step: ", step)
 
         self.TIME_STEP = step
         self.ONE_DAY = step * 24 * 60 
@@ -653,7 +654,7 @@ class Driver:
             output.write("flow preset file: " + arguments.presetsfile + "\n")
             output.write("d_m: " + str(self.manager.d_m) + "\n")
             output.write("d_inf: " + str(self.root.d_inf) + "\n")
-            output.write("granularity: " + str(self.mode_name.get(self.mode)) + "\n")
+            output.write("granularity: " + self.mode + "Minutes" + "\n")
             output.write("time: ")
             output.write(str(self.counter.get_time()) + "\n")
         except Exception as e:
@@ -774,7 +775,7 @@ class Driver:
             active_titles.append(title)
             print("testing", title, "with flowrate:", self.flowrates[title], "and activation chance of", self.frequencies[title])
         # self.sim_randomized(root, endpoints, active_titles, days*self.ONE_DAY, active_start*3600, active_end*3600, density)
-        g = graphing(self.Queue, self.mode)
+        g = graphing(self.Queue)
         g.graph_age(self.manager.expelledParticleData, self.counter, logpath)
         self.write_output(logpath + "\expelled.csv",self.manager.expendedParticles)
         self.write_output(logpath + "\pipe_contents.csv", self.manager.particleIndex)
@@ -816,7 +817,7 @@ class Driver:
             self.flowrates[each[0]] = each[2]
         manager.setTimeStep(self.TIME_STEP)
         # self.sim_randomized(self.root, self.endpoints, self.actives, length*self.ONE_DAY, time_start*self.HOUR_LENGTH, time_end*self.HOUR_LENGTH, density)
-        g = graphing(self.Queue, self.mode)
+        g = graphing(self.Queue)
         g.graph_age(self.manager.expelledParticleData, self.counter, pathname)
         self.write_output(pathname + "\expelled.csv", self.manager.expendedParticles)
         self.write_output(pathname + "\pipe_contents.csv", self.manager.particleIndex)
@@ -866,7 +867,7 @@ class Driver:
             try:
                 if not os.path.isdir(pathname):
                     os.mkdir(pathname)
-                g = graphing(self.Queue, self.mode)
+                g = graphing(self.Queue)
                 
                 g.graph_age(self.manager.expelledParticleData, self.counter, self.flowList, pathname)
             except Exception as e:
@@ -877,7 +878,7 @@ class Driver:
                 self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
                 self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
                 # start timing
-                time_1 = time.time()
+                # time_1 = time.time()
 
                 if self.manager.diffusionActive:
                     g.write_modifier_bins(".\static\plots\modifier_histogram", self.manager.bins)
@@ -895,22 +896,22 @@ class Driver:
                 var = (2 * lengthFeet * (self.manager.molecularDiffusionCoefficient /144)) / math.pow(velocity, 3)
                 skew = 3 * math.sqrt((2 * (self.manager.molecularDiffusionCoefficient /144)) / (lengthFeet * velocity))
                 mean *= self.TIME_STEP
-                time_end1 = time.time() - time_1
-                time_2 = time.time()
+                # time_end1 = time.time() - time_1
+                # time_2 = time.time()
                 g.write_expel_bins(pathname+"\expelled_histogram", mean, var, self.manager.expelledParticleData)
                 g.write_expel_bins(".\static\plots\expelled_histogram", mean, var,  self.manager.expelledParticleData)
-                time_end2 = time.time() - time_2
-                time_3 = time.time()
+                # time_end2 = time.time() - time_2
+                # time_3 = time.time()
                 ageDict = self.write_pipe_ages(self.manager.expendedParticles, pathname+"\pipe_ages.csv")
-                time_end3 = time.time() - time_3
-                time_4 = time.time()
+                # time_end3 = time.time() - time_3
+                # time_4 = time.time()
                 self.write_run_data(pathname+"\sim_data.txt", arguments)
-                time_end4 = time.time() - time_4
-                time_5 = time.time()
+                # time_end4 = time.time() - time_4
+                # time_5 = time.time()
                 self.root.generate_tree()
                 self.root.show_tree(pathname + "/tree_graph.png", ageDict)
-                time_end5 = time.time() - time_5
-                print("1: " + str(time_end1), "2: " + str(time_end2), "3: " + str(time_end3), "4: " + str(time_end4), "5: " + str(time_end5))
+                # time_end5 = time.time() - time_5
+                # print("1: " + str(time_end1), "2: " + str(time_end2), "3: " + str(time_end3), "4: " + str(time_end4), "5: " + str(time_end5))
             except Exception as e:
                 raise Exception("Error writing output files. Check uploaded files for errors and ensure that the output directory is not open in another program. [" + str(e) + "]" )
             # tree_model.render(".\static\plots\pipe_tree.png")

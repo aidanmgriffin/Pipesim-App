@@ -5,6 +5,10 @@
     <meta charset="utf-8" />
     <title>Error</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="/static/bootstrap/dist/css/bootstrap.css">
+
+    
+
 
 </head>
 <body>
@@ -13,6 +17,9 @@
         <img class="error-image" src="static/images/block-logo.png">
         <h1 class="error-message">Error 404</h1>
         <h2 class="error-message-cont">Page not found</h2>
+        <br/>
+        <a class="btn btn-dark" href="{{url_for('index')}}" role="button">Back Home</a>
+
     </div>
 
 </body>

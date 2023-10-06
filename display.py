@@ -48,8 +48,8 @@ class simulation_window():
             self.diffusion_status = True
 
     # this loop runs the graphical interface once it has been configured as above
-    def start(self):
-        pass
+    # def start(self):
+    #     pass
         # self.window.after(500, self.check_queue)
         #self.window.mainloop()
 
@@ -109,13 +109,6 @@ class simulation_window():
             item = None
         return item
 
-    # updates step size as indicated by the step size variable (used by radio buttons). This function is called
-    # when the radio button selection changes.
-    def set_step_time(self):
-        #self.step_size = self.step_var.get()
-        self.step_size = self.step_var
-        # print(self.step_size)
-    
     def load_settings_csv(self, filename):
         file = open(filename,"r")
         csvfile = csv.reader(file,dialect="excel")
@@ -137,62 +130,65 @@ class simulation_window():
             traceback.print_exc()
             exception_holder.exception = e
 
+    #Takes parameters from the settings preset file and passes them to the simulation.
     def settings_preset_simulation_button_handler(self, filename):
         density = None
         valid = True
         f0 = None
 
         try:
-            #f0 = open(self.file0.get())
             f0 = open(filename)
             f0.close()
         except:
-            # tm.showerror(title = "Error", message = "invalid filename: settings file")
             valid = False
         
         if valid:
-            #contents = self.load_settings_csv(self.file0.get())
             contents = self.load_settings_csv(filename)
 
-            # print(contents, contents[0][3])
-            if contents[0][3] == 'Yes' or contents[0][3] == 'yes':
-                self.diffusion_status = True 
+            # if contents[0][2] == 'Yes' or contents[0][2] == 'yes':
+            #     self.diffusion_status = True 
+            # else:
+            #     self.diffusion_status = False
+            
+            if contents[0][3] == 'Yes' or contents[0][2] == 'yes':
+                self.diffusion_stagnant_status = True 
+            else:
+                self.diffusion_stagnant_status = False
+            
+            if contents[0][4] == 'Yes' or contents[0][3] == 'yes':
+                self.diffusion_advective_status = True 
+            else:
+                self.diffusion_advective_status = False
+
+            if self.diffusion_advective_status == True or self.diffusion_stagnant_status == True:
+                self.diffusion_status = True
             else:
                 self.diffusion_status = False
-                
-            self.options = {"Seconds":1, "Minutes":2, "Hours":3, "Custom":4}
-            #self.step_var.set(self.options[contents[0][5]])
-            self.step_var = self.options[contents[0][5]]
-            self.set_step_time()
-            self.generate_path()
-            # manager = Manager()
-            # exception_holder = manager.Namespace()
-            simulator = driver.Driver(self.Queue, step = self.step_size)
 
-            # print(" pathname : ", self.outputLocation)
-            #arguments = driver.execution_arguments(settingsfile = self.file0.get(), modelfile=contents[0][0], presetsfile=contents[0][1],
-            #                                       density= float(contents[0][2]), pathname=self.outputLocation,
-            #                                       diffuse=self.diffusion_status, diffusionCoefficient= float(contents[0][4]))
+            print("contents: ", contents)
+            print("contents: ", contents[0][6])
+            self.step_size = float(contents[0][6]) / 60
+            self.generate_path()
+
+            
+            manager = multiprocessing.Manager()
+            exception_holder = manager.Namespace()
+            
+            simulator = driver.Driver(self.Queue, step = self.step_size)
             arguments = driver.execution_arguments(settingsfile = filename, modelfile=contents[0][0], presetsfile=contents[0][1],
-                                                   density= float(contents[0][2]), pathname=self.outputLocation,
-                                                   diffuse=self.diffusion_status, molecularDiffusionCoefficient= float(contents[0][4]))
+                                                   density= float(contents[0][5]), pathname=self.outputLocation,
+                                                   diffuse=self.diffusion_status, diffuse_stagnant= self.diffusion_stagnant_status, diffuse_advective=self.diffusion_advective_status, molecular_diffusion_coefficient = float(contents[0][4]))
             
-            sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, arguments))
-            # sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, exception_holder, arguments))
-            
+            sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, exception_holder, arguments))
             sim.start()
             sim.join()
 
-            # if hasattr(exception_holder, 'exception'):
-            #     raise exception_holder.exception
-            
             if sim.exitcode == 0:
                 return([1, self.diffusion_status])
             else:
                 return(0)
         
-    # function validates file name input for the two preset configuration files and (if valid)
-    # launches the simulation in preset mode.
+    # function validates file name input for the two preset configuration files and (if valid) launches the simulation in preset mode.
     def preset_simulation_button_handler(self, file1, file2, density1, diffusion_status, stagnant_diffusion_status, advective_diffusion_status, molecular_diffusion_coefficient, granularity):
         density = None
         valid = True
@@ -202,29 +198,24 @@ class simulation_window():
             f1 = open(file1)
             f1.close()
         except:
-            # tm.showerror(title = "Error", message = "invalid filename: pipes model")
             valid = False
         try:
             f2 = open(file2)
             f2.close()
         except:
-            # tm.showerror(title = "Error", message = "Invalid filename: test procedure")
             valid = False
         try:
             #density = self.density1.get()
             density = float(density1)
         except:
-            # tm.showerror(title = "Error", message = "Invalid argument: non-numeric density")
             valid = False
-        # self.step_var = self.options[granularity]
-        # self.set_step_time()
+
         print("granularity: ", granularity)
         self.step_size = granularity
 
         manager = multiprocessing.Manager()
         exception_holder = manager.Namespace()
 
-        # molecular_diffusion_coefficient = molecular_diffusion_coefficient  #/ self.step_var
         if valid:
             self.generate_path()
             simulator = driver.Driver(self.Queue, step = self.step_size)
@@ -246,96 +237,4 @@ class simulation_window():
                 return(0)
             
 
-    # this function validates all the inputs int he window to ensure they are valid and will result in a successful
-    # simulation. The function will raise an error describing the problem if there is one, allowing the user
-    # to correct their input. If the input validates successfully, then this function will close the configurator
-    # window and call another function that begins the simulation in random mode.
-    # def validate_configuration(self):
-    #     valid = True
-    #     for element in self.frequencies:
-    #         val = element.get()
-    #         try:
-    #             val = float(val)
-    #             if val < 0 or val > 1:
-    #               raise Exception
-    #         except:
-    #             tm.showerror("A frequency input is non-numeric or out of range [0,1]")
-    #             valid = False
-    #     for element in self.flowrates:
-    #         flow = element.get()
-    #         try:
-    #             flow = float(flow)
-    #             if flow < 0:
-    #                 raise Exception
-    #         except:
-    #             tm.showerror("A flowrate input is non-numeric or out of range [0,infinity)")
-    #             valid = False
-    #     start_time = None
-    #     end_time = None
-    #     try:
-    #         start_time = float(self.active_start.get())
-    #         if start_time < 0.0 or start_time > 24.0:
-    #             raise Exception
-    #     except:
-    #         tm.showerror("Start time is non-numeric or out of range")
-    #         valid = False
-    #     try:
-    #         end_time = float(self.active_end.get())
-    #         if end_time < 0.0 or end_time > 24.0:
-    #             raise Exception
-    #     except:
-    #         tm.showerror("end time is non-numeric or out of range")
-    #         valid = False
-    #     duration = None
-    #     try:
-    #         duration = int(self.runtime.get())
-    #         if duration < 1:
-    #             raise Exception
-    #     except:
-    #         tm.showerror("simulation duration is not an integer or less than one.")
-    #         valid = False
-    #     density = None
-    #     try:
-    #         density = float(self.densityEntry.get())
-    #         if density <= 0.0:
-    #             raise Exception
-    #     except:
-    #         tm.showerror("density is nonpositive or nonnumeric")
-    #         valid = False
-    #     randLow = None
-    #     randHigh = None
-    #     try:
-    #         randLow = int(self.lowDuration.get())
-    #         randHigh = int(self.highDuration.get())
-    #         if randLow < 1 or randHigh < 0:
-    #             raise Exception
-    #         elif randLow > randHigh:
-    #             raise Exception
-    #     except:
-    #         tm.showerror("nonnumeric entry or invalid range: a > b or a,b < 1.")
-    #         valid = False
-    #     if valid:
-    #         for i in range(len(self.checks)):
-    #             checkval = self.checks[i].cget("text")
-    #             if checkval == 1:
-    #                 instruction = (self.endpointNames[i], float(self.frequencies[i].get()), float(self.flowrates[i].get()))
-    #                 self.activation_instructions.append(instruction)
-    #                 #print(instruction)
-    #         #update the configuration object so that it does not contain the model anymore, only needs the filename
-    #         #self.root, self.endpoints, self.manager, self.timer
-    #         configuration = (self.fname, (start_time, end_time), (randLow, randHigh), duration, density, self.activation_instructions)
-    #         self.parent.Queue.put(("random_sim_configuration", configuration))
-    #         self.configurator.destroy()
-
-            #self.parent.random_simulation_handler(configuration)
-
-# starts main window thread
-# def main():
-#     sim = simulation_window()
-#     sim.start()
-
-# # executes when python is run from the command line or executed.
-# if __name__ == "__main__":
-#     main()
-
-
+  

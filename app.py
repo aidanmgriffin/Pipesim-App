@@ -107,9 +107,12 @@ def upload():
             pipes = request.files['pipe-network']
             flows = request.files['flow-preset']
 
-            #Validating density input. Input must be a number between 0 and 1 inclusive.
+            #Validating density input. Input must be a number between 0 and 1 inclusive. 
             try:
                 density = request.values['density']
+                # If no density is input, default to 0.5.
+                if density == '':                
+                    density = 0.5
                 density = float(density)
                 if density < 0 or density > 1:
                     alertDanger.message = "Density must be between 0 and 1"
@@ -118,31 +121,15 @@ def upload():
                 alertDanger.message = "Density must be a number between 0 and 1"
                 raise Exception
                 
-    
-            # Choose between minute granularity options. If custom tick is chosen, get custom tick value from form.
-            # In case of no selection, error is shown to user.
-            try:
-                req_radio = request.values['inlineRadioOptions']
-            except:
-                alertDanger.message = "Granularity option not selected."
-                raise Exception
             
-            if req_radio == 'option1':
-                granularity = -1
-            elif req_radio == 'option2':
-                granularity = -2
-            elif req_radio == 'option3':
-                granularity = -3
-            elif req_radio == 'option4':
-                # If custom tick is chosen and box is not filled in, default to minutes.
-                try:
-                    granularity = request.values['custom-granularity']
-                except:
-                    granularity = -2
+            granularity = request.values['custom-granularity']
+            if granularity == '':
+                granularity = 1
             else:
-                granularity = -2
-
-            
+                granularity = float(granularity) 
+                granularity /= 60
+                print("granularity: ", granularity)
+        
             
             # Check if diffusion is enabled (flexbox is checked). If so, set diffusion status to 1. Else, set to 0.
             # If diffusion is not enabled (flexbox not checked), molecular diffusion coefficient (d_m) will be set to default value.

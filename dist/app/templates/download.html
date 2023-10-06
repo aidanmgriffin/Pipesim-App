@@ -4,11 +4,12 @@
 
 <div class="main-content">
 
+    
     <!-- Sticky header to navigate to individual plots. -->
     <div class="nav-header">
-        <h3 class="download-heading">Output From {{date_time}}</h3>
-
-        <div class="row gx-2">
+        <h3 class="download-heading">Output From {{date_time}}</h3> 
+        
+        <div class="d-flex flex-row gx-2">
             <a type="button" href="#age-plot" class="btn btn-light btn-sm mx-2">Age Plot</a>
             <a type="button" href="#concentration-plot" class="btn btn-light btn-sm mx-2">Concentration Plot</a>
             {% if diffusion_status %}
@@ -18,6 +19,7 @@
             <a type="button" href="#flow-plot" class="btn btn-light btn-sm mx-2">Flow Plot</a>
             <a type="button" href="#network-layout" class="btn btn-light btn-sm mx-2">Network Layout</a>
             <a type="button" href="#download-outputs" class="btn btn-light btn-sm mx-2">Download Ouptuts</a>
+            <a class="btn btn-dark" href="{{url_for('upload')}}" role="button">New Simulation</a>
         </div>
     </div>
 

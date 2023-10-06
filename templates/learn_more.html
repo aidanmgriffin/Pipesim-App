@@ -5,19 +5,69 @@
 <div class="main-content">
     <h1>About the project</h1>
     <div class="foreground-spacer-block"></div>
-
-    <br />
-    <h4>Abstract and Motivation</h4>
-    <p>Risk of exposure to pathogens such as Legionella and Mycobacteria from drinking water are heightened by long residence times of water in water distribution systems and elimination of disinfection agents such as chlorine through contact with biofilms inside pipe networks. Municipal water distribution systems are multiscale, mainly dendritic networks analogous to mature trees, with large diameter main pipes (trunks) terminating at a large number of taps (leaves) connected through small diameter lines (twigs). Both the accumulation of residence time (age), and the specific surface area in such systems are maximal in the final branches and twigs of the network, typically in "premise plumbing", that is, the pipe network inside buildings. Consequently there is a critical need for simulation tools that can identify locations of maximum residence time and minimum disinfection agents in premise plumbing drinking water networks. Prof. Ginn is seeking a team of students to extend an existing (Python) code that keeps track of water ages in a building pipe network and to apply the code to the cold water premise plumbing subnetwork of the PACCAR building on the WSU campus. The code, "Pipesim," authored by WSU CS student N. Chrystephan working as a research assistant in the Ginn lab 2020-2021, has been validated and is computationally stable. Pipesim simulates transient flows in the network in response to flow events at taps such as water fountains, kitchen faucets, and toilets, and uses a "particle-tracking" approach to compute ages of water throughout the pipe network at one-second resolution in time. Typical simulations span months, so with one-second resolution of water ages that vary in time, the code generates massive data sets.</p>
-
-    <h4>Additional Info</h4>
-    <p>
-        Our work with Professor Ginn could lead to significant research findings and could contribute to detection of potentially harmful substances in our campus' drinking water. We will be spending time to expand PipeSim's capabilities to include water dispersion, advanced biochemical reaction information, long term (multiple month-long) data simulation, and more. This work has been done by Aidan Griffin, Kenji Adachi, and Keagen Brendle in collaboration with Professor Ginn and Nikita Chrystephen, one of Ginn's previous research assistants. The original PipeSim project was built by Nikita, and his guides will help us to understand how to expand on PipeSim in the ways that Professor Ginn is looking for.
-    </p>
-
-    <h4>Functionality</h4>
-    <p>Users will be able to provide Excel files that translate pipe systems as data trees as input. This way you can model a particular pipe network and use that to run various simulations. A GUI will be launched where the user can choose between predetermined and random simulation parameters where they can also fine tune data output pertaining to particle locations, particle counts, and more.</p>
-
+<br/>
+  <h4> Introduction.</h4> 
+ <p>U.S. public drinking water systems using surface water sources or ground water sources under
+the direct influence of surface water are operated under the US EPA “Surface Water Treatment
+Rules,” requiring most water systems to filter and disinfect water. Drinking water disinfection
+is used to meet these and other state and federal water quality regulations for producing water
+nationwide. However, maintaining water quality during distribution through millions of miles of
+pipeline infrastructure still remains challenging. Biochemical deterioration of distribution
+system components, including not only water mains and service lines owned by water utilities,
+some a century old, but also privately-owned premise plumbing in buildings, is unavoidable as
+revealed in the recent lead release and related Legionnaires’ disease outbreak in Flint,
+Michigan. Water main line breaks are estimated at nearly 250 thousand per year in the U.S.
+and increasing with aging systems. Breaches are among the most common causes of pathogen
+intrusion and waterborne disease outbreaks. The pipelines in the distribution system, and
+especially premise plumbing provide vast solid-liquid interfaces for such microorganisms to
+form biofilms, that are central to several compliance issues and public health risks, including
+accumulation and subsequent release of opportunistic pathogens. </p>
+<h4>Focus</h4>
+<p>
+    Control of pathogen proliferation in pipe networks is a primary objective of disinfection, often
+    by injection of free chlorine or monochloramine at the source collection point. These dissolved
+    disinfectants serve as electron acceptors in redox reactions that reduce viable microorganisms
+    including pathogens. However these disinfectants also react with organic matter, pipe wall
+    materials, and other species, leading to their reduction or “decay.” Water age (time spent in
+    the pipe network) has been found to serve as a primary indicator of water quality and
+    remaining disinfectant. Further, aging in premises plumbing has been found important because
+    of the high pipe surface area-to-volume ratio and long stagnation times that can occur within
+    buildings, especially as vacancy rises, with the recent pandemic a sudden example. Thus it is
+    useful to develop a simulator for water aging in premises plumbing systems. That is the job
+    PIPESIM is designed to do.
+</p>
+<h4>Summary details</h4>
+<p>
+    PIPESIM reads two input files. Both files are Microsoft Excel “.csv” files. The
+    first file gives information on the building pipe network including: lengths, diameters, materials,
+    and several other descriptive parameters for each pipe; pipe connections; and outlets such as
+    water fountains, kitchen faucets, bathroom lavatory faucets and toilets, and hose bibs. The
+    second file gives a time series of flow events from outlets, including start and stop time and
+    flow rates for each event. Using these data, for each flow event PIPESIM identifies the flowing
+    subnetwork of the pipe system and updates water ages in each pipe involved in the
+    
+    subnetwork, and tells the age of the water eluting from the outlet. These calculations include
+    advection, diffusion, and dispersion including pre-asymptotic dispersion, as selected by the
+    user. It also can calculate concentrations of residual free chlorine or monochloramine (with an
+    effective and simplified monochloramine reaction network in beta-testing status). The time
+    granularity of these calculations are controlled by the user but typically are in single seconds or
+    minutes. For more details on input file construction and how the code works, please refer to
+    the Documentation.
+</p>
+<h4>History</h4>
+<p>
+    PIPESIM is a “particle tracking code” in that it uses imaginary particles as markers of parcels of
+    water in the system. The first version of the code was developed by Nikita Ostrander, WSU CS
+    student, using an algorithm for the particle position and age updates developed by Prof. Tim
+    Ginn, in 2020-2021. Then developer Aidan Griffin developed the second version of the code,
+    implementing chemical reactions for free chlorine or monochloramine, as well as diffusion and
+    either asymptotic or pre-asymptotic dispersion, using models of the dispersive flux and pre-
+    asymptotic dispersion coefficient devised by Prof. Ginn. Aidan also constructed the GUI and the
+    downloadable application version for general use. Aidan was assisted by Kenji Adachi and
+    Keagen Brendle in the early stages of this work. The development of PIPESIM has been done
+    under funding support from the National Science Foundation CBET grant 1855211, and under
+    the WSU Boeing Distinguished Professorship in Environmental Engineering.
+</p>
     <p>Check out our <a href="https://github.com/WSUCptSCapstone-Fall2022Spring2023/nsf-pipesimpython">Github!</a></p>
     <h4>Changelog</h4>
 
@@ -33,7 +83,7 @@
         <p>- Connected sim builder to backend.</p>
 
         <h6>V 1.1</h6>
-        <p>- Redid home page. AG</p>
+        <p>- Redid home page.</p>
         <p>- Added new upload capabilities.</p>
         <p>- Added documentation / learn more pages.</p>
 

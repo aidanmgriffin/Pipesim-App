@@ -29,7 +29,7 @@
         <input class="form-control" type="file" id="setting-preset" name="setting-preset">
     </div>
 
-    <button type="submit" class="btn" name="settings-submit">Upload</button>
+    <button type="submit" class="btn" name="settings-submit"  style = "background-color: #e2e3e5;" >Upload</button>
 </form>
 <br />
 <div class="foreground-spacer-block"></div>
@@ -51,37 +51,36 @@
     </div>
     <script src = "/static/js/frontend.js"></script>
 
-    <div class="form-row align-items-center ml-3">
+    <div class="form-row d-flex align-items-center ml-3">
         <div class="col-auto">
 
             <input class="form-check-input" type="checkbox" value="" name = "flex-check" id="flexCheckDefault" onclick="CheckAll()">
             <label class="form-check-label" for="flexCheckDefault" name="diffusion-enabled">
-                Diffusion Enabled
+                Diffusion Enabled (default value is for 20°C. Tang & Sandall, 1985)
             </label>
-            <p id = "text" style="display: none;">Checked!</p>
          
         </div>
-        <div class="col-md-2">
-            <input type="number" step="any" class="form-control" name="molecular-diffusion-coefficient" placeholder="Customize Molecular Diffusion">
+        <div class="col-md-2 mx-2">
+            <input type="number" step="any" class="form-control" name="molecular-diffusion-coefficient" placeholder="8.28 * 10⁻⁴"> 
         </div>
 
         <div class = "col-auto">
-            gallons / minute
+            cm²/min
         </div>
     </div>
-    <div class="form-row align-items-center ml-3">
-        <div class="col-auto">
+    <div class="form-row ml-3">
+        <div class="col-auto d-flex align-items-center">
 
-            <input class="form-check-input" type="checkbox" value="" name = "flexCheckStagnant" id="flexCheckStagnant" style = "display: none" onclick="UncheckAll()">
+            <input class="form-check-input mx-2" type="checkbox" value="" name = "flexCheckStagnant" id="flexCheckStagnant" style = "display: none" onclick="UncheckAll()">
             <label class="form-check-label" for="flexCheckStagnant" name="stagnant-periods" id = "stagnant-periods" style = " display: none; margin-right: 50px;">
                 Diffusion During Stagnant Periods
 
         </div>
     </div> 
     <div class="form-row align-items-center ml-3">
-        <div class="col-auto">
+        <div class="col-auto d-flex align-items-center">
 
-            <input class="form-check-input" type="checkbox" value="" name = "flexCheckAdvective" id="flexCheckAdvective" style = "display: none;" onclick="UncheckAll()">
+            <input class="form-check-input mx-2" type="checkbox" value="" name = "flexCheckAdvective" id="flexCheckAdvective" style = "display: none;" onclick="UncheckAll()">
             <label class="form-check-label" for="flexCheckAdvective" name="advective-periods" id= "advective-periods" style = "margin-right: 50px; display: none;">
                 Diffusion & Dispersion During Advective Periods 
         
@@ -94,19 +93,21 @@
 
 
     <div class="alert alert-secondary align-middle" role="alert">
-       <!--<i class="bi bi-exclamation"></i>--> <span class = "align-middle"> Set <a href = Documentation.html>D_INF</a> and <a href = documentation#run-simulation>Alpha</a> Values in Pipe Network File </span> </div>
+       <i class="bi bi-exclamation"></i> <span class = "align-middle"> The (pre-asymptotic) dispersion coefficient is D(ω) = (D_inf - D_m)(1 - e ^ (- ω / α)) where ω is time in flow, D_m is molecular diffusion coefficient, D_inf is asymptotic dispersion coefficient, and ɑ is a scaling parameter. If you do not wish to model pre-asymptotic dispersion, set α = 1, and D_m = D_inf = the asymptotic diffusion coefficient for each pipe. Set <a href = documentation#D_INF>D_inf</a> and <a href = documentation#Alpha>α</a> Values in Pipe Network File </span> </div>
     
 
     <br />
-    <div class="form-row align-items-center">
-        <div class="col-auto">
-            Particle Density [0-1] :
+    <div class="form-row d-flex align-items-center">
+        <div class="col-auto mx-2">
+            <a href = documentation#particle-density>Particle Density</a> [0-1] :
         </div>
 
         <div class="col-md-1">
-            <input type="number" step=any class="form-control" id="density" name="density" placeholder="">
+            <input type="number" step=0.01 min = 0.01 class="form-control" id="density" name="density" placeholder="0.5">
 
         </div>
+
+
     </div>
     <br/>
     <!-- <div class="form-row align-items-center">
@@ -121,12 +122,12 @@
     </div>
     <br /> -->
 
-    <div class="form-row align-items-center">
+    <div class="form-row d-flex align-items-center">
 
-        <div class="col-auto">
-            Time Granularity: 
+        <div class="col-auto mx-2">
+            <a href = documentation#time-granularity>Time Granularity</a> [Seconds]: 
         </div>
-        <div class="col-auto">
+        <!-- <div class="col-auto">
             <div class="form-check form-check-inline">
                 <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1" value="option1">
                 <label class="form-check-label" for="inlineRadio1">Seconds</label>
@@ -143,14 +144,14 @@
                 <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio4" value="option4">
                 <label class="form-check-label" for="inlineRadio4">Custom</label>
             </div>
-            
+        </div> -->
+        <div class = "col-md-1">
+            <input type="number" step=0.01 class="form-control" id="custom-granularity" min = 0.01 name="custom-granularity" placeholder="60">
         </div>
-        <div class = "col-auto">
-            <input type="number" step=any class="form-control" id="custom-granularity" name="custom-granularity" placeholder="">
-        </div>
+        <!-- <label for = "custom-granularity" class = "mx-2"> Minute</label> -->
     </div>
     <br />
-        <button type="submit" class="btn" name="preset-submit">Upload</button>
+        <button type="submit" class="btn" name="preset-submit" style = "background-color: #e2e3e5;" >Upload</button>
     
 
 </form>
