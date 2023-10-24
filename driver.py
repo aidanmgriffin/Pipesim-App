@@ -18,6 +18,7 @@ import numpy as np
 # simple container object to store configuration options for simulation execution.
 # note that it performs no validation on input and may be created with improper values,
 # missing values, or incorrect types.
+
 class execution_arguments:
     def __init__(self,
                  settingsfile = None,
@@ -32,7 +33,13 @@ class execution_arguments:
                  diffuse_stagnant: bool = False,
                  diffuse_advective: bool = False,
                  molecular_diffusion_coefficient = None,
-                 instructions = None):
+                 instructions = None,
+                 decay_free_chlorine_status = False,
+                 decay_monochloramine_status = False,
+                 starting_particles_free_chlorine_concentration = None,
+                 injected_particles_free_chlorine_concentration = None,
+                 decay_monochloramine_dict = None,
+                 ):
         self.settingsfile = settingsfile
         self.modelfile = modelfile
         self.presetsfile = presetsfile
@@ -44,6 +51,11 @@ class execution_arguments:
         self.molecularDiffusionCoefficient = molecular_diffusion_coefficient
         self.instructions = instructions
         self.diffuse = diffuse
+        self.decay_free_chlorine_status = decay_free_chlorine_status
+        self.decay_monochloramine_status = decay_monochloramine_status
+        self.starting_particles_free_chlorine_concentration = starting_particles_free_chlorine_concentration
+        self.injected_particles_free_chlorine_concentration = injected_particles_free_chlorine_concentration
+        self.decay_monochloramine_dict = decay_monochloramine_dict
         self.diffuse_advective = diffuse_advective
         self.diffuse_stagnant = diffuse_stagnant
         self.plt = None
@@ -76,7 +88,7 @@ class graphing:
 
     # creates a new particle age graph, saves the image, and puts the filepath in the message queue. 
     # Seperated by display and log filename due to Flask's req for images to be placed in static folder.
-    def graph_age(self, particleInfo, counter, flowList, filename="/logs/"):
+    def graph_age(self, particleInfo, counter, flowList, freeChlorineDecayStatus, filename="/logs/"):
         age_display = './static/plots/age_graph.png'
         concentration_display = './static/plots/concentration_graph.png'
         flows_display ='./static/plots/flow_graph.png'
@@ -95,8 +107,10 @@ class graphing:
         except:
             print("Flow Graph Failed")
             pass
-        self.concentration_graph_helper([8,6], 92, concentration_display, particleInfo, counter)
-        self.concentration_graph_helper([8,6], 92, filename_concentration, particleInfo, counter) #Concentration
+
+        if(freeChlorineDecayStatus == True):
+            self.concentration_graph_helper([8,6], 92, concentration_display, particleInfo, counter)
+            self.concentration_graph_helper([8,6], 92, filename_concentration, particleInfo, counter) #Concentration
         # self.graph_helper([16,12], 300, filename, particleInfo, counter, 1) --- For Larger Graph / Better Quality
 
         # self.controller.event_generate("<<graph_completed>>", when="tail")
@@ -119,8 +133,9 @@ class graphing:
         for i in range(len(data)):
             element = data[i]
             name = names[i]
+            # print(element)
             x = list(map(lambda a: a[0], element))
-            y = list(map(lambda b: b[1], element))
+            y = list(map(lambda b: b[2], element))
             # print("lax: ", len(x), "ly: ", len(y))
 
             # print("g x: ", x, "y: ", y)
@@ -181,8 +196,8 @@ class graphing:
         
             for j in element:
                 
-                x.append(j[0])
-                y.append(j[1])
+                x.append(j[2])
+                y.append(j[3])
 
             line = Line2D(x,y)
             line.set_linestyle("")
@@ -233,8 +248,9 @@ class graphing:
         for i in range(len(data)):
             element = data[i]
             name = names[i]
+            # print(element)
             x = list(map(lambda a: a[0], element))
-            y = list(map(lambda b: b[2], element))
+            y = list(map(lambda b: b[3], element))
             line = Line2D(x,y)
             line.set_linestyle("")
             line.set_marker(self.line_markers[1])
@@ -262,7 +278,6 @@ class graphing:
         except:
             print("graph_helper called before containing folder has been created! Unable to create graph.")
             pass
-
     
     #Plot a histogram of all particle modifers undertaken through diffusion/dispersion as particles undergo the simulation.
     def write_modifier_bins(self, filename, values):
@@ -281,7 +296,6 @@ class graphing:
             print("Mean of modifiers: ", total / j)
         except:
             pass
-        # plt.savefig(filename + '.png', format='png')
     
     #Create a histogram displaying the exit time of all particles that have been expelled from the system. This should closesely replicate the curve created by Dr. Ginn's model.
     def write_expel_bins(self, filename, mean, var, values):
@@ -292,20 +306,12 @@ class graphing:
 
         for i in list(values.values())[0]:
 
-            #Temporarily only allowing particles with expel times past 110 to fit the onepipe model. Contraining to 110+ removes the tail at the beginning of the graph.
-            # i[ time, age, concentration, id]
-            # if(i[0] > 70):
-            # print("i: ", i)
-            newValues.append(i[1])
+            newValues.append(i[2])
  
         for i in newValues:
             total += i
             j += 1
-        # topPer = len(newValues) * .2
-        # print("topPer: ", topPer)
-        # topValues = newValues[-int(topPer):]
 
-        # print("len1: ", len(newValues), "len2: ", len(topValues))
         topValues = newValues
         color = self.select_color()
         try:
@@ -362,6 +368,8 @@ class Driver:
         self.mode = step
         # self.mode_name = {1:"second", 2:"minute", 3:"hour", 4: "custom"}
         self.flowList = {}
+
+        self.arguments = execution_arguments()
         # self.modelfile = None
         # self.presetsFile
 
@@ -467,6 +475,8 @@ class Driver:
     # class. once the initial variables are set, this function runs the simulation loop for the specified duration
     # only runs for preset mode, since the activations are handled differently.
     def sim_preset(self, root, endpoints, instructions, max_time, density):
+        # self.counter.increment_time()
+
         endpoints = self.dict_from_endpoints(endpoints)
         # print("e: ", endpoints, "i: ", instructions)
         start_time = None
@@ -531,11 +541,11 @@ class Driver:
             if root.isActive:
                 self.manager.add_particles(density, root, time_since)
             # print("6")
+            self.counter.increment_time()
             self.manager.update_particles(time_since)
             # print("6.25")
             for endpoint in endpoints.values():
                 self.sim_endpoint_preset(endpoint)
-            self.counter.increment_time()
             # print("7")
 
         # print("4")
@@ -582,40 +592,62 @@ class Driver:
     def write_output(self, filename, particles):
         results = open(filename, 'w')
         writer = csv.writer(results,'excel')
+
+        arguments = self.arguments
+
+            # output.write("pipe model file: " + arguments.modelfile + "\n")
+            # output.write("flow preset file: " + arguments.presetsfile + "\n")
+            # output.write("d_m: " + str(self.manager.d_m) + "\n")
+            # output.write("d_inf: " + str(self.root.d_inf) + "\n")
+            # output.write("granularity: " + self.mode + "Minutes" + "\n")
+            # output.write("time: ")
+        
+        writer.writerow(["Pipe Model File: ", arguments.modelfile, "Flow Preset File: ", arguments.presetsfile, "d_m: ", str(self.manager.d_m), "d_inf: ", str(self.root.d_inf), "Granularity: ", self.mode, "Time: ", self.counter.get_time()])
+
+        if(self.manager.decayActiveFreeChlorine):
+            writer.writerow(["ParticleID", "Timestamp", "Age", "OutputEndpoint", "AgeByMaterial", "AgeByPipe", "FreeChlorineConcentration"])
+        elif(self.manager.decayActiveMonochloramine):
+            writer.writerow(["ParticleID", "Timestamp", "Age", "OutputEndpoint", "AgeByMaterial", "AgeByPipe", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration" ])
+        elif(self.manager.decayActiveFreeChlorine and self.manager.decayActiveMonochloramine):
+            writer.writerow(["ParticleID", "Timestamp", "Age", "OutputEndpoint", "AgeByMaterial", "AgeByPipe", "FreeChlorineConcentration", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration" ])
+        else:
+            writer.writerow(["ParticleID", "Timestamp", "Age", "OutputEndpoint", "AgeByMaterial", "AgeByPipe"])
+
         for key in particles:
             particle = particles[key]
             data = particle.getOutput()
             writer.writerow(data)
         results.close()
 
-    # creates a csv file report the includes all particles expelled. Also includes
-    # the endpoint the particle was expelled from, the time it left the system,
-    # the particle age at the time of departure, and the particle ID.
-    def write_age_data(self, filename, particleAges):
-        results = open(filename, 'w')
-        writer = csv.writer(results, 'excel')
-        names = particleAges.keys()
-        writer.writerow(["Endpoint", "Timestamp", "Age", "ParticleID"])
-        for name in names:
-            values = particleAges.get(name)
-            # x = list(map(lambda a: a[0], values))
-            # y = list(map(lambda b: b[1], values))
-            for value in values:
-                writer.writerow([name, value[0], value[1], value[2]])
-        results.close()
+    # # creates a csv file report the includes all particles expelled. Also includes
+    # # the endpoint the particle was expelled from, the time it left the system,
+    # # the particle age at the time of departure, and the particle ID.
+    # def write_age_data(self, filename, particleAges):
+    #     results = open(filename, 'w')
+    #     writer = csv.writer(results, 'excel')
+    #     names = particleAges.keys()
+    #     writer.writerow(["Endpoint", "Timestamp", "Age", "ParticleID"])
+    #     for name in names:
+    #         values = particleAges.get(name)
+    #         # x = list(map(lambda a: a[0], values))
+    #         # y = list(map(lambda b: b[1], values))
+    #         for value in values:
+    #             writer.writerow([name, value[0], value[1], value[2]])
+    #     results.close()
 
-    def write_age_and_FreeChlorine_data(self, filename, particleAges):
-        results = open(filename, 'w')
-        writer = csv.writer(results, 'excel')
-        names = particleAges.keys()
-        writer.writerow(["Endpoint", "Timestamp", "Age", "FreeChlorine", "ParticleID"])
-        for name in names:
-            values = particleAges.get(name)
-            # x = list(map(lambda a: a[0], values))
-            # y = list(map(lambda b: b[1], values))
-            for value in values:
-                writer.writerow([name, value[0], value[1], value[2], value[3]])
-        results.close()
+    # def write_age_and_FreeChlorine_data(self, filename, particleAges):
+    #     results = open(filename, 'w')
+    #     writer = csv.writer(results, 'excel')
+    #     names = particleAges.keys()
+    #     writer.writerow(["Endpoint", "Timestamp", "Age", "FreeChlorine", "ParticleID"])
+    #     for name in names:
+    #         values = particleAges.get(name)
+    #         print(values)
+    #         # x = list(map(lambda a: a[0], values))
+    #         # y = list(map(lambda b: b[1], values))
+    #         for value in values:
+    #             writer.writerow([name, value[0], value[1], value[2], value[3]])
+    #     results.close()
 
     def write_pipe_ages(self, particles, filename):
         results = open(filename, 'w')
@@ -627,16 +659,19 @@ class Driver:
             particle = particles[key]
             data = particle.getOutput()
             for pipe in data[4]:
+                # print("pipe: ", pipe)
                 if pipe[0] not in endpointNames:
                     ageDict.setdefault(pipe[0], [0,0])
                     ageDict[pipe[0]][0] += pipe[1]
                     ageDict[pipe[0]][1] += 1
+        
 
         #Column containing the pipe name, the total age of particles in that pipe (summed time spent in that pipe value for each particle), the number of particles that have flowed through that pipe,
         # and the result of those two values divided from one another ( assumed to be the average age of particles in that pipe. )
         for entry in ageDict:
             writer.writerow([str(entry), str(ageDict[entry]), str(ageDict[entry][0] / ageDict[entry][1])])
-
+        
+        # print("ageDict: ", ageDict)
         return ageDict
     
         # print("root: ", self.root)
@@ -776,10 +811,10 @@ class Driver:
             print("testing", title, "with flowrate:", self.flowrates[title], "and activation chance of", self.frequencies[title])
         # self.sim_randomized(root, endpoints, active_titles, days*self.ONE_DAY, active_start*3600, active_end*3600, density)
         g = graphing(self.Queue)
-        g.graph_age(self.manager.expelledParticleData, self.counter, logpath)
+        g.graph_age(self.manager.expelledParticleData, self.counter, self.manager.decayActiveFreeChlorine, logpath)
         self.write_output(logpath + "\expelled.csv",self.manager.expendedParticles)
-        self.write_output(logpath + "\pipe_contents.csv", self.manager.particleIndex)
-        self.write_age_and_FreeChlorine_data(logpath + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
+        # self.write_output(logpath + "\pipe_contents.csv", self.manager.particleIndex)
+        # self.write_age_and_FreeChlorine_data(logpath + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
         if(self.manager.diffusionActive):
             g.write_modifier_bins(logpath + "./static/plots/histogram.png", self.manager.bins)
 
@@ -818,10 +853,10 @@ class Driver:
         manager.setTimeStep(self.TIME_STEP)
         # self.sim_randomized(self.root, self.endpoints, self.actives, length*self.ONE_DAY, time_start*self.HOUR_LENGTH, time_end*self.HOUR_LENGTH, density)
         g = graphing(self.Queue)
-        g.graph_age(self.manager.expelledParticleData, self.counter, pathname)
+        g.graph_age(self.manager.expelledParticleData, self.counter, self.manager.decayActiveFreeChlorine, pathname)
         self.write_output(pathname + "\expelled.csv", self.manager.expendedParticles)
-        self.write_output(pathname + "\pipe_contents.csv", self.manager.particleIndex)
-        self.write_age_and_FreeChlorine_data(pathname + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
+        # self.write_output(pathname + "\pipe_contents.csv", self.manager.particleIndex)
+        # self.write_age_and_FreeChlorine_data(pathname + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
         if self.manager.diffusionActive:
             g.write_modifier_bins(pathname + "\inputbin", self.manager.bins)
         # self.controller.event_generate("<<sim_finished>>", when = "tail")
@@ -839,12 +874,22 @@ class Driver:
             self.manager.diffusionActive = arguments.diffuse
             self.manager.diffusionActiveStagnant = arguments.diffuse_stagnant
             self.manager.diffusionActiveAdvective = arguments.diffuse_advective
+            self.manager.decayActiveFreeChlorine = arguments.decay_free_chlorine_status
+            self.manager.decayActiveMonochloramine = arguments.decay_monochloramine_status
+            self.manager.startingParticlesFreeChlorineConcentration = arguments.starting_particles_free_chlorine_concentration
+            self.manager.injectedParticlesFreeChlorineConcentration = arguments.injected_particles_free_chlorine_concentration
+            self.manager.monochloramineDecayDict = arguments.decay_monochloramine_dict
+
+
+            print("decay: ", self.manager.decayActiveFreeChlorine, "diffuse: ", self.manager.diffusionActive)
 
             send = ("status_started", "Simulation started.")
             self.Queue.put(send)
 
             self.manager.setTimeStep(self.TIME_STEP)
             self.manager.setDiffusionCoefficient(arguments.molecularDiffusionCoefficient)
+
+            self.arguments = arguments
             try:
                 self.root, self.endpoints = builder.build(modelfile, self.manager)
             except Exception as e:
@@ -869,14 +914,14 @@ class Driver:
                     os.mkdir(pathname)
                 g = graphing(self.Queue)
                 
-                g.graph_age(self.manager.expelledParticleData, self.counter, self.flowList, pathname)
+                g.graph_age(self.manager.expelledParticleData, self.counter, self.flowList, self.manager.decayActiveFreeChlorine, pathname)
             except Exception as e:
                 raise Exception("Error generating graphs. [" + str(e) + "]") 
             
             try:        
                 self.write_output(pathname+"\expelled.csv", self.manager.expendedParticles)
-                self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
-                self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
+                # self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
+                # self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
                 # start timing
                 # time_1 = time.time()
 
@@ -909,7 +954,7 @@ class Driver:
                 # time_end4 = time.time() - time_4
                 # time_5 = time.time()
                 self.root.generate_tree()
-                self.root.show_tree(pathname + "/tree_graph.png", ageDict)
+                # self.root.show_tree(pathname + "/tree_graph.png", ageDict)
                 # time_end5 = time.time() - time_5
                 # print("1: " + str(time_end1), "2: " + str(time_end2), "3: " + str(time_end3), "4: " + str(time_end4), "5: " + str(time_end5))
             except Exception as e:

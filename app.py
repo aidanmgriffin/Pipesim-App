@@ -5,6 +5,8 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, send_file
 from display import simulation_window
 from datetime import datetime
+from selenium import webdriver
+import webbrowser
 # from flask_wtf import FlaskForm
 # from flask_wtf.file import FileField, FileRequired
 from werkzeug.utils import secure_filename
@@ -156,21 +158,136 @@ def upload():
             else:
                 molecular_diffusion_coefficient = 8.28 * math.pow(10, -4) #9.3 * math.pow(10, -5) 
 
+            # Check if Free chlorine / monochloramine decay are enabled. Will affect whether the update function in particles.py will call the decay subroutines.
+            if('flexCheckFreeChlorineDecay' in request.values):
+                decay_free_chlorine_status = 1
+                starting_particles_free_chlorine_concentration = request.values['starting-particles-concentration-free-chlorine']
+                injected_particles_free_chlorine_concentration = request.values['injected-particles-concentration-free-chlorine']
+            else:
+                decay_free_chlorine_status = 0
+                starting_particles_free_chlorine_concentration = 1.0
+                injected_particles_free_chlorine_concentration = 1.0
+            
+            decay_monochloramine_dict = {}
+
+            if('flexCheckMonochloramineDecay' in request.values):
+                decay_monochloramine_status = 1
+
+
+                
+            else:
+                decay_monochloramine_status = 0
+
+            if('starting-particles-concentration-hypochlorous' in request.values):
+                starting_particles_hypochlorous_concentration = request.values['starting-particles-concentration-hypochlorous']
+                injected_particles_hypochlorous_concentration = request.values['injected-particles-concentration-hypochlorous']
+            else:
+                starting_particles_hypochlorous_concentration = 1.0
+                injected_particles_hypochlorous_concentration = 1.0
+            
+            decay_monochloramine_dict['starting-particles-concentration-hypochlorous'] = starting_particles_hypochlorous_concentration
+            decay_monochloramine_dict['injected-particles-concentration-hypochlorous'] = injected_particles_hypochlorous_concentration
+            
+            if('starting-particles-concentration-ammonia' in request.values):
+                starting_particles_ammonia_concentration = request.values['starting-particles-concentration-ammonia']
+                injected_particles_ammonia_concentration = request.values['injected-particles-concentration-ammonia']
+            else:
+                starting_particles_ammonia_concentration = 1.0
+                injected_particles_ammonia_concentration = 1.0
+            
+            decay_monochloramine_dict['starting-particles-concentration-ammonia'] = starting_particles_ammonia_concentration
+            decay_monochloramine_dict['injected-particles-concentration-ammonia'] = injected_particles_ammonia_concentration
+
+            if('starting-particles-concentration-monochloramine' in request.values):
+                starting_particles_monochloramine_concentration = request.values['starting-particles-concentration-monochloramine']
+                injected_particles_monochloramine_concentration = request.values['injected-particles-concentration-monochloramine']
+            else:
+                starting_particles_monochloramine_concentration = 1.0
+                injected_particles_monochloramine_concentration = 1.0
+
+            decay_monochloramine_dict['starting-particles-concentration-monochloramine'] = starting_particles_monochloramine_concentration
+            decay_monochloramine_dict['injected-particles-concentration-monochloramine'] = injected_particles_monochloramine_concentration
+            
+            if('starting-particles-concentration-dichloramine' in request.values):
+                starting_particles_dichloramine_concentration = request.values['starting-particles-concentration-dichloramine']
+                injected_particles_dichloramine_concentration = request.values['injected-particles-concentration-dichloramine']
+            else:
+                starting_particles_dichloramine_concentration = 1.0
+                injected_particles_dichloramine_concentration = 1.0
+            
+            decay_monochloramine_dict['starting-particles-concentration-dichloramine'] = starting_particles_dichloramine_concentration
+            decay_monochloramine_dict['injected-particles-concentration-dichloramine'] = injected_particles_dichloramine_concentration
+
+            if('starting-particles-concentration-iodine' in request.values):
+                starting_particles_iodine_concentration = request.values['starting-particles-concentration-iodine']
+                injected_particles_iodine_concentration = request.values['injected-particles-concentration-iodine']
+            else:
+                starting_particles_iodine_concentration = 1.0
+                injected_particles_iodine_concentration = 1.0
+            
+            decay_monochloramine_dict['starting-particles-concentration-iodine'] = starting_particles_iodine_concentration
+            decay_monochloramine_dict['injected-particles-concentration-iodine'] = injected_particles_iodine_concentration
+
+            if('starting-particles-concentration-docb' in request.values):
+                starting_particles_docb_concentration = request.values['starting-particles-concentration-docb']
+                injected_particles_docb_concentration = request.values['injected-particles-concentration-docb']
+            else:
+                starting_particles_docb_concentration = 1.0
+                injected_particles_docb_concentration = 1.0
+
+            decay_monochloramine_dict['starting-particles-concentration-docb'] = starting_particles_docb_concentration
+            decay_monochloramine_dict['injected-particles-concentration-docb'] = injected_particles_docb_concentration
+
+            if('starting-particles-concentration-docbox' in request.values):
+                starting_particles_docbox_concentration = request.values['starting-particles-concentration-docbox']
+                injected_particles_docbox_concentration = request.values['injected-particles-concentration-docbox']
+            else:
+                starting_particles_docbox_concentration = 1.0
+                injected_particles_docbox_concentration = 1.0
+
+            decay_monochloramine_dict['starting-particles-concentration-docbox'] = starting_particles_docbox_concentration
+            decay_monochloramine_dict['injected-particles-concentration-docbox'] = injected_particles_docbox_concentration
+
+            if('starting-particles-concentration-docw' in request.values):
+                starting_particles_docw_concentration = request.values['starting-particles-concentration-docw']
+                injected_particles_docw_concentration = request.values['injected-particles-concentration-docw']
+            else:
+                starting_particles_docw_concentration = 1.0
+                injected_particles_docw_concentration = 1.0
+            
+            decay_monochloramine_dict['starting-particles-concentration-docw'] = starting_particles_docw_concentration
+            decay_monochloramine_dict['injected-particles-concentration-docw'] = injected_particles_docw_concentration
+
+            if('starting-particles-concentration-docwox' in request.values):
+                starting_particles_docwox_concentration = request.values['starting-particles-concentration-docwox']
+                injected_particles_docwox_concentration = request.values['injected-particles-concentration-docwox']
+            else:
+                starting_particles_docwox_concentration = 1.0
+                injected_particles_docwox_concentration = 1.0
+            
+            decay_monochloramine_dict['starting-particles-concentration-docwox'] = starting_particles_docwox_concentration
+            decay_monochloramine_dict['injected-particles-concentration-docwox'] = injected_particles_docwox_concentration
+
+            if('starting-particles-concentration-chlorine' in request.values):
+                starting_particles_chlorine_concentration = request.values['starting-particles-concentration-chlorine']
+                injected_particles_chlorine_concentration = request.values['injected-particles-concentration-chlorine']
+            else:
+                starting_particles_chlorine_concentration = 1.0
+                injected_particles_chlorine_concentration = 1.0
+            
+            decay_monochloramine_dict['starting-particles-concentration-chlorine'] = starting_particles_chlorine_concentration
+            decay_monochloramine_dict['injected-particles-concentration-chlorine'] = injected_particles_chlorine_concentration
+
             # Attempt to save pipe network and flows files to input folder. If unsuccessful (most likely due to incorrect file type),
             # an error will be shown to the user.
-
             try:
                 if pipes and allowed_file(pipes.filename) and flows and allowed_file(flows.filename):
-                    # print("1")
                     pipes_filename = secure_filename(pipes.filename)
                     pipes_save_location = os.path.join("input", pipes_filename)
-                    # print("2", pipes_save_location)
                     pipes.save(pipes_save_location)
-                    # print("3")
                     flows_filename = secure_filename(flows.filename)
                     flows_save_location = os.path.join("input", flows_filename)
                     flows.save(flows_save_location)
-                    # print("4")
             except Exception as e:
                 alertDanger.message = "Pipe Network File Could Not Uploaded. Is file type CSV?" + e
                 raise Exception
@@ -190,29 +307,35 @@ def upload():
             # errors involving the input files, and errors involving the simulation itself.
             try:
                 output_file = 0
-                output_file = sim.preset_simulation_button_handler(pipes_save_location, flows_save_location, density, diffusion_status, stagnant_diffusion_status, advective_diffusion_status, molecular_diffusion_coefficient, granularity)
+                output_file = sim.preset_simulation_button_handler(
+                    pipes_save_location,
+                    flows_save_location,
+                    density, diffusion_status, 
+                    stagnant_diffusion_status, 
+                    advective_diffusion_status, 
+                    molecular_diffusion_coefficient, 
+                    granularity, 
+                    decay_free_chlorine_status, 
+                    decay_monochloramine_status, 
+                    starting_particles_free_chlorine_concentration,
+                    injected_particles_free_chlorine_concentration,
+                    decay_monochloramine_dict)
+                
             except Exception as e:
                 alertDanger.message = e
                 raise Exception
-            # print("output file? ", output_file)
-            # except:
-            #     # alertDanger.message = e
-            #     return render_template("upload.html", form=form, alert = alertDanger)
             
+            print("error: ", alertDanger.message)
             #If simulation is successful, redirect to download page. If failed, show error message.
             if(output_file):
                 print("Simulation Complete...")
                 return redirect(url_for('download' , diffusion_status = diffusion_status, date_time = date_time))
 
-                # print("dir: ", os.listdir('static/plots'))
-                # return render_template("download.html",  diffusion_status = diffusion_status, date_time = date_time)
             else:
                 alertDanger.message = "Simulation Failed. Do the files contain the correct data?"
                 return render_template("upload.html", alert = alertDanger)
-                # return render_template("upload.html", form=form, alert = alertDanger)
             
     return render_template("upload.html")
-    # return render_template("upload.html", form=form)
 
 #Route to download page accessed by running a simulation from upload. If not redirected from the upload page, redirect to upload page.
 #  Therefore, it is not possible to search pipesim.com/download directly. It will just make you upload.
@@ -226,18 +349,6 @@ def download():
         return redirect(url_for('upload'))
 
     return render_template('download.html', diffusion_status = diffusion_status, date_time = date_time)
-    #pass current time, and list of files in output folder to download page. Load download page.
-    
-    # path = pathlib.Path('logs\output_batch')
-    # memory_file = BytesIO()
-
-    # with zipfile.ZipFile(memory_file, 'w') as zf:
-    #     for root, dirs, files in os.walk(path):
-    #         for file in files:
-    #             zf.write(os.path.join(root, file))
-    # memory_file.seek(0)
-    
-    # return send_file(memory_file, as_attachment=True, download_name='logs.zip')
 
 @app.route('/download_log')
 def download_log():
@@ -252,17 +363,6 @@ def download_log():
     memory_file.seek(0)
     
     return send_file(memory_file, as_attachment=True, download_name='logs.zip')
-    # return send_file(age_path, as_attachment=True)
-    # send_file(expelled_ages_path, as_attachment=True)
-    # send_file(expelled_path, as_attachment=True)
-    # send_file(contents_path, as_attachment=True)
-    # return render_template("download.html", files=os.listdir('logs'), date_time = date_time)
-    # return render_template('download.html', files=os.listdir('logs'), date_time = date_time)
-
-# @app.route('/download/<filename>', methods = ['GET', 'POST'])
-# def download_log():
-#     path = 'downloadfile.txt'
-#     return send_file(path, as_attachment=True)
 
 #Error routes
 
@@ -277,10 +377,14 @@ def page_not_found_500(e):
     return render_template("500.html"), 500
 
 if __name__ == '__main__':
-    multiprocessing.freeze_support()
     print("App Running...")
-    webview.create_window("PipeSim", app)
-    webview.start()
-    # input("Press Enter to continue...")
-    # server_port = os.environ.get('PORT', '8080')
-    # app.run(debug=False, port=server_port, host='0.0.0.0')
+    # webview.create_window("PipeSim", app)
+    # webview.start()
+
+    # driver = webdriver.Chrome()
+    # driver.get("http://localhost:5000")
+    # driver.quit()
+
+    webbrowser.open("http://localhost:5000")
+    app.run()
+    # webbrowser.open(app)

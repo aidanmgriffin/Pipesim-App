@@ -187,9 +187,24 @@ class simulation_window():
                 return([1, self.diffusion_status])
             else:
                 return(0)
+            
         
     # function validates file name input for the two preset configuration files and (if valid) launches the simulation in preset mode.
-    def preset_simulation_button_handler(self, file1, file2, density1, diffusion_status, stagnant_diffusion_status, advective_diffusion_status, molecular_diffusion_coefficient, granularity):
+    def preset_simulation_button_handler(   self, 
+                                            file1, 
+                                            file2, 
+                                            density1, 
+                                            diffusion_status, 
+                                            stagnant_diffusion_status, 
+                                            advective_diffusion_status, 
+                                            molecular_diffusion_coefficient, 
+                                            granularity, 
+                                            decay_free_chlorine_status, 
+                                            decay_monochloramine_status, 
+                                            starting_particles_free_chlorine_concentration, 
+                                            injected_particles_free_chlorine_concentration,
+                                            decay_monochloramine_dict
+                                         ):
         density = None
         valid = True
         f1 = None
@@ -210,7 +225,7 @@ class simulation_window():
         except:
             valid = False
 
-        print("granularity: ", granularity)
+        # print("granularity: ", granularity , "dcfs", decay_free_chlorine_status, "dcms", decay_monochloramine_status)
         self.step_size = granularity
 
         manager = multiprocessing.Manager()
@@ -219,9 +234,22 @@ class simulation_window():
         if valid:
             self.generate_path()
             simulator = driver.Driver(self.Queue, step = self.step_size)
-            arguments = driver.execution_arguments(settingsfile = None, modelfile=file1, presetsfile=file2,
-                                                   density=density, pathname=self.outputLocation,
-                                                   diffuse=diffusion_status, diffuse_stagnant =stagnant_diffusion_status, diffuse_advective = advective_diffusion_status, molecular_diffusion_coefficient=molecular_diffusion_coefficient)
+            arguments = driver.execution_arguments(
+                settingsfile = None, 
+                modelfile=file1,
+                presetsfile=file2,
+                density=density,
+                pathname=self.outputLocation,
+                diffuse=diffusion_status,
+                diffuse_stagnant =stagnant_diffusion_status,
+                diffuse_advective = advective_diffusion_status,
+                molecular_diffusion_coefficient=molecular_diffusion_coefficient,
+                decay_free_chlorine_status=decay_free_chlorine_status,
+                decay_monochloramine_status=decay_monochloramine_status,
+                starting_particles_free_chlorine_concentration=starting_particles_free_chlorine_concentration,
+                injected_particles_free_chlorine_concentration=injected_particles_free_chlorine_concentration,
+                decay_monochloramine_dict=decay_monochloramine_dict
+                )
             
             sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset,exception_holder, arguments))
 

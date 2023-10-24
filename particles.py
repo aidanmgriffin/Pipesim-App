@@ -76,7 +76,11 @@ class ParticleManager():
         self.docwoxBase: float = 1
         self.chlorineBase: float = 1
         self.d_m : float = None
-
+        self.startingParticlesFreeChlorineConcentration: float = 1.0
+        self.injectedParticlesFreeChlorineConcentration: float = 1.0
+        self.monochloramineDecayDict: dict = {}
+        self.concentrationDict: dict = {}
+    
         #Particle accumulation vars
         self.bins = []
         self.flowNum: int = 0 
@@ -94,13 +98,13 @@ class ParticleManager():
         self.prevArea = 0
         self.prevLength = 0
 
-    def particle(self, container, freeChlorineInit):
+    def particle(self, container, concrentrationDict):
         """
         Creates a new particle object and registers it with the particle manager.
         """
         
         global logfile
-        return Particle(container, self, freeChlorineInit)
+        return Particle(container, self, concentrationDict=concrentrationDict)
 
     def setDiffusionCoefficient(self, diffusionCoefficient: float):
         """
@@ -164,19 +168,53 @@ class ParticleManager():
 
         particles = self.particlePositions.get(root.name)
         
-        freeChlorineInit = 1.0
+        freeChlorineInit = self.injectedParticlesFreeChlorineConcentration
+        hypochlorousAcidInit = self.monochloramineDecayDict['starting-particles-concentration-hypochlorous']
+        ammoniaInit = self.monochloramineDecayDict['starting-particles-concentration-ammonia']
+        monochloramineInit = self.monochloramineDecayDict['starting-particles-concentration-monochloramine']
+        dichloramineInit = self.monochloramineDecayDict['starting-particles-concentration-dichloramine']
+        iodineInit = self.monochloramineDecayDict['starting-particles-concentration-iodine']
+        docbInit = self.monochloramineDecayDict['starting-particles-concentration-docb']
+        docboxInit = self.monochloramineDecayDict['starting-particles-concentration-docbox']
+        docwInit = self.monochloramineDecayDict['starting-particles-concentration-docw']
+        docwoxInit = self.monochloramineDecayDict['starting-particles-concentration-docwox']
+        chlorineInit = self.monochloramineDecayDict['starting-particles-concentration-chlorine']
+
         if particles == None:
             self.particlePositions[root.name] = particles = []
 
         if len(particles) < 1:
-            freeChlorineInit = 1.0
+            freeChlorineInit = self.startingParticlesFreeChlorineConcentration
+            hypochlorousAcidInit = self.monochloramineDecayDict['starting-particles-concentration-hypochlorous']
+            ammoniaInit = self.monochloramineDecayDict['starting-particles-concentration-ammonia']
+            monochloramineInit = self.monochloramineDecayDict['starting-particles-concentration-monochloramine']
+            dichloramineInit = self.monochloramineDecayDict['starting-particles-concentration-dichloramine']
+            iodineInit = self.monochloramineDecayDict['starting-particles-concentration-iodine']
+            docbInit = self.monochloramineDecayDict['starting-particles-concentration-docb']
+            docboxInit = self.monochloramineDecayDict['starting-particles-concentration-docbox']
+            docwInit = self.monochloramineDecayDict['starting-particles-concentration-docw']
+            docwoxInit = self.monochloramineDecayDict['starting-particles-concentration-docwox']
+            chlorineInit = self.monochloramineDecayDict['starting-particles-concentration-chlorine']
+
             min_distance = root.length
         else:
             min_distance = min(part.position for part in particles)
         current_distance = 0
 
+        self.concentrationDict['freeChlorine'] = freeChlorineInit
+        self.concentrationDict['hypochlorousAcid'] = hypochlorousAcidInit
+        self.concentrationDict['ammonia'] = ammoniaInit
+        self.concentrationDict['monochloramine'] = monochloramineInit
+        self.concentrationDict['dichloramine'] = dichloramineInit
+        self.concentrationDict['iodine'] = iodineInit
+        self.concentrationDict['docb'] = docbInit
+        self.concentrationDict['docbox'] = docboxInit
+        self.concentrationDict['docw'] = docwInit
+        self.concentrationDict['docwox'] = docwoxInit
+        self.concentrationDict['chlorine'] = chlorineInit
+
         while current_distance < min_distance + density:
-            part = self.particle(root, freeChlorineInit)
+            part = self.particle(root, concrentrationDict=self.concentrationDict)
             part.position = current_distance
             current_distance += density
 
@@ -225,7 +263,7 @@ class Particle:
     about the pipes it travels through and about how long it remains in contact with each pipe.
     """
     
-    def __init__(self, container, manager, freeChlorineInit):
+    def __init__(self, container, manager, concentrationDict):
         """
         this constructor requires a container (pipe object) to instantiate, because particles should always be tied to one
         pipe. upon creation, the particle assigns itself an id based on the global numParticles variable, adds itself to
@@ -242,19 +280,20 @@ class Particle:
         self.sumDistance: float = 0 # stores total distance travelled by particle
         self.route: list = [container.name]
         self.age: float = 0
+        self.time: int = 0
         self.manager.particleIndex[self.ID] = self
         self.d_m = self.manager.d_m
-        self.freechlorine : float = freeChlorineInit #1.0 #for now this is starting concentration
-        self.hypochlorousAcid : float = self.manager.hypochlorousAcidBase
-        self.ammonia : float = self.manager.ammoniaBase
-        self.monochloramine : float = self.manager.monochloramineBase
-        self.dichloramine : float = self.manager.dichloramineBase
-        self.iodine : float = self.manager.iodineBase
-        self.docb : float = self.manager.docbBase
-        self.docbox : float = self.manager.docboxBase
-        self.docw : float = self.manager.docwBase
-        self.docwox : float = self.manager.docwoxBase
-        self.chlorine : float = self.manager.chlorineBase
+        self.freechlorine : float = concentrationDict['freeChlorine'] #1.0 #for now this is starting concentration
+        self.hypochlorousAcid : float = concentrationDict['hypochlorousAcid']
+        self.ammonia : float = concentrationDict['ammonia']
+        self.monochloramine : float = concentrationDict['monochloramine']
+        self.dichloramine : float = concentrationDict['dichloramine']
+        self.iodine : float = concentrationDict['iodine']
+        self.docb : float = concentrationDict['docb']
+        self.docbox : float = concentrationDict['docbox']
+        self.docw : float = concentrationDict['docw']
+        self.docwox : float = concentrationDict['docwox']
+        self.chlorine : float = concentrationDict['chlorine']
         global logfile
 
     
@@ -280,8 +319,10 @@ class Particle:
         The lambda value is specific to the area and material of the pipe.
         """
 
+
         freeChlorineLambda = self.container.freeChlorineLambda
-        self.freechlorine = self.freechlorine * math.exp(-freeChlorineLambda*timeStep)
+        self.freechlorine = float(self.freechlorine) * math.exp(-float(freeChlorineLambda)*float(self.manager.timeStep))
+        # print("free chlorine: ", self.freechlorine)
         
     def update(self):
         """
@@ -289,6 +330,9 @@ class Particle:
         """
 
         self.age += 1
+
+        if self.manager.decayActiveFreeChlorine:
+            self.free_chlorine_decay()
 
         if self.manager.decayActiveMonochloramine:
             self.monochloramine_network_decay()
@@ -356,14 +400,30 @@ class Particle:
                     containerName = self.container.name
             elif self.container.type == "endpoint":
                 particleInfo = []
-                time = self.manager.time.get_time()
-                particleInfo.append(time)
+                self.time = self.manager.time.get_time()
+                particleInfo.append(self.time)
                 expelledTime = self.age + (1 - remainingTime)
                 self.age = expelledTime
                 # print(expelledTime)
-                particleInfo.append(self.age)
-                particleInfo.append(self.freechlorine)
                 particleInfo.append(self.ID)
+                particleInfo.append(self.age)
+                # particleInfo.append(counter.get_time())
+
+                if(self.manager.decayActiveFreeChlorine):
+                    particleInfo.append(self.freechlorine)
+                
+                if(self.manager.decayActiveMonochloramine):
+                    particleInfo.append(self.hypochlorousAcid)
+                    particleInfo.append(self.ammonia)
+                    particleInfo.append(self.monochloramine)
+                    particleInfo.append(self.dichloramine)
+                    particleInfo.append(self.iodine)
+                    particleInfo.append(self.docb)
+                    particleInfo.append(self.docbox)
+                    particleInfo.append(self.docw)
+                    particleInfo.append(self.docwox)
+                    particleInfo.append(self.chlorine)
+                
                 if self.manager.expelledParticleData.get(self.container.name) is None:
                     self.manager.expelledParticleData[self.container.name] = []
                 dataset = self.manager.expelledParticleData.get(self.container.name)
@@ -491,17 +551,33 @@ class Particle:
                 
             elif self.container.type == "endpoint":
                 particleInfo = []
-                time = self.manager.time.get_time()
-                particleInfo.append(time)
+                self.time = self.manager.time.get_time()
+                particleInfo.append(self.time)
                 expelledTime = self.age + (1 - remainingTime)
 
                 # Remove the time that the particle has been accounted for while being expelled from the system. The length, flow, and area of the endpoint is irrelevant and not used in the calculation.
                 em = ( self.manager.newpos - self.manager.prevLength) / (self.manager.prevFlow / self.manager.prevArea) 
                 expelledTime -= em
                 self.age = expelledTime
-                particleInfo.append(self.age)
-                particleInfo.append(self.freechlorine)
                 particleInfo.append(self.ID)
+                # particleInfo.append(counter.get_time())
+                particleInfo.append(self.age)
+                
+                if(self.manager.decayActiveFreeChlorine):
+                    particleInfo.append(self.freechlorine)
+                
+                if(self.manager.decayActiveMonochloramine):
+                    particleInfo.append(self.hypochlorousAcid)
+                    particleInfo.append(self.ammonia)
+                    particleInfo.append(self.monochloramine)
+                    particleInfo.append(self.dichloramine)
+                    particleInfo.append(self.iodine)
+                    particleInfo.append(self.docb)
+                    particleInfo.append(self.docbox)
+                    particleInfo.append(self.docw)
+                    particleInfo.append(self.docwox)
+                    particleInfo.append(self.chlorine)
+
                 if self.manager.expelledParticleData.get(self.container.name) is None:
                     self.manager.expelledParticleData[self.container.name] = []
                 dataset = self.manager.expelledParticleData.get(self.container.name)
@@ -568,14 +644,27 @@ class Particle:
         add_ages = []
         keys = self.contact.keys()
         values = self.contact.values()
-        rval = [self.ID, self.age, self.container.name]
+        rval = [self.ID, self.time, self.age, self.container.name]
         for key in keys:
             add_contacts.append([key, self.contact[key]])
         rval.append(add_contacts)
         for pipe in self.ages.keys():
             add_ages.append([pipe, self.ages[pipe]])
         rval.append(add_ages)
-        rval.append(self.freechlorine)
+        if(self.manager.decayActiveFreeChlorine):
+            rval.append(self.freechlorine)
+        if(self.manager.decayActiveMonochloramine):
+            rval.append(self.hypochlorousAcid)
+            rval.append(self.ammonia)
+            rval.append(self.monochloramine)
+            rval.append(self.dichloramine)
+            rval.append(self.iodine)
+            rval.append(self.docb)
+            rval.append(self.docbox)
+            rval.append(self.docw)
+            rval.append(self.docwox)
+            rval.append(self.chlorine)
+
         return rval
 
     # prints details about the particle. included for testing purposes. Not used.
@@ -857,8 +946,6 @@ class endpoint(pipe):
         while p is not None:
             p.flowRate += flow_change
             p.flow += rate_change
-            #for testing
-            #assert(p.flowRate <= 6.0)
             if not p.flowRate >= 0:
                 if p.flowRate > (-1*self.manager.tolerance):
                     self.flow = 0
@@ -886,7 +973,6 @@ class endpoint(pipe):
 
 def main():
     sim = pipe("sim", 0, 0, None, None, 0, 0, 0, None)
-    pipe.show_tree(sim)
 
 if __name__ == "__main__":
     main()
