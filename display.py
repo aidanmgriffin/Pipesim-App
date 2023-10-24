@@ -203,7 +203,9 @@ class simulation_window():
                                             decay_monochloramine_status, 
                                             starting_particles_free_chlorine_concentration, 
                                             injected_particles_free_chlorine_concentration,
-                                            decay_monochloramine_dict
+                                            decay_monochloramine_dict,
+                                            groupby_status,
+                                            timestep_group_size,
                                          ):
         density = None
         valid = True
@@ -248,7 +250,9 @@ class simulation_window():
                 decay_monochloramine_status=decay_monochloramine_status,
                 starting_particles_free_chlorine_concentration=starting_particles_free_chlorine_concentration,
                 injected_particles_free_chlorine_concentration=injected_particles_free_chlorine_concentration,
-                decay_monochloramine_dict=decay_monochloramine_dict
+                decay_monochloramine_dict=decay_monochloramine_dict,
+                groupby_status=groupby_status,
+                timestep_group_size=timestep_group_size,
                 )
             
             sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset,exception_holder, arguments))

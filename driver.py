@@ -39,6 +39,8 @@ class execution_arguments:
                  starting_particles_free_chlorine_concentration = None,
                  injected_particles_free_chlorine_concentration = None,
                  decay_monochloramine_dict = None,
+                 groupby_status = None,
+                 timestep_group_size = 1,
                  ):
         self.settingsfile = settingsfile
         self.modelfile = modelfile
@@ -58,6 +60,8 @@ class execution_arguments:
         self.decay_monochloramine_dict = decay_monochloramine_dict
         self.diffuse_advective = diffuse_advective
         self.diffuse_stagnant = diffuse_stagnant
+        self.groupby_status = groupby_status
+        self.timestep_group_size = int(timestep_group_size)
         self.plt = None
 
 # The graphing functionality has been broken into it's own class to make it easier to call the graphing functions multiple times with different parameters.
@@ -595,21 +599,16 @@ class Driver:
 
         arguments = self.arguments
 
-            # output.write("pipe model file: " + arguments.modelfile + "\n")
-            # output.write("flow preset file: " + arguments.presetsfile + "\n")
-            # output.write("d_m: " + str(self.manager.d_m) + "\n")
-            # output.write("d_inf: " + str(self.root.d_inf) + "\n")
-            # output.write("granularity: " + self.mode + "Minutes" + "\n")
-            # output.write("time: ")
-        
+        # Print run information in the first row of the output csv file.
         writer.writerow(["Pipe Model File: ", arguments.modelfile, "Flow Preset File: ", arguments.presetsfile, "d_m: ", str(self.manager.d_m), "d_inf: ", str(self.root.d_inf), "Granularity: ", self.mode, "Time: ", self.counter.get_time()])
 
-        if(self.manager.decayActiveFreeChlorine):
-            writer.writerow(["ParticleID", "Timestamp", "Age", "OutputEndpoint", "AgeByMaterial", "AgeByPipe", "FreeChlorineConcentration"])
-        elif(self.manager.decayActiveMonochloramine):
-            writer.writerow(["ParticleID", "Timestamp", "Age", "OutputEndpoint", "AgeByMaterial", "AgeByPipe", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration" ])
-        elif(self.manager.decayActiveFreeChlorine and self.manager.decayActiveMonochloramine):
+        # Print the header row for the particle data. Varies on inclusion of free chlorine / monochloramine decay.
+        if(self.manager.decayActiveFreeChlorine and self.manager.decayActiveMonochloramine):
             writer.writerow(["ParticleID", "Timestamp", "Age", "OutputEndpoint", "AgeByMaterial", "AgeByPipe", "FreeChlorineConcentration", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration" ])
+        elif(self.manager.decayActiveFreeChlorine and not self.manager.decayActiveMonochloramine):
+            writer.writerow(["ParticleID", "Timestamp", "Age", "OutputEndpoint", "AgeByMaterial", "AgeByPipe", "FreeChlorineConcentration"])
+        elif(self.manager.decayActiveMonochloramine and not self.manager.decayActiveFreeChlorine):
+            writer.writerow(["ParticleID", "Timestamp", "Age", "OutputEndpoint", "AgeByMaterial", "AgeByPipe", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration" ])
         else:
             writer.writerow(["ParticleID", "Timestamp", "Age", "OutputEndpoint", "AgeByMaterial", "AgeByPipe"])
 
@@ -617,6 +616,114 @@ class Driver:
             particle = particles[key]
             data = particle.getOutput()
             writer.writerow(data)
+        results.close()
+
+    def write_groupby_output(self, filename, particles, groupby):
+        results = open(filename, 'w')
+        writer = csv.writer(results,'excel')
+
+        arguments = self.arguments
+
+        # Print run information in the first row of the output csv file.
+        writer.writerow(["Pipe Model File: ", arguments.modelfile, "Flow Preset File: ", arguments.presetsfile, "d_m: ", str(self.manager.d_m), "d_inf: ", str(self.root.d_inf), "Granularity: ", self.mode, "Time: ", self.counter.get_time()])
+
+        # Print the header row for the particle data. Varies on inclusion of free chlorine / monochloramine decay.
+        if(self.manager.decayActiveFreeChlorine and self.manager.decayActiveMonochloramine):
+            writer.writerow(["Timestamp", "Age", "FreeChlorineConcentration", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration" ])
+        elif(self.manager.decayActiveFreeChlorine and not self.manager.decayActiveMonochloramine):
+            writer.writerow(["Timestamp", "Age", "FreeChlorineConcentration"])
+        elif(self.manager.decayActiveMonochloramine and not self.manager.decayActiveFreeChlorine):
+            writer.writerow(["Timestamp", "Age", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration" ])
+        else:
+            writer.writerow(["Timestamp", "Age"])
+
+        prevStamp= 0
+
+        for key in range(0, len(particles), groupby):
+            sumTime = 0
+            sumFreeChlorine = 0
+            sumHypochlorousAcid = 0
+            sumAmmonia = 0
+            sumMonochloramine = 0
+            sumDichloramine = 0
+            sumIodine = 0
+            sumDOCb = 0
+            sumDOCbox = 0
+            sumDOCw = 0
+            sumDOCwox = 0
+            sumChlorine = 0
+
+            for i in range(groupby):
+                if(key + i) < len(particles):
+                    particle = particles[key + i]
+                    data = particle.getOutput()
+
+                    sumTime += data[2]
+
+                    if(self.manager.decayActiveFreeChlorine and self.manager.decayActiveMonochloramine):
+                        sumFreeChlorine += data[6]
+                        sumHypochlorousAcid += data[7]
+                        sumAmmonia += data[8]
+                        sumMonochloramine += data[9]
+                        sumDichloramine += data[10]
+                        sumIodine += data[11]
+                        sumDOCb += data[12]
+                        sumDOCbox += data[13]
+                        sumDOCw += data[14]
+                        sumDOCwox += data[15]
+                        sumChlorine += data[16]
+
+                    elif(self.manager.decayActiveFreeChlorine and not self.manager.decayActiveMonochloramine):
+                        sumFreeChlorine += data[6]
+
+                    elif(self.manager.decayActiveMonochloramine and not self.manager.decayActiveFreeChlorine):
+                        sumHypochlorousAcid += data[7]
+                        sumAmmonia += data[8]
+                        sumMonochloramine += data[9]
+                        sumDichloramine += data[10]
+                        sumIodine += data[11]
+                        sumDOCb += data[12]
+                        sumDOCbox += data[13]
+                        sumDOCw += data[14]
+                        sumDOCwox += data[15]
+                        sumChlorine += data[16]
+            
+            sumTime /= groupby
+            
+            if (self.manager.decayActiveFreeChlorine and self.manager.decayActiveMonochloramine):
+                sumFreeChlorine /= groupby
+                sumHypochlorousAcid /= groupby
+                sumAmmonia /= groupby
+                sumMonochloramine /= groupby
+                sumDichloramine /= groupby
+                sumIodine /= groupby
+                sumDOCb /= groupby
+                sumDOCbox /= groupby
+                sumDOCw /= groupby
+                sumDOCwox /= groupby
+                sumChlorine /= groupby
+                writer.writerow([key, sumTime, sumFreeChlorine, sumHypochlorousAcid, sumAmmonia, sumMonochloramine, sumDichloramine, sumIodine, sumDOCb, sumDOCbox, sumDOCw, sumDOCwox, sumChlorine])
+            
+            elif(self.manager.decayActiveFreeChlorine and not self.manager.decayActiveMonochloramine):
+                sumFreeChlorine /= groupby
+                writer.writerow([key, sumTime, sumFreeChlorine])
+
+            elif(self.manager.decayActiveMonochloramine and not self.manager.decayActiveFreeChlorine):
+                sumHypochlorousAcid /= groupby
+                sumAmmonia /= groupby
+                sumMonochloramine /= groupby
+                sumDichloramine /= groupby
+                sumIodine /= groupby
+                sumDOCb /= groupby
+                sumDOCbox /= groupby
+                sumDOCw /= groupby
+                sumDOCwox /= groupby
+                sumChlorine /= groupby
+                writer.writerow([key, sumTime, sumHypochlorousAcid, sumAmmonia, sumMonochloramine, sumDichloramine, sumIodine, sumDOCb, sumDOCbox, sumDOCw, sumDOCwox, sumChlorine])
+            
+            else:
+                writer.writerow([key, sumTime])
+                
         results.close()
 
     # # creates a csv file report the includes all particles expelled. Also includes
@@ -813,6 +920,9 @@ class Driver:
         g = graphing(self.Queue)
         g.graph_age(self.manager.expelledParticleData, self.counter, self.manager.decayActiveFreeChlorine, logpath)
         self.write_output(logpath + "\expelled.csv",self.manager.expendedParticles)
+
+        if(self.manager.groupbyStatus == 1):
+            self.write_groupby_output(logpath + "\expelledgroups.csv", self.manager.expendedParticles, self.manager.timestepGroupSize)
         # self.write_output(logpath + "\pipe_contents.csv", self.manager.particleIndex)
         # self.write_age_and_FreeChlorine_data(logpath + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
         if(self.manager.diffusionActive):
@@ -855,6 +965,9 @@ class Driver:
         g = graphing(self.Queue)
         g.graph_age(self.manager.expelledParticleData, self.counter, self.manager.decayActiveFreeChlorine, pathname)
         self.write_output(pathname + "\expelled.csv", self.manager.expendedParticles)
+
+        if(self.manager.groupbyStatus == 1):
+            self.write_groupby_output(pathname + "\expelledgroups.csv", self.manager.expendedParticles, self.manager.timestepGroupSize)
         # self.write_output(pathname + "\pipe_contents.csv", self.manager.particleIndex)
         # self.write_age_and_FreeChlorine_data(pathname + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
         if self.manager.diffusionActive:
@@ -879,6 +992,8 @@ class Driver:
             self.manager.startingParticlesFreeChlorineConcentration = arguments.starting_particles_free_chlorine_concentration
             self.manager.injectedParticlesFreeChlorineConcentration = arguments.injected_particles_free_chlorine_concentration
             self.manager.monochloramineDecayDict = arguments.decay_monochloramine_dict
+            self.manager.groupbyStatus = arguments.groupby_status
+            self.manager.timestepGroupSize = arguments.timestep_group_size
 
 
             print("decay: ", self.manager.decayActiveFreeChlorine, "diffuse: ", self.manager.diffusionActive)
@@ -920,6 +1035,9 @@ class Driver:
             
             try:        
                 self.write_output(pathname+"\expelled.csv", self.manager.expendedParticles)
+
+                if(self.manager.groupbyStatus == 1):
+                    self.write_groupby_output(pathname+"\expelledgroups.csv", self.manager.expendedParticles, self.manager.timestepGroupSize)
                 # self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
                 # self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
                 # start timing

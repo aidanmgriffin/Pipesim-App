@@ -80,6 +80,10 @@ class ParticleManager():
         self.injectedParticlesFreeChlorineConcentration: float = 1.0
         self.monochloramineDecayDict: dict = {}
         self.concentrationDict: dict = {}
+
+        #Groupby vars
+        self.groupbyStatus: int = 0
+        self.timestepGroupSize: int = 1
     
         #Particle accumulation vars
         self.bins = []
@@ -97,6 +101,8 @@ class ParticleManager():
         self.prevFlow = 0
         self.prevArea = 0
         self.prevLength = 0
+
+
 
     def particle(self, container, concrentrationDict):
         """

@@ -168,13 +168,15 @@ def upload():
                 starting_particles_free_chlorine_concentration = 1.0
                 injected_particles_free_chlorine_concentration = 1.0
             
+            if starting_particles_free_chlorine_concentration == '':
+                starting_particles_free_chlorine_concentration = 1.0
+            if injected_particles_free_chlorine_concentration == '':
+                injected_particles_free_chlorine_concentration = 1.0
+
             decay_monochloramine_dict = {}
 
             if('flexCheckMonochloramineDecay' in request.values):
                 decay_monochloramine_status = 1
-
-
-                
             else:
                 decay_monochloramine_status = 0
 
@@ -183,6 +185,11 @@ def upload():
                 injected_particles_hypochlorous_concentration = request.values['injected-particles-concentration-hypochlorous']
             else:
                 starting_particles_hypochlorous_concentration = 1.0
+                injected_particles_hypochlorous_concentration = 1.0
+
+            if starting_particles_hypochlorous_concentration == '':
+                starting_particles_hypochlorous_concentration = 1.0
+            if injected_particles_hypochlorous_concentration == '':
                 injected_particles_hypochlorous_concentration = 1.0
             
             decay_monochloramine_dict['starting-particles-concentration-hypochlorous'] = starting_particles_hypochlorous_concentration
@@ -195,6 +202,11 @@ def upload():
                 starting_particles_ammonia_concentration = 1.0
                 injected_particles_ammonia_concentration = 1.0
             
+            if starting_particles_ammonia_concentration == '':
+                starting_particles_ammonia_concentration = 1.0
+            if injected_particles_ammonia_concentration == '':
+                injected_particles_ammonia_concentration = 1.0
+
             decay_monochloramine_dict['starting-particles-concentration-ammonia'] = starting_particles_ammonia_concentration
             decay_monochloramine_dict['injected-particles-concentration-ammonia'] = injected_particles_ammonia_concentration
 
@@ -205,6 +217,11 @@ def upload():
                 starting_particles_monochloramine_concentration = 1.0
                 injected_particles_monochloramine_concentration = 1.0
 
+            if starting_particles_monochloramine_concentration == '':
+                starting_particles_monochloramine_concentration = 1.0
+            if injected_particles_monochloramine_concentration == '':
+                injected_particles_monochloramine_concentration = 1.0
+
             decay_monochloramine_dict['starting-particles-concentration-monochloramine'] = starting_particles_monochloramine_concentration
             decay_monochloramine_dict['injected-particles-concentration-monochloramine'] = injected_particles_monochloramine_concentration
             
@@ -213,6 +230,11 @@ def upload():
                 injected_particles_dichloramine_concentration = request.values['injected-particles-concentration-dichloramine']
             else:
                 starting_particles_dichloramine_concentration = 1.0
+                injected_particles_dichloramine_concentration = 1.0
+
+            if starting_particles_dichloramine_concentration == '':
+                starting_particles_dichloramine_concentration = 1.0
+            if injected_particles_dichloramine_concentration == '':
                 injected_particles_dichloramine_concentration = 1.0
             
             decay_monochloramine_dict['starting-particles-concentration-dichloramine'] = starting_particles_dichloramine_concentration
@@ -225,6 +247,11 @@ def upload():
                 starting_particles_iodine_concentration = 1.0
                 injected_particles_iodine_concentration = 1.0
             
+            if starting_particles_iodine_concentration == '':
+                starting_particles_iodine_concentration = 1.0
+            if injected_particles_iodine_concentration == '':
+                injected_particles_iodine_concentration = 1.0
+            
             decay_monochloramine_dict['starting-particles-concentration-iodine'] = starting_particles_iodine_concentration
             decay_monochloramine_dict['injected-particles-concentration-iodine'] = injected_particles_iodine_concentration
 
@@ -233,6 +260,11 @@ def upload():
                 injected_particles_docb_concentration = request.values['injected-particles-concentration-docb']
             else:
                 starting_particles_docb_concentration = 1.0
+                injected_particles_docb_concentration = 1.0
+            
+            if starting_particles_docb_concentration == '':
+                starting_particles_docb_concentration = 1.0
+            if injected_particles_docb_concentration == '':
                 injected_particles_docb_concentration = 1.0
 
             decay_monochloramine_dict['starting-particles-concentration-docb'] = starting_particles_docb_concentration
@@ -245,6 +277,11 @@ def upload():
                 starting_particles_docbox_concentration = 1.0
                 injected_particles_docbox_concentration = 1.0
 
+            if starting_particles_docbox_concentration == '':
+                starting_particles_docbox_concentration = 1.0
+            if injected_particles_docbox_concentration == '':
+                injected_particles_docbox_concentration = 1.0
+
             decay_monochloramine_dict['starting-particles-concentration-docbox'] = starting_particles_docbox_concentration
             decay_monochloramine_dict['injected-particles-concentration-docbox'] = injected_particles_docbox_concentration
 
@@ -253,6 +290,11 @@ def upload():
                 injected_particles_docw_concentration = request.values['injected-particles-concentration-docw']
             else:
                 starting_particles_docw_concentration = 1.0
+                injected_particles_docw_concentration = 1.0
+
+            if starting_particles_docw_concentration == '':
+                starting_particles_docw_concentration = 1.0
+            if injected_particles_docw_concentration == '':
                 injected_particles_docw_concentration = 1.0
             
             decay_monochloramine_dict['starting-particles-concentration-docw'] = starting_particles_docw_concentration
@@ -264,6 +306,11 @@ def upload():
             else:
                 starting_particles_docwox_concentration = 1.0
                 injected_particles_docwox_concentration = 1.0
+
+            if starting_particles_docwox_concentration == '':
+                starting_particles_docwox_concentration = 1.0
+            if injected_particles_docwox_concentration == '':
+                injected_particles_docwox_concentration = 1.0
             
             decay_monochloramine_dict['starting-particles-concentration-docwox'] = starting_particles_docwox_concentration
             decay_monochloramine_dict['injected-particles-concentration-docwox'] = injected_particles_docwox_concentration
@@ -274,9 +321,21 @@ def upload():
             else:
                 starting_particles_chlorine_concentration = 1.0
                 injected_particles_chlorine_concentration = 1.0
+
+            if starting_particles_chlorine_concentration == '':
+                starting_particles_chlorine_concentration = 1.0
+            if injected_particles_chlorine_concentration == '':
+                injected_particles_chlorine_concentration = 1.0
             
             decay_monochloramine_dict['starting-particles-concentration-chlorine'] = starting_particles_chlorine_concentration
             decay_monochloramine_dict['injected-particles-concentration-chlorine'] = injected_particles_chlorine_concentration
+
+            if('timestep-group-size' in request.values):
+                groupby_status = 1
+                timestep_group_size = request.values['timestep-group-size']
+            else:
+                groupby_status = 0
+                timestep_group_size = 1.0
 
             # Attempt to save pipe network and flows files to input folder. If unsuccessful (most likely due to incorrect file type),
             # an error will be shown to the user.
@@ -319,13 +378,15 @@ def upload():
                     decay_monochloramine_status, 
                     starting_particles_free_chlorine_concentration,
                     injected_particles_free_chlorine_concentration,
-                    decay_monochloramine_dict)
+                    decay_monochloramine_dict,
+                    groupby_status,
+                    timestep_group_size)
                 
             except Exception as e:
                 alertDanger.message = e
                 raise Exception
             
-            print("error: ", alertDanger.message)
+            print("APP ALERT ERROR: ", alertDanger.message)
             #If simulation is successful, redirect to download page. If failed, show error message.
             if(output_file):
                 print("Simulation Complete...")

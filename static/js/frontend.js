@@ -9,7 +9,6 @@ function CheckAll() {
     var text = document.getElementById("text");
 
     if (checkBox.checked == true){
-        console.log("fe checked")
         checkBoxAdvective.style.display = "block"
         checkBoxStagnant.style.display = "block"
         labelAdvective.style.display = "block"
@@ -18,8 +17,6 @@ function CheckAll() {
         checkBoxAdvective.checked = true
     }
     else {
-        console.log("fe unchecked")
-
         checkBoxAdvective.style.display = "none"
         checkBoxStagnant.style.display = "none"
         labelAdvective.style.display = "none"
@@ -28,9 +25,7 @@ function CheckAll() {
         checkBoxAdvective.checked = false
     }
 
-    if (checkBoxAdvective.checked == false && checkBoxStagnant.checked == false && checkBox.checked == true){
-        console.log("fe all unchecked")
-        
+    if (checkBoxAdvective.checked == false && checkBoxStagnant.checked == false && checkBox.checked == true){        
         checkBox.checked = false
         checkBoxAdvective.style.display = "none"
         checkBoxStagnant.style.display = "none"
@@ -484,5 +479,21 @@ function chlorineCheckAll() {
         label.style.display = "none";
         startingParticles.required = false;
         injectedParticles.required = false;
+    }
+}
+
+function groupByTimestepCheckAll() {
+    
+    var checkBox = document.getElementById("flexCheckGroupByTimestep");
+    var label = document.getElementById("label-groupby");
+    var groupSize = document.getElementById("timestep-group-size");
+
+    if (checkBox.checked == true){
+        label.style.display = "block"
+        groupSize.required = true
+    }
+    else {
+        label.style.display = "none"
+        groupSize.required = false
     }
 }
