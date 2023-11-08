@@ -346,10 +346,12 @@ class Driver:
         self.WORK_END = 0
         self.TIME_STEP = 0
         self.HOUR_LENGTH = 0
+
         if timer == None:
             self.counter = particles.counter()
         else:
             self.counter = timer
+
         self.activation_counter = 0
         self.randLow = 1
         self.randHigh = 5
@@ -370,12 +372,17 @@ class Driver:
         self.actives = None # list of active endpoints
         self.set_time_step(step)
         self.mode = step
-        # self.mode_name = {1:"second", 2:"minute", 3:"hour", 4: "custom"}
         self.flowList = {}
 
         self.arguments = execution_arguments()
-        # self.modelfile = None
-        # self.presetsFile
+
+        # Global List Variables - Group Output
+        self.FCL_MCM = ["AverageAge", "FreeChlorineConcentration", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration", ""]
+        self.FCL = ["AverageAge", "FreeChlorineConcentration", ""]
+        self.MCM = ["AverageAge", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration", ""]
+        self.AGE = ["AverageAge", ""]
+
+
 
     # updates the time step and related variables to allow for computation on seconds, minutes, or hours.
     def set_time_step(self, option: int):
@@ -618,7 +625,7 @@ class Driver:
             writer.writerow(data)
         results.close()
 
-    def write_groupby_output(self, filename, particles, groupby):
+    def write_groupby_particles_output(self, filename, particles, groupby):
         results = open(filename, 'w')
         writer = csv.writer(results,'excel')
 
@@ -629,13 +636,13 @@ class Driver:
 
         # Print the header row for the particle data. Varies on inclusion of free chlorine / monochloramine decay.
         if(self.manager.decayActiveFreeChlorine and self.manager.decayActiveMonochloramine):
-            writer.writerow(["Timestamp", "Age", "FreeChlorineConcentration", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration" ])
+            writer.writerow(["ParticleID", "Age", "FreeChlorineConcentration", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration" ])
         elif(self.manager.decayActiveFreeChlorine and not self.manager.decayActiveMonochloramine):
-            writer.writerow(["Timestamp", "Age", "FreeChlorineConcentration"])
+            writer.writerow(["ParticleID", "Age", "FreeChlorineConcentration"])
         elif(self.manager.decayActiveMonochloramine and not self.manager.decayActiveFreeChlorine):
-            writer.writerow(["Timestamp", "Age", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration" ])
+            writer.writerow(["ParticleID", "Age", "HypochlorousAcidConcentration", "AmmoniaConcentration", "MonochloramineConcentration", "DichloramineConcentration", "IodineConcentration", "DOCbConcentration", "DOCboxConcentration", "DOCwConcentration", "DOCwoxConcentration", "ChlorineConcentration" ])
         else:
-            writer.writerow(["Timestamp", "Age"])
+            writer.writerow(["ParticleID", "Age"])
 
         prevStamp= 0
 
@@ -653,9 +660,15 @@ class Driver:
             sumDOCwox = 0
             sumChlorine = 0
 
+            # print(key, " of ", len(particles))
+            # i = key
+            # while i < (key + groupby) and i < len(particles):
             for i in range(groupby):
-                if(key + i) < len(particles):
-                    particle = particles[key + i]
+                if (key + i) < len(particles):
+                    try:
+                        particle = particles[key + i]
+                    except:
+                        break
                     data = particle.getOutput()
 
                     sumTime += data[2]
@@ -687,6 +700,7 @@ class Driver:
                         sumDOCw += data[14]
                         sumDOCwox += data[15]
                         sumChlorine += data[16]
+                # i += 1
             
             sumTime /= groupby
             
@@ -722,7 +736,292 @@ class Driver:
                 writer.writerow([key, sumTime, sumHypochlorousAcid, sumAmmonia, sumMonochloramine, sumDichloramine, sumIodine, sumDOCb, sumDOCbox, sumDOCw, sumDOCwox, sumChlorine])
             
             else:
+                # particleID = particles[key].getOutput()[0]
+                # writer.writerow([particleID, sumTime])
                 writer.writerow([key, sumTime])
+                
+        results.close()
+
+    def write_groupby_time_output(self, filename, particles, groupby):
+        results = open(filename, 'w')
+        writer = csv.writer(results,'excel')
+
+        arguments = self.arguments
+
+        # Print run information in the first row of the output csv file.
+        writer.writerow(["Pipe Model File: ", arguments.modelfile, "Flow Preset File: ", arguments.presetsfile, "d_m: ", str(self.manager.d_m), "d_inf: ", str(self.root.d_inf), "Granularity: ", self.mode, "Time: ", self.counter.get_time()])
+
+        key = 0
+        prevKey = 0
+        timeDict = {}
+        timeDict.setdefault(0, [])
+        tapList = []
+        tapInfo = {}
+        tapContents = {}
+        tapCount = {}
+
+        for key in range(len(particles)- 1):
+            try:
+                particle = particles[key]
+                data = particle.getOutput()
+
+                if data[3] not in tapList:
+                    tapList.append(data[3])
+
+                tapContents.setdefault(data[3], {})
+
+                tapCount.setdefault(data[3], {})
+                
+                if data[1] % groupby == 0:
+                    timeDict.setdefault(data[1], [])
+                    timeDict[data[1]].append(data)
+                    prevKey = data[1]
+                else:
+                    timeDict[prevKey].append(data)
+            except:
+                pass
+
+        # Ensure proper orientation when printing the tap list row in the output groups csv file.
+        tapListRow = ['']
+        for tap in tapList:
+            tapListRow.append(tap)
+            if(self.manager.decayActiveFreeChlorine and self.manager.decayActiveMonochloramine):
+                tapListRow.extend([''] * (len(self.FCL_MCM) - 1))
+            elif(self.manager.decayActiveFreeChlorine and not self.manager.decayActiveMonochloramine):
+                tapListRow.extend([''] * (len(self.FCL) - 1))
+            elif(self.manager.decayActiveMonochloramine and not self.manager.decayActiveFreeChlorine):
+                tapListRow.extend([''] * (len(self.MCM) - 1))    
+            else:
+                tapListRow.extend([''] * (len(self.AGE)))
+
+        writer.writerow(tapListRow)
+
+        # Print the header row for the particle data. Varies on inclusion of free chlorine / monochloramine decay.
+        if(self.manager.decayActiveFreeChlorine and self.manager.decayActiveMonochloramine):
+            writer.writerow(['Timestep'] + self.FCL_MCM * len(tapList))
+        elif(self.manager.decayActiveFreeChlorine and not self.manager.decayActiveMonochloramine):
+            writer.writerow(['Timestep'] + self.FCL * len(tapList))
+        elif(self.manager.decayActiveMonochloramine and not self.manager.decayActiveFreeChlorine):
+            writer.writerow(['Timestep'] + self.MCM * len(tapList))
+        else:
+            writer.writerow(['Timestep'] + self.AGE * len(tapList))
+
+        for key in timeDict.keys():
+
+            for i in timeDict[key]:
+                try:
+                    data = i
+                except:
+                    break
+
+                tapContents[data[3]].setdefault('sumTime', 0)
+                tapContents[data[3]]['sumTime'] += data[2]
+                tapCount[data[3]].setdefault(key, 0)
+                tapCount[data[3]][key] += 1
+
+                if(self.manager.decayActiveFreeChlorine and self.manager.decayActiveMonochloramine):
+                    tapContents[data[3]].setdefault('sumFreeChlorine', 0)
+                    tapContents[data[3]]['sumFreeChlorine'] += data[6]
+                    tapContents[data[3]].setdefault('sumHypochlorousAcid', 0)
+                    tapContents[data[3]]['sumHypochlorousAcid'] += data[7]
+                    tapContents[data[3]].setdefault('sumAmmonia', 0)
+                    tapContents[data[3]]['sumAmmonia'] += data[8]
+                    tapContents[data[3]].setdefault('sumMonochloramine', 0)
+                    tapContents[data[3]]['sumMonochloramine'] += data[9]
+                    tapContents[data[3]].setdefault('sumDichloramine', 0)
+                    tapContents[data[3]]['sumDichloramine'] += data[10]
+                    tapContents[data[3]].setdefault('sumIodine', 0)
+                    tapContents[data[3]]['sumIodine'] += data[11]
+                    tapContents[data[3]].setdefault('sumDOCb', 0)
+                    tapContents[data[3]]['sumDOCb'] += data[12]
+                    tapContents[data[3]].setdefault('sumDOCbox', 0)
+                    tapContents[data[3]]['sumDOCbox'] += data[13]
+                    tapContents[data[3]].setdefault('sumDOCw', 0)
+                    tapContents[data[3]]['sumDOCw'] += data[14]
+                    tapContents[data[3]].setdefault('sumDOCwox', 0)
+                    tapContents[data[3]]['sumDOCwox'] += data[15]
+                    tapContents[data[3]].setdefault('sumChlorine', 0)
+                    tapContents[data[3]]['sumChlorine'] += data[16]
+
+                elif(self.manager.decayActiveFreeChlorine and not self.manager.decayActiveMonochloramine):
+                    tapContents[data[3]].setdefault('sumFreeChlorine', 0)
+                    tapContents[data[3]]['sumFreeChlorine'] += data[6]
+
+                elif(self.manager.decayActiveMonochloramine and not self.manager.decayActiveFreeChlorine):
+                    tapContents[data[3]].setdefault('sumHypochlorousAcid', 0)
+                    tapContents[data[3]]['sumHypochlorousAcid'] += data[7]
+                    tapContents[data[3]].setdefault('sumAmmonia', 0)
+                    tapContents[data[3]]['sumAmmonia'] += data[8]
+                    tapContents[data[3]].setdefault('sumMonochloramine', 0)
+                    tapContents[data[3]]['sumMonochloramine'] += data[9]
+                    tapContents[data[3]].setdefault('sumDichloramine', 0)
+                    tapContents[data[3]]['sumDichloramine'] += data[10]
+                    tapContents[data[3]].setdefault('sumIodine', 0)
+                    tapContents[data[3]]['sumIodine'] += data[11]
+                    tapContents[data[3]].setdefault('sumDOCb', 0)
+                    tapContents[data[3]]['sumDOCb'] += data[12]
+                    tapContents[data[3]].setdefault('sumDOCbox', 0)
+                    tapContents[data[3]]['sumDOCbox'] += data[13]
+                    tapContents[data[3]].setdefault('sumDOCw', 0)
+                    tapContents[data[3]]['sumDOCw'] += data[14]
+                    tapContents[data[3]].setdefault('sumDOCwox', 0)
+                    tapContents[data[3]]['sumDOCwox'] += data[15]
+                    tapContents[data[3]].setdefault('sumChlorine', 0)
+                    tapContents[data[3]]['sumChlorine'] += data[16]
+                    
+            for tap in tapContents.keys():
+
+                tapInfo.setdefault(tap, {})
+                tapInfo[tap].setdefault(key, [])
+
+                try:
+                    tapContents[tap]['sumTime'] /= tapCount[tap][key]
+                except:
+                    pass
+
+                if (self.manager.decayActiveFreeChlorine and self.manager.decayActiveMonochloramine):
+                    try:
+                        tapContents[tap]['sumFreeChlorine'] /= tapCount[tap][key]
+                        tapContents[tap]['sumHypochlorousAcid'] /= tapCount[tap][key]
+                        tapContents[tap]['sumAmmonia'] /= tapCount[tap][key]
+                        tapContents[tap]['sumMonochloramine'] /= tapCount[tap][key]
+                        tapContents[tap]['sumDichloramine'] /= tapCount[tap][key]
+                        tapContents[tap]['sumIodine'] /= tapCount[tap][key]
+                        tapContents[tap]['sumDOCb'] /= tapCount[tap][key]
+                        tapContents[tap]['sumDOCbox'] /= tapCount[tap][key]
+                        tapContents[tap]['sumDOCw'] /= tapCount[tap][key]
+                        tapContents[tap]['sumDOCwox'] /= tapCount[tap][key]
+                        tapContents[tap]['sumChlorine'] /= tapCount[tap][key]
+                    except:
+                        pass
+
+                    try:
+                        tapInfo[tap][key].append(tapContents[tap]['sumTime'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumFreeChlorine'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumHypochlorousAcid'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumAmmonia'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumMonochloramine'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumDichloramine'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumIodine'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumDOCb'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumDOCbox'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumDOCw'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumDOCwox'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumChlorine'])
+                    except:
+                        tapInfo[tap][key].extend([0] * len(self.FCL_MCM))
+                    
+                elif(self.manager.decayActiveFreeChlorine and not self.manager.decayActiveMonochloramine):
+                    try:
+                        tapContents[tap]['sumFreeChlorine'] /= tapCount[tap][key]
+                    except:
+                        pass
+
+                    try:
+                        tapInfo[tap][key].append(tapContents[tap]['sumTime'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumFreeChlorine'])
+                    except:
+                        tapInfo[tap][key].extend([0] * len(self.FCL))
+
+
+                elif(self.manager.decayActiveMonochloramine and not self.manager.decayActiveFreeChlorine):
+                    try:
+                        tapContents[tap]['sumHypochlorousAcid'] /= tapCount[tap][key]
+                        tapContents[tap]['sumAmmonia'] /= tapCount[tap][key]
+                        tapContents[tap]['sumMonochloramine'] /= tapCount[tap][key]
+                        tapContents[tap]['sumDichloramine'] /= tapCount[tap][key]
+                        tapContents[tap]['sumIodine'] /= tapCount[tap][key]
+                        tapContents[tap]['sumDOCb'] /= tapCount[tap][key]
+                        tapContents[tap]['sumDOCbox'] /= tapCount[tap][key]
+                        tapContents[tap]['sumDOCw'] /= tapCount[tap][key]
+                        tapContents[tap]['sumDOCwox'] /= tapCount[tap][key]
+                        tapContents[tap]['sumChlorine'] /= tapCount[tap][key]
+                    except:
+                        pass
+
+                    try:
+                        tapInfo[tap][key].append(tapContents[tap]['sumTime'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumHypochlorousAcid'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumAmmonia'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumMonochloramine'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumDichloramine'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumIodine'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumDOCb'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumDOCbox'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumDOCw'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumDOCwox'])
+                        tapInfo[tap][key].append(tapContents[tap]['sumChlorine'])
+                    except:
+                        tapInfo[tap][key].extend([0] * len(self.MCM))
+
+                else:
+
+                    try:
+                        tapInfo[tap][key].append(tapContents[tap]['sumTime'])
+                    except:
+                        tapInfo[tap][key].append(0)
+                        pass
+
+            print(tapInfo)
+            tapInfoList = []
+            for tap in tapInfo.keys():
+                try:
+                    if(self.manager.decayActiveFreeChlorine and self.manager.decayActiveMonochloramine):
+                        tapInfoList.append(tapInfo[tap][key][0])
+                        tapInfoList.append(tapInfo[tap][key][1])
+                        tapInfoList.append(tapInfo[tap][key][2])
+                        tapInfoList.append(tapInfo[tap][key][3])
+                        tapInfoList.append(tapInfo[tap][key][4])
+                        tapInfoList.append(tapInfo[tap][key][5])
+                        tapInfoList.append(tapInfo[tap][key][6])
+                        tapInfoList.append(tapInfo[tap][key][7])
+                        tapInfoList.append(tapInfo[tap][key][8])
+                        tapInfoList.append(tapInfo[tap][key][9])
+                        tapInfoList.append(tapInfo[tap][key][10])
+                        tapInfoList.append(tapInfo[tap][key][11])
+                        tapInfoList.append('')
+                    elif(self.manager.decayActiveFreeChlorine and not self.manager.decayActiveMonochloramine):
+                        tapInfoList.append(tapInfo[tap][key][0])
+                        tapInfoList.append(tapInfo[tap][key][1])
+                        tapInfoList.append('')
+                    elif(self.manager.decayActiveMonochloramine and not self.manager.decayActiveFreeChlorine):
+                        tapInfoList.append(tapInfo[tap][key][0])
+                        tapInfoList.append(tapInfo[tap][key][1])
+                        tapInfoList.append(tapInfo[tap][key][2])
+                        tapInfoList.append(tapInfo[tap][key][3])
+                        tapInfoList.append(tapInfo[tap][key][4])
+                        tapInfoList.append(tapInfo[tap][key][5])
+                        tapInfoList.append(tapInfo[tap][key][6])
+                        tapInfoList.append(tapInfo[tap][key][7])
+                        tapInfoList.append(tapInfo[tap][key][8])
+                        tapInfoList.append(tapInfo[tap][key][9])
+                        tapInfoList.append(tapInfo[tap][key][10])
+                        tapInfoList.append('')
+                    else:
+                        tapInfoList.append(tapInfo[tap][key][0])
+                        tapInfoList.append('')
+
+                except:
+                    pass
+            print(tapInfoList)
+            writer.writerow([key]+ tapInfoList)
+
+            for tap in tapList:
+                try:
+                    tapContents[tap]['sumTime'] = 0
+                    tapContents[tap]['sumFreeChlorine'] = 0
+                    tapContents[tap]['sumHypochlorousAcid'] = 0
+                    tapContents[tap]['sumAmmonia'] = 0
+                    tapContents[tap]['sumMonochloramine'] = 0
+                    tapContents[tap]['sumDichloramine'] = 0
+                    tapContents[tap]['sumIodine'] = 0
+                    tapContents[tap]['sumDOCb'] = 0
+                    tapContents[tap]['sumDOCbox'] = 0
+                    tapContents[tap]['sumDOCw'] = 0
+                    tapContents[tap]['sumDOCwox'] = 0
+                    tapContents[tap]['sumChlorine'] = 0
+                except:
+                    pass
                 
         results.close()
 
@@ -922,7 +1221,7 @@ class Driver:
         self.write_output(logpath + "\expelled.csv",self.manager.expendedParticles)
 
         if(self.manager.groupbyStatus == 1):
-            self.write_groupby_output(logpath + "\expelledgroups.csv", self.manager.expendedParticles, self.manager.timestepGroupSize)
+            self.write_groupby_time_output(logpath + "\expelledgroups.csv", self.manager.expendedParticles, self.manager.timestepGroupSize)
         # self.write_output(logpath + "\pipe_contents.csv", self.manager.particleIndex)
         # self.write_age_and_FreeChlorine_data(logpath + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
         if(self.manager.diffusionActive):
@@ -967,7 +1266,7 @@ class Driver:
         self.write_output(pathname + "\expelled.csv", self.manager.expendedParticles)
 
         if(self.manager.groupbyStatus == 1):
-            self.write_groupby_output(pathname + "\expelledgroups.csv", self.manager.expendedParticles, self.manager.timestepGroupSize)
+            self.write_groupby_time_output(pathname + "\expelledgroups.csv", self.manager.expendedParticles, self.manager.timestepGroupSize)
         # self.write_output(pathname + "\pipe_contents.csv", self.manager.particleIndex)
         # self.write_age_and_FreeChlorine_data(pathname + "\expelled_particle_ages.csv", self.manager.expelledParticleData)
         if self.manager.diffusionActive:
@@ -979,6 +1278,7 @@ class Driver:
     # This function executes the simulation in preset mode. This changes how pipes are activated and enables different
     # flow rates for each activation.
     def exec_preset(self, arguments: execution_arguments):
+        print("driver.py")
         try:
             modelfile = arguments.modelfile
             presetsfile = arguments.presetsfile
@@ -996,7 +1296,7 @@ class Driver:
             self.manager.timestepGroupSize = arguments.timestep_group_size
 
 
-            print("decay: ", self.manager.decayActiveFreeChlorine, "diffuse: ", self.manager.diffusionActive)
+            print("decay: ", self.manager.decayActiveFreeChlorine, "diffuse: ", self.manager.diffusionActive, "groupBy: ", self.manager.groupbyStatus, "group size", self.manager.timestepGroupSize)
 
             send = ("status_started", "Simulation started.")
             self.Queue.put(send)
@@ -1037,7 +1337,7 @@ class Driver:
                 self.write_output(pathname+"\expelled.csv", self.manager.expendedParticles)
 
                 if(self.manager.groupbyStatus == 1):
-                    self.write_groupby_output(pathname+"\expelledgroups.csv", self.manager.expendedParticles, self.manager.timestepGroupSize)
+                    self.write_groupby_time_output(pathname+"\expelledgroups.csv", self.manager.expendedParticles, self.manager.timestepGroupSize)
                 # self.write_output(pathname+"\pipe_contents.csv", self.manager.particleIndex)
                 # self.write_age_and_FreeChlorine_data(pathname+"\expelled_particle_ages.csv", self.manager.expelledParticleData)
                 # start timing

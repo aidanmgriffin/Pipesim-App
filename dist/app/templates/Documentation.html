@@ -13,7 +13,7 @@
         <a class = "doc-content" href = "#"><h2 class="text-center">Contents</h2></a>
 
         <li><a class="doc-content" href="#">Get Started</a></li>
-        <li><a class="doc-content" href="#run-simulation">Run Simulation</a></li>
+        <!-- <li><a class="doc-content" href="#run-simulation">Run Simulation</a></li> -->
         <li><a class="doc-content-sub" href="#simulation-modes">Simulation Modes</a></li>
         <li><a class="doc-content" href="#settings-preset-file">Settings Preset File</a></li>
         <li><a class="doc-content" href="#run-simulation">Build a Simulation</a></li>
@@ -43,12 +43,24 @@
       <br />
 
       <h2 id="get-started">Get Started</h2>
-      <p>Pipesim is a tool for simulating water residence times in a plumbing system or pipe network. It was
-        designed to provide data about how long water remains in pipes within a building plumbing system before being
-        expelled through a water faucet or other outlet. </p>
+      <p>Pipesim is a tool for simulating water residence
+        times in a plumbing system inside a building (“premise
+        plumbing”). It takes as input the pipe network e.g. from building
+        blueprints, and a time series of flow events at outlets such as
+        fountains or faucets, and simulates aging of water in the system as
+        well as disinfectant decay and resulting concentrations. Ages and
+        concentrations at effluent water are computed, with some simple
+        automatic graphing of these quantities. Pipesim is a
+        “particle-tracking” code in that is sprinkles imaginary particles
+        both initially along the entire network and in the influent during
+        flow events. Each particle has a list of attributes including Age
+        (total, and age in each pipe traversed) and disinfectant
+        concentration (that decays according to specified rates). The
+        simulation will run at time steps specified by the user and for a
+        total Run Time before producting charts and raw data. Simple
+        demonstration files are provided to exploring how the code
+        works. </p>
 
-      <h2 id="run-simulation">Run Simulation</h2>
-      <p>The PipeSim pipe network residence time simulation will run for a given amount of time before producing visual charts and raw data.</p>
       <h3 id="simulation-modes">Simulation Modes</h3>
       <p>There are two ways to run PipeSim: with a <a class = "linked-text" href = "#settings-preset-file">settings preset file</a> or with a
         <a class = "linked-text" href = "#build-simulation-preset">custom built simulation</a>. Each method allows for control over all aspects of the simulation.</p>
@@ -70,9 +82,9 @@
             <th scope="col" class="table-widths">Diffusion Status [Yes/No]</th>
             <th scope="col" class="table-widths">Diffusion - Stagnant [Yes/No]</th>
             <th scope="col" class="table-widths">Diffusion - Advective [Yes/No]</th>
-            <th scope="col" class="table-widths">Diffusion Coefficient</th>
-            <th scope="col" class="table-widths">Density [0-1]</th>
-            <th scope="col" class="table-widths">Granularity</th>
+            <th scope="col" class="table-widths">Diffusion Coefficient [cm^2/min]</th>
+            <th scope="col" class="table-widths">Density [0-1"]</th>
+            <th scope="col" class="table-widths">Computation Time Step [Seconds]</th>
           </tr>
         </thead>
       </table>
@@ -80,11 +92,13 @@
       <table class="table table-bordered">
         <tbody>
           <tr>
-            <td scope="col" class="table-widths">C:\path\to\example-model.csv</td>
-            <td scope="col" class="table-widths">C:\path\to\example-preset.csv</td>
-            <td scope="col" class="table-widths">0.5</td>
+            <td scope="col" class="table-widths">c:\file\path.csv</td>
+            <td scope="col" class="table-widths">c:\file\path.csv</td>
+            <td scope="col" class="table-widths">Yes</td>
+            <td scope="col" class="table-widths">No</td>
             <td scope="col" class="table-widths">Yes</td>
             <td scope="col" class="table-widths">2.14</td>
+            <td scope="col" class="table-widths">0.5</td>
             <td scope="col" class="table-widths">60</td>
           </tr>
         </tbody>

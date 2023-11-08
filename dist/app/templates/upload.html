@@ -7,110 +7,125 @@
 {% if alert %}
 <div class="alert alert-danger alert-dismissible fade show" role="alert">
     <strong>Error!</strong> {{alert.message}}
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">&times;</span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+        <!-- <span aria-hidden="true">&times;</span> -->
     </button>
-  </div>
+</div>
 {% endif %}
 
-<div class = "main-content">
-<h1> Run Simulation </h1>
-<p>Check documentation for additional information.</p>
-<div class="foreground-spacer-block"></div>
-<br />
-
-<h3>Using Settings Preset File</h3>
-<p>Upload a CSV file with all of the system/flow information included. To find out how to create this form, click <a href="{{url_for('documentation')}}">here!</a></p>
-
-<form method="POST" enctype="multipart/form-data" name="SettingsForm">
-    <!--<label for="file" class="font-weight-bold">File:</label>-->
-    <div class="mb-3">
-        <label for="setting-preset" class="form-label">Settings Preset</label>
-        <input class="form-control" type="file" id="setting-preset" name="setting-preset">
-    </div>
-
-    <button type="submit" class="btn" name="settings-submit"  style = "background-color: #e2e3e5;" >Upload</button>
-</form>
-<br />
-<div class="foreground-spacer-block"></div>
-<br />
-
-<h3>Build Simulation Preset</h3>
-<p>Upload separate CSV files: one containing a pipe network description and one containing flow preset. To learn more about format requirements, click <a href="{{url_for('documentation')}}">here!</a></p>
-
-<form method="POST" enctype="multipart/form-data" name="PresetsForm">
-    <!--<label for="file" class="font-weight-bold">File:</label>-->
-    <div class="mb-3">
-        <label for="pipe-network" class="form-label">Pipe Network </label>
-        <input class="form-control" type="file" accept = ".csv" id="pipe-network" name="pipe-network">
-    </div>
-
-    <div class="mb-4">
-        <label for="flow-preset" class="form-label">Flows Preset</label>
-        <input class="form-control" type="file" accept = ".csv" id="flow-preset" name="flow-preset">
-    </div>
-    <script src = "/static/js/frontend.js"></script>
-
-    <div class="form-row d-flex align-items-center ml-3">
-        <div class="col-auto">
-
-            <input class="form-check-input" type="checkbox" value="" name = "flex-check" id="flexCheckDefault" onclick="CheckAll()">
-            <label class="form-check-label" for="flexCheckDefault" name="diffusion-enabled">
-                Diffusion Enabled (default value is for 20°C. Tang & Sandall, 1985)
-            </label>
-         
-        </div>
-        <div class="col-md-2 mx-2">
-            <input type="number" step="any" class="form-control" name="molecular-diffusion-coefficient" placeholder="8.28 * 10⁻⁴"> 
-        </div>
-
-        <div class = "col-auto">
-            cm²/min
-        </div>
-    </div>
-    <div class="form-row ml-3">
-        <div class="col-auto d-flex align-items-center">
-
-            <input class="form-check-input mx-2" type="checkbox" value="" name = "flexCheckStagnant" id="flexCheckStagnant" style = "display: none" onclick="UncheckAll()">
-            <label class="form-check-label" for="flexCheckStagnant" name="stagnant-periods" id = "stagnant-periods" style = " display: none; margin-right: 50px;">
-                Diffusion During Stagnant Periods
-
-        </div>
-    </div> 
-    <div class="form-row align-items-center ml-3">
-        <div class="col-auto d-flex align-items-center">
-
-            <input class="form-check-input mx-2" type="checkbox" value="" name = "flexCheckAdvective" id="flexCheckAdvective" style = "display: none;" onclick="UncheckAll()">
-            <label class="form-check-label" for="flexCheckAdvective" name="advective-periods" id= "advective-periods" style = "margin-right: 50px; display: none;">
-                Diffusion & Dispersion During Advective Periods 
-        
-        </div>
-    </div> 
-
-
+<div class="main-content">
+    <h1> Run Simulation </h1>
+    <p>Check documentation for additional information.</p>
+    <div class="foreground-spacer-block"></div>
     <br />
 
+    <h3>Using Settings Preset File</h3>
+    <p>Upload a CSV file with all of the system/flow information included. To find out how to create this form, click <a
+            href="{{url_for('documentation')}}">here!</a></p>
 
+    <form method="POST" enctype="multipart/form-data" name="SettingsForm">
+        <!--<label for="file" class="font-weight-bold">File:</label>-->
+        <div class="mb-3">
+            <label for="setting-preset" class="form-label">Settings Preset</label>
+            <input class="form-control" type="file" id="setting-preset" name="setting-preset">
+        </div>
 
-    <div class="alert alert-secondary align-middle" role="alert">
-       <i class="bi bi-exclamation"></i> <span class = "align-middle"> The (pre-asymptotic) dispersion coefficient is D(ω) = (D_inf - D_m)(1 - e ^ (- ω / α)) where ω is time in flow, D_m is molecular diffusion coefficient, D_inf is asymptotic dispersion coefficient, and ɑ is a scaling parameter. If you do not wish to model pre-asymptotic dispersion, set α = 1, and D_m = D_inf = the asymptotic diffusion coefficient for each pipe. Set <a href = documentation#D_INF>D_inf</a> and <a href = documentation#Alpha>α</a> Values in Pipe Network File </span> </div>
-    
-
+        <button type="submit" class="btn" name="settings-submit" style="background-color: #e2e3e5;">Upload</button>
+    </form>
     <br />
-    <div class="form-row d-flex align-items-center">
-        <div class="col-auto mx-2">
-            <a href = documentation#particle-density>Particle Density</a> [0-1] :
+    <div class="foreground-spacer-block"></div>
+    <br />
+
+    <h3>Build Simulation Preset</h3>
+    <p>Upload separate CSV files: one containing a pipe network description and one containing flow preset. To learn
+        more about format requirements, click <a href="{{url_for('documentation')}}">here!</a></p>
+
+    <form method="POST" enctype="multipart/form-data" name="PresetsForm">
+        <!--<label for="file" class="font-weight-bold">File:</label>-->
+        <div class="mb-3">
+            <label for="pipe-network" class="form-label">Pipe Network </label>
+            <input class="form-control" type="file" accept=".csv" id="pipe-network" name="pipe-network">
         </div>
 
-        <div class="col-md-1">
-            <input type="number" step=0.01 min = 0.01 class="form-control" id="density" name="density" placeholder="0.5">
+        <div class="mb-4">
+            <label for="flow-preset" class="form-label">Flows Preset</label>
+            <input class="form-control" type="file" accept=".csv" id="flow-preset" name="flow-preset">
+        </div>
+        <script src="/static/js/frontend.js"></script>
 
+        <div class="form-row d-flex align-items-center ml-3">
+            <div class="col-auto">
+
+                <input class="form-check-input" type="checkbox" value="" name="flex-check" id="flexCheckDefault"
+                    onclick="CheckAll()">
+                <label class="form-check-label" for="flexCheckDefault" name="diffusion-enabled">
+                    Diffusion Enabled (default value is for 20°C. Tang & Sandall, 1985)
+                </label>
+
+            </div>
+            <div class="col-md-2 mx-2">
+                <input type="number" step="any" class="form-control" name="molecular-diffusion-coefficient"
+                    placeholder="8.28 * 10⁻⁴">
+            </div>
+
+            <div class="col-auto">
+                cm²/min
+            </div>
+        </div>
+        <div class="form-row ml-3">
+            <div class="col-auto d-flex align-items-center">
+
+                <input class="form-check-input mx-2" type="checkbox" value="" name="flexCheckStagnant"
+                    id="flexCheckStagnant" style="display: none" onclick="UncheckAll()">
+                <label class="form-check-label" for="flexCheckStagnant" name="stagnant-periods" id="stagnant-periods"
+                    style=" display: none; margin-right: 50px;">
+                    Diffusion During Stagnant Periods
+
+            </div>
+        </div>
+        <div class="form-row align-items-center ml-3">
+            <div class="col-auto d-flex align-items-center">
+
+                <input class="form-check-input mx-2" type="checkbox" value="" name="flexCheckAdvective"
+                    id="flexCheckAdvective" style="display: none;" onclick="UncheckAll()">
+                <label class="form-check-label" for="flexCheckAdvective" name="advective-periods" id="advective-periods"
+                    style="margin-right: 50px; display: none;">
+                    Diffusion & Dispersion During Advective Periods
+
+            </div>
         </div>
 
 
-    </div>
-    <br/>
-    <!-- <div class="form-row align-items-center">
+        <br />
+
+
+
+        <div class="alert alert-secondary align-middle" role="alert">
+            <i class="bi bi-exclamation"></i> <span class="align-middle"> The (pre-asymptotic) dispersion coefficient is
+                D(ω) = (D_inf - D_m)(1 - e ^ (- ω / α)) where ω is time in flow, D_m is molecular diffusion coefficient,
+                D_inf is asymptotic dispersion coefficient, and ɑ is a scaling parameter. If you do not wish to model
+                pre-asymptotic dispersion, set α = 1, and D_m = D_inf = the asymptotic diffusion coefficient for each
+                pipe. Set <a href=documentation#D_INF>D_inf</a> and <a href=documentation#Alpha>α</a> Values in Pipe
+                Network File </span>
+        </div>
+
+
+        <br />
+        <div class="form-row d-flex align-items-center">
+            <div class="col-auto mx-2">
+                <a href=documentation#particle-density>Particle Density</a> [0-1] :
+            </div>
+
+            <div class="col-md-1">
+                <input type="number" step=0.01 min=0.01 class="form-control" id="density" name="density"
+                    placeholder="0.5">
+
+            </div>
+
+
+        </div>
+        <br />
+        <!-- <div class="form-row align-items-center">
         <div class="col-auto">
             Time Granularity (Custom):
         </div>
@@ -122,12 +137,12 @@
     </div>
     <br /> -->
 
-    <div class="form-row d-flex align-items-center">
+        <div class="form-row d-flex align-items-center">
 
-        <div class="col-auto mx-2">
-            <a href = documentation#time-granularity>Time Granularity</a> [Seconds]: 
-        </div>
-        <!-- <div class="col-auto">
+            <div class="col-auto mx-2">
+                <a href=documentation#time-granularity>Time Granularity</a> [Seconds]:
+            </div>
+            <!-- <div class="col-auto">
             <div class="form-check form-check-inline">
                 <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1" value="option1">
                 <label class="form-check-label" for="inlineRadio1">Seconds</label>
@@ -145,16 +160,400 @@
                 <label class="form-check-label" for="inlineRadio4">Custom</label>
             </div>
         </div> -->
-        <div class = "col-md-1">
-            <input type="number" step=0.01 class="form-control" id="custom-granularity" min = 0.01 name="custom-granularity" placeholder="60">
+            <div class="col-md-1">
+                <input type="number" step=0.01 class="form-control" id="custom-granularity" min=0.01
+                    name="custom-granularity" placeholder="60">
+            </div>
+            <!-- <label for = "custom-granularity" class = "mx-2"> Minute</label> -->
         </div>
-        <!-- <label for = "custom-granularity" class = "mx-2"> Minute</label> -->
-    </div>
-    <br />
-        <button type="submit" class="btn" name="preset-submit" style = "background-color: #e2e3e5;" >Upload</button>
-    
 
-</form>
+        <br />
+
+        <div class="accordion" id="additional-items">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="flush-headingOne">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+                        Advanced Settings
+                    </button>
+                </h2>
+                <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne"
+                    data-bs-parent="#accordionFlushExample">
+                    <div class="accordion-body">
+                        <strong>Decay</strong>
+                        <br />
+                        <!-- <script src="/static/js/monochloramine.js"></script> -->
+
+                        <input class="form-check-input" type="checkbox" value="" name="flexCheckFreeChlorineDecay"
+                            id="flexCheckFreeChlorineDecay" onclick="concentrationCheckAll()" />
+                        <label class="form-check-label" for="flexCheckFreeChlorineDecay">Calculate Free Chlorine
+                            Decay</label> <br />
+
+                        <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
+                            <div class="col-auto" style="display: none;" id="label-1">
+                                Concentration (Initial) [0-1]:
+                            </div>
+
+                            <div class="col-1 mx-2" style="display: none;" id="label-2">
+                                <input type="number" step="any" class="form-control"
+                                    id="starting-particles-concentration-free-chlorine"
+                                    name="starting-particles-concentration-free-chlorine" placeholder="1.0">
+                            </div>
+
+                            <div class="col-auto" style="display: none;" id="label-3">
+                                Concentration (Injected) [0-1]:
+                            </div>
+
+                            <div class="col-1 mx-2" style="display: none;" id="label-4">
+                                <input type="number" step="any" class="form-control"
+                                    id="injected-particles-concentration-free-chlorine"
+                                    name="injected-particles-concentration-free-chlorine" placeholder="1.0">
+                            </div>
+                        </div>
+
+
+                        <input class="form-check-input" type="checkbox" value=""
+                            name="flexCheckMonochloramineNetworkDecay" id="flexCheckMonochloramineNetworkDecay"
+                            onclick="monochloramineNetworkCheckAll()" />
+                        <label class="form-check-label" for="flexCheckMonochloramineNetworkDecay"
+                            name="monochloramine-network-decay" id="monochloramine-network-decay">Calculate
+                            Monochloramine Network Decay</label>
+
+
+
+                        <div class="col-auto d-flex align-items-center">
+                            <input class="form-check-input mx-2" type="checkbox" value=""
+                                name="flexCheckHypochlorousAcidDecay" id="flexCheckHypochlorousAcidDecay"
+                                style="display: none" onclick="monochloramineUncheckAll(), hypochlorousCheckAll()">
+                            <label class="form-check-label" for="flexCheckHypochlorousAcidDecay"
+                                name="hypochlorous-acid-decay" id="hypochlorous-acid-decay"
+                                style=" display: none; margin-right: 50px;">
+                                Hypochlorous Acid Decay </label>
+                        </div>
+                        <div style="display: none;" id="label-hypochlorous">
+                            <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
+                                <div class="col-auto">
+                                    Concentration (Initial) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="starting-particles-concentration-hypochlorous"
+                                        name="starting-particles-concentration" placeholder="1.0">
+                                </div>
+
+                                <div class="col-auto">
+                                    Concentration (Injected) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="injected-particles-concentration-hypochlorous"
+                                        name="injected-particles-concentration" placeholder="1.0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto d-flex align-items-center">
+                            <input class="form-check-input mx-2" type="checkbox" value="" name="flexCheckAmmoniaDecay"
+                                id="flexCheckAmmoniaDecay" style="display: none" onclick="monochloramineUncheckAll(), ammoniaCheckAll()">
+                            <label class="form-check-label" for="flexCheckAmmoniaDecay" name="ammonia-decay"
+                                id="ammonia-decay" style=" display: none; margin-right: 50px;">
+                                Ammonia Decay </label>
+                        </div>
+                        <div style="display: none;" id="label-ammonia">
+                            <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
+                                <div class="col-auto">
+                                    Concentration (Initial) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="starting-particles-concentration-ammonia"
+                                        name="starting-particles-concentration" placeholder="1.0">
+                                </div>
+
+                                <div class="col-auto">
+                                    Concentration (Injected) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="injected-particles-concentration-ammonia"
+                                        name="injected-particles-concentration" placeholder="1.0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto d-flex align-items-center">
+                            <input class="form-check-input mx-2" type="checkbox" value=""
+                                name="flexCheckMonochloramineDecay" id="flexCheckMonochloramineDecay"
+                                style="display: none" onclick="monochloramineUncheckAll(), monochloramineCheckAll() ">
+                            <label class="form-check-label" for="flexCheckMonochloramineDecay"
+                                name="monochloramine-decay" id="monochloramine-decay"
+                                style=" display: none; margin-right: 50px;">
+                                Monochloramine Decay </label>
+                        </div>
+                        <div style="display: none;" id="label-monochloramine">
+                            <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
+                                <div class="col-auto">
+                                    Concentration (Initial) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="starting-particles-concentration-monochloramine"
+                                        name="starting-particles-concentration" placeholder="1.0">
+                                </div>
+
+                                <div class="col-auto">
+                                    Concentration (Injected) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="injected-particles-concentration-monochloramine"
+                                        name="injected-particles-concentration" placeholder="1.0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto d-flex align-items-center">
+                            <input class="form-check-input mx-2" type="checkbox" value=""
+                                name="flexCheckDichloramineDecay" id="flexCheckDichloramineDecay" style="display: none"
+                                onclick="monochloramineUncheckAll(), dichloramineCheckAll()">
+                            <label class="form-check-label" for="flexCheckDichloramineDecay" name="dichloramine-decay"
+                                id="dichloramine-decay" style=" display: none; margin-right: 50px;">
+                                Dichloramine Decay </label>
+                        </div>
+                        <div style="display: none;" id="label-dichloramine">
+                            <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
+                                <div class="col-auto">
+                                    Concentration (Initial) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="starting-particles-concentration-dichloramine"
+                                        name="starting-particles-concentration" placeholder="1.0">
+                                </div>
+
+                                <div class="col-auto">
+                                    Concentration (Injected) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="injected-particles-concentration-dichloramine"
+                                        name="injected-particles-concentration" placeholder="1.0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto d-flex align-items-center">
+                            <input class="form-check-input mx-2" type="checkbox" value="" name="flexCheckIodineDecay"
+                                id="flexCheckIodineDecay" style="display: none" onclick="monochloramineUncheckAll(), iodineCheckAll()">
+                            <label class="form-check-label" for="flexCheckIodineDecay" name="iodine-decay"
+                                id="iodine-decay" style=" display: none; margin-right: 50px;">
+                                Iodine Decay </label>
+                        </div>
+                        <div style="display: none;" id="label-iodine">
+                            <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
+                                <div class="col-auto">
+                                    Concentration (Initial) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="starting-particles-concentration-iodine"
+                                        name="starting-particles-concentration" placeholder="1.0">
+                                </div>
+
+                                <div class="col-auto">
+                                    Concentration (Injected) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="injected-particles-concentration-iodine"
+                                        name="injected-particles-concentration" placeholder="1.0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto d-flex align-items-center">
+                            <input class="form-check-input mx-2" type="checkbox" value="" name="flexCheckDOCbDecay"
+                                id="flexCheckDOCbDecay" style="display: none" onclick="monochloramineUncheckAll(), docbCheckAll()">
+                            <label class="form-check-label" for="flexCheckDOCbDecay" name="docb-decay" id="docb-decay"
+                                style=" display: none; margin-right: 50px;">
+                                DOCb Decay </label>
+                        </div>
+                        <div style="display: none;" id="label-docb">
+                            <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
+                                <div class="col-auto">
+                                    Concentration (Initial) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="starting-particles-concentration-docb"
+                                        name="starting-particles-concentration" placeholder="1.0">
+                                </div>
+
+                                <div class="col-auto">
+                                    Concentration (Injected) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="injected-particles-concentration-docb"
+                                        name="injected-particles-concentration" placeholder="1.0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto d-flex align-items-center">
+                            <input class="form-check-input mx-2" type="checkbox" value="" name="flexCheckDOCboxDecay"
+                                id="flexCheckDOCboxDecay" style="display: none" onclick="monochloramineUncheckAll(), docboxCheckAll()">
+                            <label class="form-check-label" for="flexCheckDOCboxDecay" name="docbox-decay"
+                                id="docbox-decay" style=" display: none; margin-right: 50px;">
+                                DOCbox Decay </label>
+                        </div>
+                        <div style="display: none;" id="label-docbox">
+                            <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
+                                <div class="col-auto">
+                                    Concentration (Initial) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="starting-particles-concentration-docbox"
+                                        name="starting-particles-concentration" placeholder="1.0">
+                                </div>
+
+                                <div class="col-auto">
+                                    Concentration (Injected) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="injected-particles-concentration-docbox"
+                                        name="injected-particles-concentration" placeholder="1.0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto d-flex align-items-center">
+                            <input class="form-check-input mx-2" type="checkbox" value="" name="flexCheckDOCwDecay"
+                                id="flexCheckDOCwDecay" style="display: none" onclick="monochloramineUncheckAll(), docwCheckAll()">
+                            <label class="form-check-label" for="flexCheckDOCwDecay" name="docw-decay" id="docw-decay"
+                                style=" display: none; margin-right: 50px;">
+                                DOCw Decay </label>
+                        </div>
+                        <div style="display: none;" id="label-docw">
+                            <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
+                                <div class="col-auto">
+                                    Concentration (Initial) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="starting-particles-concentration-docw"
+                                        name="starting-particles-concentration" placeholder="1.0">
+                                </div>
+
+                                <div class="col-auto">
+                                    Concentration (Injected) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="injected-particles-concentration-docw"
+                                        name="injected-particles-concentration" placeholder="1.0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto d-flex align-items-center">
+                            <input class="form-check-input mx-2" type="checkbox" value="" name="flexCheckDOCwoxDecay"
+                                id="flexCheckDOCwoxDecay" style="display: none" onclick="monochloramineUncheckAll(), docwoxCheckAll()">
+                            <label class="form-check-label" for="flexCheckDOCwoxDecay" name="docwox-decay"
+                                id="docwox-decay" style=" display: none; margin-right: 50px;">
+                                DOCwox Decay </label>
+                        </div>
+                        <div style="display: none;" id="label-docwox">
+                            <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
+                                <div class="col-auto">
+                                    Concentration (Initial) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="starting-particles-concentration-docwox"
+                                        name="starting-particles-concentration" placeholder="1.0">
+                                </div>
+
+                                <div class="col-auto">
+                                    Concentration (Injected) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="injected-particles-concentration-docwox"
+                                        name="injected-particles-concentration" placeholder="1.0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto d-flex align-items-center">
+                            <input class="form-check-input mx-2" type="checkbox" value="" name="flexCheckChlorineDecay"
+                                id="flexCheckChlorineDecay" style="display: none" onclick="monochloramineUncheckAll(), chlorineCheckAll()">
+                            <label class="form-check-label" for="flexCheckChlorineDecay" name="chlorine-decay"
+                                id="chlorine-decay" style=" display: none; margin-right: 50px;">
+                                Chlorine Decay </label>
+                        </div>
+                        <div style="display: none;" id="label-chlorine">
+                            <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
+                                <div class="col-auto">
+                                    Concentration (Initial) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="starting-particles-concentration-chlorine"
+                                        name="starting-particles-concentration" placeholder="1.0">
+                                </div>
+
+                                <div class="col-auto">
+                                    Concentration (Injected) [0-1]:
+                                </div>
+
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="any" class="form-control"
+                                        id="injected-particles-concentration-chlorine"
+                                        name="injected-particle-concentration" placeholder="1.0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <input class="form-check-input" type="checkbox" value="" name="flexCheckGroupByTimestep" id="flexCheckGroupByTimestep"
+                            onclick="groupByTimestepCheckAll()" />
+                        <label class="form-check-label" for="flexCheckGroupByTimestep">Group By Particles</label> <br />
+                        <div style="display: none;" id="label-groupby">
+                            <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
+                                <div class="col-auto">
+                                    Subgroup Size [num. particles]:
+                                </div>
+                        
+                                <div class="col-1 mx-2">
+                                    <input type="number" step="1" class="form-control" id="timestep-group-size" name="timestep-group-size"
+                                        placeholder="1">
+                                </div>
+                        
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <br />
+        <button type="submit" class="btn" name="preset-submit" style="background-color: #e2e3e5;">Upload</button>
+
+
+
+    </form>
 </div>
 
 

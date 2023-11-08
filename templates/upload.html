@@ -7,8 +7,8 @@
 {% if alert %}
 <div class="alert alert-danger alert-dismissible fade show" role="alert">
     <strong>Error!</strong> {{alert.message}}
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+        <!-- <span aria-hidden="true">&times;</span> -->
     </button>
 </div>
 {% endif %}
@@ -533,7 +533,7 @@
                         <div style="display: none;" id="label-groupby">
                             <div class="form-row d-flex align-items-center" style="margin-left: 1rem;">
                                 <div class="col-auto">
-                                    Subgroup Size [timesteps or particles?]:
+                                    Effluent Time Intervals:
                                 </div>
                         
                                 <div class="col-1 mx-2">

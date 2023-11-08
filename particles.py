@@ -335,6 +335,8 @@ class Particle:
         The update function increments the particle age and increments contact record according to the current container material type. If the particle container is active (flowing) then calls the movement function to compute particle flow.
         """
 
+        # print("particles.py")
+
         self.age += 1
 
         if self.manager.decayActiveFreeChlorine:
@@ -718,7 +720,7 @@ class pipe:
         self.flowRate: int = 0  # gallons per minute
         self.flow: float = 0  # gallons per time unit
         pipeIndex[self.name] = self
-        print("WidtH: ", self.width, "Radius: ", self.radius, "Area: ", self.area)
+        # print("WidtH: ", self.width, "Radius: ", self.radius, "Area: ", self.area)
         if self.area == 0:
             self.velocity = 0
         else: 

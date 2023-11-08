@@ -207,6 +207,8 @@ class simulation_window():
                                             groupby_status,
                                             timestep_group_size,
                                          ):
+        # print("display.py")
+        # return 1
         density = None
         valid = True
         f1 = None
@@ -233,7 +235,9 @@ class simulation_window():
         manager = multiprocessing.Manager()
         exception_holder = manager.Namespace()
 
+        # print("prevalid")
         if valid:
+            # print("valid")
             self.generate_path()
             simulator = driver.Driver(self.Queue, step = self.step_size)
             arguments = driver.execution_arguments(
@@ -261,12 +265,18 @@ class simulation_window():
             sim.join()
 
             if hasattr(exception_holder, 'exception'):
+                print("exception holder")
                 raise exception_holder.exception
+            
+            # print("sim exit code: ", sim.exitcode)
             
             if sim.exitcode == 0:
                 return(1)
             else:
                 return(0)
+        else:
+            # print("returning 0 from display")
+            return(0)
             
 
   

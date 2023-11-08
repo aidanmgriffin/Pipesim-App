@@ -5,21 +5,23 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, send_file
 from display import simulation_window
 from datetime import datetime
-from selenium import webdriver
-import webbrowser
+# from selenium import webdriver
+# import webbrowser
 # from flask_wtf import FlaskForm
 # from flask_wtf.file import FileField, FileRequired
 from werkzeug.utils import secure_filename
 from datetime import datetime
-import sys
+# import sys
 import math
 from io import BytesIO
 import zipfile
 import pathlib
 import builder
-import webview
 import multiprocessing
-import cairo
+import webbrowser
+# import webview
+# import multiprocessing
+# import cairo
 
 
 # pylint: disable=C0103
@@ -72,6 +74,13 @@ def upload_page():
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
+
+    path = pathlib.Path('logs\output_batch')
+
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            os.remove((str(path) + '/'  + file))
+                # os.remove(path + file)
 
     #Get current time
     now = datetime.now()
@@ -330,12 +339,17 @@ def upload():
             decay_monochloramine_dict['starting-particles-concentration-chlorine'] = starting_particles_chlorine_concentration
             decay_monochloramine_dict['injected-particles-concentration-chlorine'] = injected_particles_chlorine_concentration
 
-            if('timestep-group-size' in request.values):
+            if('flexCheckGroupByTimestep' in request.values):
                 groupby_status = 1
                 timestep_group_size = request.values['timestep-group-size']
             else:
                 groupby_status = 0
                 timestep_group_size = 1.0
+
+            if timestep_group_size == '':
+                timestep_group_size = 1.0
+
+            print("gb: ", groupby_status)
 
             # Attempt to save pipe network and flows files to input folder. If unsuccessful (most likely due to incorrect file type),
             # an error will be shown to the user.
@@ -365,6 +379,7 @@ def upload():
             # Catches and alerts users of errors in the simulation. These include errors involving output files being open,
             # errors involving the input files, and errors involving the simulation itself.
             try:
+                print("running simulation...")
                 output_file = 0
                 output_file = sim.preset_simulation_button_handler(
                     pipes_save_location,
@@ -381,19 +396,22 @@ def upload():
                     decay_monochloramine_dict,
                     groupby_status,
                     timestep_group_size)
+                print("done running simulation...")
                 
             except Exception as e:
+                print("01ALERT", e)
                 alertDanger.message = e
-                raise Exception
-            
-            print("APP ALERT ERROR: ", alertDanger.message)
+            # print(e)
+                # raise Exception
+            # print("APP ALERT ERROR: ", alertDanger.message)
             #If simulation is successful, redirect to download page. If failed, show error message.
+            print( "output_file: ", output_file)
             if(output_file):
                 print("Simulation Complete...")
                 return redirect(url_for('download' , diffusion_status = diffusion_status, date_time = date_time))
 
             else:
-                alertDanger.message = "Simulation Failed. Do the files contain the correct data?"
+                # alertDanger.message = "Simulation Failed. Do the files contain the correct data?"
                 return render_template("upload.html", alert = alertDanger)
             
     return render_template("upload.html")
@@ -402,6 +420,12 @@ def upload():
 #  Therefore, it is not possible to search pipesim.com/download directly. It will just make you upload.
 @app.route('/download')
 def download():
+    path = pathlib.Path('input')
+
+
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            os.remove((str(path) + '/'  + file))
 
     try: 
         date_time = request.args['date_time']
@@ -438,14 +462,8 @@ def page_not_found_500(e):
     return render_template("500.html"), 500
 
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
     print("App Running...")
-    # webview.create_window("PipeSim", app)
-    # webview.start()
-
-    # driver = webdriver.Chrome()
-    # driver.get("http://localhost:5000")
-    # driver.quit()
 
     webbrowser.open("http://localhost:5000")
     app.run()
-    # webbrowser.open(app)
