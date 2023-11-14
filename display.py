@@ -33,25 +33,16 @@ class simulation_window():
         self.diffusion_status = False
         logfile = "ParticleDiffusion.log"
         logfile = open(logfile, 'w')
-        # particlelogfile = "SingleParticle.csv"
-        # particlelogfile = open(particlelogfile, 'w')
-
         self.options = {"Seconds":1, "Minutes":2, "Hours":3, "Custom":4}
         self.step_size = 1
         self.step_var = 1
 
-        
     def setDiffusionStatus(self):
         if self.diffusion_check_internal.get() == 0:
             self.diffusion_status = False
         if self.diffusion_check_internal.get() == 1:
             self.diffusion_status = True
 
-    # this loop runs the graphical interface once it has been configured as above
-    # def start(self):
-    #     pass
-        # self.window.after(500, self.check_queue)
-        #self.window.mainloop()
 
     # in order to preserve data from subsequent executions of the simulator, a new save path is generated on each
     # simulation run. the save path is in the format $currentFolder/logs/$currentTime/.
@@ -145,11 +136,6 @@ class simulation_window():
         if valid:
             contents = self.load_settings_csv(filename)
 
-            # if contents[0][2] == 'Yes' or contents[0][2] == 'yes':
-            #     self.diffusion_status = True 
-            # else:
-            #     self.diffusion_status = False
-            
             if contents[0][3] == 'Yes' or contents[0][2] == 'yes':
                 self.diffusion_stagnant_status = True 
             else:
@@ -165,12 +151,9 @@ class simulation_window():
             else:
                 self.diffusion_status = False
 
-            print("contents: ", contents)
-            print("contents: ", contents[0][6])
             self.step_size = float(contents[0][6]) / 60
             self.generate_path()
 
-            
             manager = multiprocessing.Manager()
             exception_holder = manager.Namespace()
             

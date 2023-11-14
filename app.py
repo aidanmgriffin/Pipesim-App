@@ -80,6 +80,7 @@ def upload():
     for root, dirs, files in os.walk(path):
         for file in files:
             os.remove((str(path) + '/'  + file))
+
                 # os.remove(path + file)
 
     #Get current time
@@ -349,7 +350,7 @@ def upload():
             if timestep_group_size == '':
                 timestep_group_size = 1.0
 
-            print("gb: ", groupby_status)
+            # print("gb: ", groupby_status)
 
             # Attempt to save pipe network and flows files to input folder. If unsuccessful (most likely due to incorrect file type),
             # an error will be shown to the user.
@@ -379,7 +380,6 @@ def upload():
             # Catches and alerts users of errors in the simulation. These include errors involving output files being open,
             # errors involving the input files, and errors involving the simulation itself.
             try:
-                print("running simulation...")
                 output_file = 0
                 output_file = sim.preset_simulation_button_handler(
                     pipes_save_location,
@@ -396,19 +396,14 @@ def upload():
                     decay_monochloramine_dict,
                     groupby_status,
                     timestep_group_size)
-                print("done running simulation...")
                 
             except Exception as e:
-                print("01ALERT", e)
                 alertDanger.message = e
-            # print(e)
-                # raise Exception
-            # print("APP ALERT ERROR: ", alertDanger.message)
+
             #If simulation is successful, redirect to download page. If failed, show error message.
-            print( "output_file: ", output_file)
             if(output_file):
                 print("Simulation Complete...")
-                return redirect(url_for('download' , diffusion_status = diffusion_status, date_time = date_time))
+                return redirect(url_for('download' ,  concentration_status = decay_free_chlorine_status, diffusion_status = diffusion_status, date_time = date_time))
 
             else:
                 # alertDanger.message = "Simulation Failed. Do the files contain the correct data?"
@@ -425,15 +420,18 @@ def download():
 
     for root, dirs, files in os.walk(path):
         for file in files:
-            os.remove((str(path) + '/'  + file))
-
+            if file != "README.txt":
+                os.remove((str(path) + '/'  + file))
+                
     try: 
         date_time = request.args['date_time']
         diffusion_status = request.args['diffusion_status']
+        concentration_status = request.args['concentration_status']
+
     except:
         return redirect(url_for('upload'))
 
-    return render_template('download.html', diffusion_status = diffusion_status, date_time = date_time)
+    return render_template('download.html', concentration_status = concentration_status, diffusion_status = diffusion_status, date_time = date_time)
 
 @app.route('/download_log')
 def download_log():

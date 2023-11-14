@@ -1,3 +1,0 @@
-Pex,Material,Width (inches),Length (feet),Parent,Root,Endpoint,D_INF,Alpha,Free Chlorine Lambda,kv1 Lambda,kv2 Lambda,kv3 Lambda,kv5 Lambda,kv7 Lambda,DOC1 Lambda,DOC2 Lambda
-Pipe,Copper,12,100,NONE,TRUE,FALSE,2.8022,1,0.01,0,0,0,0,0,0,0
-Tap,None,2,1,Pipe,FALSE,TRUE,2.8022,1,0.01,0,0,0,0,0,0,0

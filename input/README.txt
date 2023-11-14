@@ -1,0 +1,1 @@
+This folder contains input files for the PipeSim program. After each run, the files are deleted.

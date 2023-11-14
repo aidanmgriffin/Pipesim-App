@@ -1,4 +1,0 @@
-Pex,Material,Width (inches),Length (feet),Parent,Root,Endpoint,D_INF,Alpha,Free Chlorine Lambda,Monochloramine Lambda,Hypochlorous Acid Lambda,DOC1 Lambda,DOC2 Lambda
-Pipe,Copper,12,100,NONE,TRUE,FALSE,2.8022,1,0.01,,,,
-Tap,None,2,1,Pipe,FALSE,TRUE,2.8022,1,0.01,,,,
-Tap2,None,2,1,Pipe,FALSE,TRUE,2.8022,1,0.01,,,,

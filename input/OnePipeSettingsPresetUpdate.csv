@@ -1,2 +1,0 @@
-Path of Pipes File,Flows Preset File,Diffusion During Stagnant Periods [Yes/No],Diffusion & Dispersion During Advective Periods [Yes/No],Diffusion Coefficient [cm^2/min],Density [0-1],Granularity
-examples\build-simulation-examples\onepipe\onepipe.csv,examples\build-simulation-examples\onepipe\onepipeflows.csv,Yes,Yes,0.000828,0.5,60

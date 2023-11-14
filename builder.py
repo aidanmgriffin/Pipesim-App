@@ -96,8 +96,6 @@ def insert_node(root, new_node):
 def add_endpoints(root, list):
     if (len(root.children) < 1):
         newname = root.name + "-endpoint"
-        #end = pipestuff.endpoint(root, root.name + "-endpoint")
-        #insert_node(root,end)
         end = root.create_end(newname)
         list.append(end)
     else:
