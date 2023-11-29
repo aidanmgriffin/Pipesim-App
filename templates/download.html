@@ -33,7 +33,8 @@
         <img src="/static/plots/age_graph.png/" />
     </div>
 
-    {% if concentration_status %}
+    {% if concentration_status == 1 %}
+    {{concentration_status}}
     <div id="concentration-plot">
         <br /><br /><br /><br />
         <h4 class="download-heading">Concentration Plot</h4>

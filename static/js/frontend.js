@@ -1,5 +1,6 @@
 function CheckAll() {
     
+    console.log("check all!")
     var checkBox = document.getElementById("flexCheckDefault");
     var checkBoxStagnant = document.getElementById("flexCheckStagnant");
     var checkBoxAdvective = document.getElementById("flexCheckAdvective");
@@ -36,6 +37,7 @@ function CheckAll() {
 
 function UncheckAll() {
 
+    console.log("uncheck all!")
     var checkBox = document.getElementById("flexCheckDefault");
     var checkBoxStagnant = document.getElementById("flexCheckStagnant");
     var checkBoxAdvective = document.getElementById("flexCheckAdvective");
@@ -45,7 +47,6 @@ function UncheckAll() {
    
 
     if (checkBoxAdvective.checked == false && checkBoxStagnant.checked == false && checkBox.checked == true){
-        console.log("fe unchecked all")
         
         checkBox.checked = false
         checkBoxAdvective.style.display = "none"
@@ -496,4 +497,28 @@ function groupByTimestepCheckAll() {
         label.style.display = "none"
         groupSize.required = false
     }
+}
+
+function disableText() {
+
+    var uploadButton = document.getElementById("upload-submit");
+    var loadingButton = document.getElementById("upload-loading");
+    var uploadButtonSettings = document.getElementById("settings-submit");
+    var loadingButtonSettings = document.getElementById("settings-loading");
+
+    uploadButton.style.display = "none";
+    loadingButton.style.display = "block";
+    uploadButtonSettings.style.display = "none";
+    loadingButtonSettings.style.display = "block";
+
+    setInterval(function() {
+    fetch("static/update-text.txt")
+    .then(function (res) {
+        return res.text();
+    })
+    .then(function (data) {
+        console.log(data);
+        document.getElementById("text-show").innerHTML = data;
+    });
+}, 2000)
 }

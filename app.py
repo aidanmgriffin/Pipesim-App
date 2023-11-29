@@ -1,48 +1,48 @@
 """
-A sample Hello World server.
+This file contains the main flask application. It contains the routes for the website, and the functions that are called when a route is accessed.
 """
+
 import os
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, send_file
-from display import simulation_window
-from datetime import datetime
-# from selenium import webdriver
-# import webbrowser
-# from flask_wtf import FlaskForm
-# from flask_wtf.file import FileField, FileRequired
-from werkzeug.utils import secure_filename
-from datetime import datetime
-# import sys
+from time import time
+from flask import jsonify
 import math
-from io import BytesIO
 import zipfile
 import pathlib
 import builder
-import multiprocessing
 import webbrowser
-# import webview
-# import multiprocessing
-# import cairo
+import multiprocessing
+from io import BytesIO
+from flask import request
+from datetime import datetime
+from display import SimulationWindow
+from werkzeug.utils import secure_filename
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, send_file
 
-
-# pylint: disable=C0103
-# template_folder = os.path.join(os.getcwd(), 'templates')
-app = Flask(__name__)#, template_folder=template_folder)
+#Flask app setup
+app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(12).hex()
 
-#Create a form class (file)
-# class SettingsForm(FlaskForm):
-#     photo = FileField(validators=[FileRequired()])
-
-#Default route
-@app.route('/')
-def index():
-    return render_template("index.html")
-
+#Alert class for displaying alerts on the GUI
 class alert:
     def __init__(self, message, type):
         self.type = type
         self.message = message
-#Custom routes
+
+#Specify allowed file types for upload
+ALLOWED_EXTENSIONS = set(['csv'])
+
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+""" Routes """
+
+""" Default Route """
+@app.route('/')
+def index():
+    return render_template("index.html")
+
+""" Custom Routes"""
 
 #route to documentation page
 @app.route('/documentation', methods = ['GET', 'POST'])
@@ -59,39 +59,28 @@ def learn_more():
 def canvas():
     return render_template("canvas.html")
 
-ALLOWED_EXTENSIONS = set(['csv'])
-
-def allowed_file(filename):
-    return '.' in filename and \
-        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-#Upload files
-
 #route to upload page
-@app.route('/upload_page')
-def upload_page():
-    return render_template("upload_page.html")
-
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
 
+    # Clear output folder of any files from previous simulations.
     path = pathlib.Path('logs\output_batch')
-
     for root, dirs, files in os.walk(path):
         for file in files:
             os.remove((str(path) + '/'  + file))
 
-                # os.remove(path + file)
-
-    #Get current time
+    #Get current time to be displayed on download page.
     now = datetime.now()
     date_time =now.strftime("%m/%d/%Y, %H:%M:%S")
 
-    # form = SettingsForm()
+
+    #Set default alert message.
     alertDanger = alert("Running Simulation Failed", "Danger")
    
+   # If user is submitting the upload form, check whether they are running a settings preset simulation or a custom simulation based on the button which was pressed.
     if request.method == 'POST':
 
+        # User is electing to run a settings preset simulation.
         if 'settings-submit' in request.form:
             file = request.files['setting-preset']
             if file and allowed_file(file.filename):
@@ -99,22 +88,21 @@ def upload():
                 save_location = os.path.join('input', filename)
                 file.save(save_location)
 
-                sim = simulation_window()
+                sim = SimulationWindow()
            
                 output_file = 0
                 output_file = sim.settings_preset_simulation_button_handler(save_location)
-                #output_file = process_csv(save_location)
-                #return send_from_directory('output', output_file)
 
+                # print("output_file: ", output_file)
                 if(output_file):
-                    return redirect(url_for('download', diffusion_status = output_file[1] , date_time = date_time))
+                    # print("output")
+                    return redirect(url_for('download', concentration_status = 0, diffusion_status = 0 , date_time = date_time))
         
             return 'uploaded'
         
-        # User is not electing to run a settings preset simulation. 
-        # Thus, running a custom simulation with selected files/settings.
+        # User is not electing to run a settings preset simulation. Thus, running a custom simulation with selected files/settings.
         elif 'preset-submit' in request.form:
-            # try:
+
             # Get pipe network and flows files from form
             pipes = request.files['pipe-network']
             flows = request.files['flow-preset']
@@ -122,6 +110,7 @@ def upload():
             #Validating density input. Input must be a number between 0 and 1 inclusive. 
             try:
                 density = request.values['density']
+
                 # If no density is input, default to 0.5.
                 if density == '':                
                     density = 0.5
@@ -133,19 +122,15 @@ def upload():
                 alertDanger.message = "Density must be a number between 0 and 1"
                 raise Exception
                 
-            
+            # Validating granularity input. Input is a number in unit: seconds, which is converted to unit: minutes granularity for the simulation.
             granularity = request.values['custom-granularity']
             if granularity == '':
                 granularity = 1
             else:
                 granularity = float(granularity) 
                 granularity /= 60
-                print("granularity: ", granularity)
         
-            
             # Check if diffusion is enabled (flexbox is checked). If so, set diffusion status to 1. Else, set to 0.
-            # If diffusion is not enabled (flexbox not checked), molecular diffusion coefficient (d_m) will be set to default value.
-            # Otherwise, validate that molecular diffusion coefficient is a number. If not, d_m will be set to default value.
             if('flex-check' in request.values):
                 diffusion_status = 1                    
             else:
@@ -161,12 +146,12 @@ def upload():
             else:
                 advective_diffusion_status = 0
             
-            
+            # Validate that molecular diffusion coefficient input exists. If not, d_m will be set to default value.
             molecular_diffusion_coefficient = request.values['molecular-diffusion-coefficient']
             if any(char.isdigit() for char in molecular_diffusion_coefficient):
                 pass
             else:
-                molecular_diffusion_coefficient = 8.28 * math.pow(10, -4) #9.3 * math.pow(10, -5) 
+                molecular_diffusion_coefficient = 8.28 * math.pow(10, -4) 
 
             # Check if Free chlorine / monochloramine decay are enabled. Will affect whether the update function in particles.py will call the decay subroutines.
             if('flexCheckFreeChlorineDecay' in request.values):
@@ -350,8 +335,6 @@ def upload():
             if timestep_group_size == '':
                 timestep_group_size = 1.0
 
-            # print("gb: ", groupby_status)
-
             # Attempt to save pipe network and flows files to input folder. If unsuccessful (most likely due to incorrect file type),
             # an error will be shown to the user.
             try:
@@ -366,8 +349,7 @@ def upload():
                 alertDanger.message = "Pipe Network File Could Not Uploaded. Is file type CSV?" + e
                 raise Exception
             
-            # Attempts to build pipe network. 
-            # If builder.build successfully returns a single value, an error will be shown to the user.
+            # Attempts to build pipe network. If builder.build successfully returns a single value, an error will be shown to the user.
             try:
                 message = builder.build(pipes_save_location)
                 alertDanger.message = message
@@ -375,7 +357,7 @@ def upload():
             except:
                 pass
 
-            sim = simulation_window()
+            sim = SimulationWindow()
 
             # Catches and alerts users of errors in the simulation. These include errors involving output files being open,
             # errors involving the input files, and errors involving the simulation itself.
@@ -400,6 +382,9 @@ def upload():
             except Exception as e:
                 alertDanger.message = e
 
+            with open('static/update-text.txt', 'w') as f:
+                f.write('')
+
             #If simulation is successful, redirect to download page. If failed, show error message.
             if(output_file):
                 print("Simulation Complete...")
@@ -408,15 +393,21 @@ def upload():
             else:
                 # alertDanger.message = "Simulation Failed. Do the files contain the correct data?"
                 return render_template("upload.html", alert = alertDanger)
-            
+    
+
+    data = "hello"
+    
     return render_template("upload.html")
 
-#Route to download page accessed by running a simulation from upload. If not redirected from the upload page, redirect to upload page.
-#  Therefore, it is not possible to search pipesim.com/download directly. It will just make you upload.
+@app.route('/data')
+def data():
+    return "hello"
+
+# Route to download page accessed by running a simulation from upload. If not redirected from the upload page, redirect to upload page.
+# Therefore, it is not possible to search pipesim.com/download directly. It will just make you upload.
 @app.route('/download')
 def download():
     path = pathlib.Path('input')
-
 
     for root, dirs, files in os.walk(path):
         for file in files:
@@ -433,6 +424,7 @@ def download():
 
     return render_template('download.html', concentration_status = concentration_status, diffusion_status = diffusion_status, date_time = date_time)
 
+# Download log files from the output folder. This is a zip file containing all the output files from the simulation.
 @app.route('/download_log')
 def download_log():
     
@@ -447,7 +439,7 @@ def download_log():
     
     return send_file(memory_file, as_attachment=True, download_name='logs.zip')
 
-#Error routes
+""" Error Routes """
 
 #Page not found error(404)
 @app.errorhandler(404)
@@ -460,8 +452,10 @@ def page_not_found_500(e):
     return render_template("500.html"), 500
 
 if __name__ == '__main__':
-    multiprocessing.freeze_support()
+
+    multiprocessing.freeze_support() # Required for multiprocessing to work on Windows
+
     print("App Running...")
 
-    webbrowser.open("http://localhost:5000")
+    webbrowser.open("http://localhost:5000") # Open browser to localhost:5000
     app.run()
