@@ -15,6 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib.lines import Line2D
+from joblib import Parallel, delayed
 
 class ExecutionArguments:
     """
@@ -153,6 +154,7 @@ class Graphing:
         max_time = 0
         max_age = 0
         particle_data = particle_info
+        print("particle data: ", particle_data)
         fig = plt.figure(figsize = graph_size, dpi=graph_resolution)
         xy = fig.add_subplot(111)
         data = [d for d in particle_data.values()]
@@ -164,7 +166,7 @@ class Graphing:
             element = data[i]
             name = names[i]
             x = list(map(lambda a: a[0], element))
-            y = list(map(lambda b: b[2], element))
+            y = list(map(lambda b: b[1], element))
             line = Line2D(x,y)
             line.set_linestyle("")
             line.set_marker(self.line_markers[1])
@@ -180,9 +182,11 @@ class Graphing:
             legend_lines.append(line)
             i += 1
 
+        # print("max age: ", max_age, "time: ", timer.get_time())
         xy.legend(legend_lines, legend_names)
         xy.set_ylim(0, max_age * 1.1)
-        xy.set_xlim(0, timer.get_time())
+        # xy.set_xlim(0, )
+        # xy.set_xlim(0, timer.get_time())
         xy.set_xlabel("Simulation Time (%s)" % self.step)
         xy.set_ylabel("Expelled Particle Age")
         try:
@@ -334,6 +338,7 @@ class Graphing:
         num_values = 0
         new_values = []
 
+        print("values: ", values)
         for value in list(values.values())[0]:
             new_values.append(value[2])
  
@@ -355,6 +360,167 @@ class Graphing:
             print("Error generating mean for expel bins.")
             pass
         plt.savefig(filename + '.png', format='png')
+
+def movement_update(timestep0, timestep, root, density, instructions, max_time, keys, time_since, time_since_starts, endpoints, manager, counter, add_activation, sim_endpoint_preset, progress_update, functions):
+        # print(timestep, drive_vars.max_time)
+        # for timestep in range(0, self.max_time):
+        functions.start_time = progress_update(functions.start_time, max_time, timestep)
+        # TODO: multiprocessing
+
+        timestep0[0] += 1
+        for key in keys:
+            endpoint = endpoints[key]
+            actions = instructions[key]
+            if timestep >= time_since_starts[key]:
+                if key not in time_since:
+                    time_since[key] = 0
+                else: 
+                    time_since[key] += 1 
+            if len(actions) > 0:
+                first_action = actions[0]
+                if timestep == first_action[0]:
+                    first_action = actions.pop(0)
+                    length = first_action[1] - first_action[0]
+                    add_activation(key, length)
+                    if not endpoint.is_active:
+                        endpoint.activate_pipes(first_action[2])
+                    else:
+                        endpoint.update_flow_rate(first_action[2])
+            else:
+                pass
+
+        print("is root active? ", root.is_active)
+        if root.is_active:
+            manager.add_particles(density, root)
+        counter.increment_time()
+        # print("time: ", counter.get_time(), timestep0)
+        manager.update_particles(time_since)
+        for endpoint in endpoints.values():
+            sim_endpoint_preset(endpoint)
+        
+        print("timer: ", counter.get_time(), len(manager.particle_index), len(manager.expended_particles))
+        # return manager, counter
+        # print(timestep)
+        # return 4
+
+class Supplemental:
+    def __init__(self, manager):
+        self.start_time = 0
+        self.manager = manager
+
+        # the remaining activation times for active endpoints
+        self.activations = {}
+
+    def get_activation(self, endpointName):
+        """
+        this function returns the value of the remaining time for a specific endpoint
+        or -1 if the endpoint has not previously been activated (and sets the activation time
+        to -1)
+
+        :param endpointName: The name of the endpoint to be retrieved.
+        :return: The remaining activation time for the endpoint.
+        """
+
+        activation_time = self.activations.get(endpointName)
+        if activation_time is None:
+            activation_time = -1
+            self.activations[endpointName] = -1
+        return activation_time
+    
+    def add_activation(self, endpointName:str, length:int):
+        """
+        this function adds an activation for an endpoint according to the activation time indicated.
+        if the endpoint is already active, adds to the existing activation time.
+
+        :param endpointName: The name of the endpoint to be activated.
+        :param length: The length of time the endpoint should be active.
+        """
+
+        activation_time = self.activations.get(endpointName)
+        if activation_time is None or activation_time <= 0:
+            activation_time = 0
+            self.activations[endpointName] = activation_time + length
+        else:
+            self.activations[endpointName] = activation_time + length
+        return self.activations[endpointName]
+    
+    def depreciate_activation(self, endpointName):
+        """
+        This function retrieves the remaining activation time for an endpoint
+        and deprecates it if it is positive, or sets it to -1 if nonpositive.
+        -1 is used as the key that signifies that the endpoint is in inactive state
+
+        :param endpointName: The name of the endpoint to be depreciated.
+        :return: The remaining activation time for the endpoint.
+        """
+
+        active = self.activations.get(endpointName)
+        if active is not None and active > 0:
+            active -= 1
+            self.activations[endpointName] = active
+        elif active <= 0:
+            self.activations[endpointName] = active =  -1
+        return active
+    
+    def sim_endpoint_preset(self, endpoint):
+        """
+        This function simulates an endpoint while in preset mode. this function is simplified
+        since it does not handle endpoint activation. particle flow calculations have also been
+        removed from this function because they have been removed from pipes.
+
+        :param endpoint: The endpoint to be simulated.
+        """
+
+        activation_time = self.get_activation(endpoint.name)
+        if activation_time > 0:
+            self.depreciate_activation(endpoint.name)
+        elif activation_time == 0:
+            endpoint.deactivate_pipes()
+            print("dectivating \n\n\n\n")
+            self.depreciate_activation(endpoint.name)
+
+    def progress_update(self, start_time, max_time, second):
+        """
+        This function prints to the console with statistics about the simulation and the current simulation speed.
+        it also communicates with the display classes via message passing, allowing for
+        the gui to update at regular intervals during execution.
+
+        :param start_time: The time at which the simulation started.
+        :param max_time: The maximum time the simulation will run for.
+        :param second: Current second
+        :return: The time at which the simulation started.
+        """
+
+        message = ""
+        if start_time == None:
+            start_time = time.time()
+
+        if second == 0:
+            message = "Simulation started."
+            send = ("progress_update", message)
+            # self.Queue.put(send)
+
+        if second % 1000 == 0 and second > 0:
+            end_time = time.time()
+            elapsed = end_time - start_time
+            line1 = "Simulating Timestep " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
+            message += line1
+            pipe_particles = len(self.manager.particle_index)
+            expelled_particles = len(self.manager.expended_particles)
+            line2 = "There are currently {} particles in the pipe network and {} particles expelled.".format(
+                    pipe_particles, expelled_particles)
+            message += line2
+
+            with open("static/update-text.txt", "w") as update_text:
+                update_text.write(message)
+            print(message)
+            send = ("progress_update", message)
+            # self.Queue.put(send)
+            send = ("status_update", self.manager.output_status())
+            # self.Queue.put(send)
+            start_time = time.time()
+
+        return start_time
 
 class Driver:
     """
@@ -396,8 +562,8 @@ class Driver:
         self.rand_low = 1
         self.rand_high = 5
 
-        # Activations stores the remaining activation times for active endpoints
-        self.activations = {}
+        # # Activations stores the remaining activation times for active endpoints
+        # self.activations = {}
 
         # Flowrates stores the current flow rate for all endpoints (endpoints only flow when active, but have their flow rate always set)
         self.flowrates = {}
@@ -411,11 +577,25 @@ class Driver:
         # Create and assign timer
         if timer == None:
             self.counter = particles.Counter()
+
         else:
             self.counter = timer
 
+        # print("time: ", self.counter.get_time())
+
         self.manager = particles.ParticleManager(self.counter)
         self.arguments = ExecutionArguments()
+
+        #parallelization test
+        self.max_time = 0
+        self.instructions = None
+        self.endpoints = None 
+        self.root = None
+        self.density = None
+        self.time_since = None
+        self.keys = None
+        self.functions = Supplemental(self.manager)
+
         
     def set_timestep(self, option: int):
         """
@@ -429,73 +609,6 @@ class Driver:
         self.ONE_DAY = step * 24 * 60 
         self.HOUR_LENGTH = step * 60 
 
-
-    def add_activation(self, endpointName:str, length:int):
-        """
-        this function adds an activation for an endpoint according to the activation time indicated.
-        if the endpoint is already active, adds to the existing activation time.
-
-        :param endpointName: The name of the endpoint to be activated.
-        :param length: The length of time the endpoint should be active.
-        """
-
-        activation_time = self.activations.get(endpointName)
-        if activation_time is None or activation_time <= 0:
-            activation_time = 0
-            self.activations[endpointName] = activation_time + length
-        else:
-            self.activations[endpointName] = activation_time + length
-        return self.activations[endpointName]
-
-    def get_activation(self, endpointName):
-        """
-        this function returns the value of the remaining time for a specific endpoint
-        or -1 if the endpoint has not previously been activated (and sets the activation time
-        to -1)
-
-        :param endpointName: The name of the endpoint to be retrieved.
-        :return: The remaining activation time for the endpoint.
-        """
-
-        activation_time = self.activations.get(endpointName)
-        if activation_time is None:
-            activation_time = -1
-            self.activations[endpointName] = -1
-        return activation_time
-
-    def depreciate_activation(self, endpointName):
-        """
-        This function retrieves the remaining activation time for an endpoint
-        and deprecates it if it is positive, or sets it to -1 if nonpositive.
-        -1 is used as the key that signifies that the endpoint is in inactive state
-
-        :param endpointName: The name of the endpoint to be depreciated.
-        :return: The remaining activation time for the endpoint.
-        """
-
-        active = self.activations.get(endpointName)
-        if active is not None and active > 0:
-            active -= 1
-            self.activations[endpointName] = active
-        elif active <= 0:
-            self.activations[endpointName] = active =  -1
-        return active
-
-    def sim_endpoint_preset(self, endpoint):
-        """
-        This function simulates an endpoint while in preset mode. this function is simplified
-        since it does not handle endpoint activation. particle flow calculations have also been
-        removed from this function because they have been removed from pipes.
-
-        :param endpoint: The endpoint to be simulated.
-        """
-
-        activation_time = self.get_activation(endpoint.name)
-        if activation_time > 0:
-            self.depreciate_activation(endpoint.name)
-        elif activation_time == 0:
-            endpoint.deactivate_pipes()
-            self.depreciate_activation(endpoint.name)
 
     def dict_from_endpoints(self, endpoints:list):
         """
@@ -526,7 +639,12 @@ class Driver:
         """
 
         endpoints = self.dict_from_endpoints(endpoints)
-        start_time = None
+        # root = root
+        # self.density = density
+        # self.instructions = instructions
+        # self.max_time = max_time
+        
+        self.start_time = None
         keys = instructions.keys()
         time_since = {}
         time_since_starts = {}
@@ -546,79 +664,57 @@ class Driver:
                 except Exception as e: 
                     pass
         
-        for timestep in range(0, max_time):
-            start_time = self.progress_update(start_time, max_time, timestep)
-            # TODO: multiprocessing
-            for key in keys:
-                endpoint = endpoints[key]
-                actions = instructions[key]
-                if timestep >= time_since_starts[key]:
-                    if key not in time_since:
-                        time_since[key] = 0
-                    else: 
-                        time_since[key] += 1 
-                if len(actions) > 0:
-                    first_action = actions[0]
-                    if timestep == first_action[0]:
-                        first_action = actions.pop(0)
-                        length = first_action[1] - first_action[0]
-                        self.add_activation(key, length)
-                        if not endpoint.is_active:
-                            endpoint.activate_pipes(first_action[2])
-                        else:
-                            endpoint.update_flow_rate(first_action[2])
-                else:
-                    pass
+       
+        manager = self.manager
+        # counter = self.counter
 
-            if root.is_active:
-                self.manager.add_particles(density, root)
-            self.counter.increment_time()
-            self.manager.update_particles(time_since)
-            for endpoint in endpoints.values():
-                self.sim_endpoint_preset(endpoint)
+        # functions = self.functions
 
-    def progress_update(self, start_time, max_time, second):
-        """
-        This function prints to the console with statistics about the simulation and the current simulation speed.
-        it also communicates with the display classes via message passing, allowing for
-        the gui to update at regular intervals during execution.
+        
+        timestep0 = [0]
 
-        :param start_time: The time at which the simulation started.
-        :param max_time: The maximum time the simulation will run for.
-        :param second: Current second
-        :return: The time at which the simulation started.
-        """
+        max_time = 80
 
-        message = ""
-        if start_time == None:
-            start_time = time.time()
+        Parallel(n_jobs=1)(delayed(movement_update)(timestep0, timestep, root, density, instructions, max_time, keys, time_since, time_since_starts, endpoints, manager, self.counter, self.functions.add_activation, self.functions.sim_endpoint_preset, self.functions.progress_update, self.functions) for timestep in range(0, max_time))
+        # Parallel(n_jobs=4)(delayed(movement_update)(timestep0, timestep, root, density, instructions, max_time, keys, time_since, time_since_starts, endpoints, manager, self.counter, self.functions.add_activation, self.functions.sim_endpoint_preset, self.functions.progress_update, self.functions) for timestep in range(0, max_time))
+        
+        # print("not parallel")
+# 
+        # for i in range(0, max_time):
+        #     movement_update(timestep0, i, root, density, instructions, max_time, keys, time_since, time_since_starts, endpoints, manager, self.counter, self.functions.add_activation, self.functions.sim_endpoint_preset, self.functions.progress_update, self.functions)
+        
+        print("end 0 t0", timestep0)
+        
+        # for timestep in range(0, max_time):
+        #     start_time = self.progress_update(start_time, max_time, timestep)
+        #     # TODO: multiprocessing
+        #     for key in keys:
+        #         endpoint = endpoints[key]
+        #         actions = instructions[key]
+        #         if timestep >= time_since_starts[key]:
+        #             if key not in time_since:
+        #                 time_since[key] = 0
+        #             else: 
+        #                 time_since[key] += 1 
+        #         if len(actions) > 0:
+        #             first_action = actions[0]
+        #             if timestep == first_action[0]:
+        #                 first_action = actions.pop(0)
+        #                 length = first_action[1] - first_action[0]
+        #                 self.add_activation(key, length)
+        #                 if not endpoint.is_active:
+        #                     endpoint.activate_pipes(first_action[2])
+        #                 else:
+        #                     endpoint.update_flow_rate(first_action[2])
+        #         else:
+        #             pass
 
-        if second == 0:
-            message = "Simulation started."
-            send = ("progress_update", message)
-            self.Queue.put(send)
-
-        if second % 1000 == 0 and second > 0:
-            end_time = time.time()
-            elapsed = end_time - start_time
-            line1 = "Simulating Timestep " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
-            message += line1
-            pipe_particles = len(self.manager.particle_index)
-            expelled_particles = len(self.manager.expended_particles)
-            line2 = "There are currently {} particles in the pipe network and {} particles expelled.".format(
-                    pipe_particles, expelled_particles)
-            # message += line2
-
-            with open("static/update-text.txt", "w") as update_text:
-                update_text.write(message)
-            print(message)
-            send = ("progress_update", message)
-            self.Queue.put(send)
-            send = ("status_update", self.manager.output_status())
-            self.Queue.put(send)
-            start_time = time.time()
-
-        return start_time
+        #     if root.is_active:
+        #         self.manager.add_particles(density, root)
+        #     self.counter.increment_time()
+        #     self.manager.update_particles(time_since)
+        #     for endpoint in endpoints.values():
+        #         self.sim_endpoint_preset(endpoint)
 
     def write_output(self, filename, particles):
         """
@@ -634,7 +730,7 @@ class Driver:
         arguments = self.arguments
 
         # Print run information in the first row of the output csv file.
-        writer.writerow(["Pipe Model File: ", arguments.modelfile, "Flow Preset File: ", arguments.presetsfile, "d_m: ", str(self.manager.d_m), "d_inf: ", str(self.root.d_inf), "Granularity: ", self.mode, "Time: ", self.counter.get_time()])
+        # writer.writerow(["Pipe Model File: ", arguments.modelfile, "Flow Preset File: ", arguments.presetsfile, "d_m: ", str(self.manager.d_m), "d_inf: ", str(self.root.d_inf), "Granularity: ", self.mode, "Time: ", self.counter.get_time()])
 
         # Print the header row for the particle data. Varies on inclusion of free chlorine / monochloramine decay.
         if(self.manager.decay_active_free_chlorine and self.manager.decay_active_monochloramine):
@@ -666,7 +762,7 @@ class Driver:
         writer = csv.writer(results,'excel')
 
         # Print run information in the first row of the output csv file.
-        writer.writerow(["Pipe Model File: ", self.arguments.modelfile, "Flow Preset File: ", self.arguments.presetsfile, "d_m: ", str(self.manager.d_m), "d_inf: ", str(self.root.d_inf), "Granularity: ", self.mode, "Time: ", self.counter.get_time()])
+        # writer.writerow(["Pipe Model File: ", self.arguments.modelfile, "Flow Preset File: ", self.arguments.presetsfile, "d_m: ", str(self.manager.d_m), "d_inf: ", str(self.root.d_inf), "Granularity: ", self.mode, "Time: ", self.counter.get_time()])
 
         # Print the header row for the particle data. Varies on inclusion of free chlorine / monochloramine decay.
         if(self.manager.decay_active_free_chlorine and self.manager.decay_active_monochloramine):
@@ -783,7 +879,7 @@ class Driver:
         writer = csv.writer(results,'excel')
 
         # Print run information in the first row of the output csv file.
-        writer.writerow(["Pipe Model File: ", self.arguments.modelfile, "Flow Preset File: ", self.arguments.presetsfile, "d_m: ", str(self.manager.d_m), "d_inf: ", str(self.root.d_inf), "Granularity: ", self.mode, "Time: ", self.counter.get_time()])
+        # writer.writerow(["Pipe Model File: ", self.arguments.modelfile, "Flow Preset File: ", self.arguments.presetsfile, "d_m: ", str(self.manager.d_m), "d_inf: ", str(self.root.d_inf), "Granularity: ", self.mode, "Time: ", self.counter.get_time()])
 
         key = 0
         prev_key = 0
@@ -1168,8 +1264,8 @@ class Driver:
                 var = (2 * lengthFeet * (self.manager.molecular_diffusion_coefficient /144)) / math.pow(velocity, 3)
                 skew = 3 * math.sqrt((2 * (self.manager.molecular_diffusion_coefficient /144)) / (lengthFeet * velocity))
                 mean *= self.TIME_STEP
-                g.write_expel_bins(pathname+"\expelled_histogram", mean, var, self.manager.expelled_particle_data)
-                g.write_expel_bins(".\static\plots\expelled_histogram", mean, var,  self.manager.expelled_particle_data)
+                # g.write_expel_bins(pathname+"\expelled_histogram", mean, var, self.manager.expelled_particle_data)
+                # g.write_expel_bins(".\static\plots\expelled_histogram", mean, var,  self.manager.expelled_particle_data)
                 ageDict = self.write_pipe_ages(pathname+"\pipe_ages.csv", self.manager.expended_particles)
                 self.root.generate_tree()
                 self.root.show_tree(pathname+"tree_graph.png", ageDict)
@@ -1201,3 +1297,4 @@ class Driver:
                 new_val.append((int((each[0]*self.TIME_STEP)), int(each[1]*self.TIME_STEP), each[2]))
             instructions[key] = new_val
         return max_time, instructions
+

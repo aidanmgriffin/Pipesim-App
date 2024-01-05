@@ -9,6 +9,8 @@ import numpy as np
 import random
 from igraph import *
 import collections
+from multiprocessing import Pool
+from joblib import Parallel, delayed
 
 logfile = "ParticleDiffusion.log"
 logfile = open(logfile, 'a')
@@ -93,6 +95,10 @@ class ParticleManager():
         self.prev_length = 0
 
 
+        # self.pool = Pool(processes = 4)
+        
+
+
 
     def particle(self, container, concentration_dict):
         """
@@ -134,6 +140,8 @@ class ParticleManager():
         :return: the name of the pipe that the particle is in and the particle object.
         """
 
+        # print(particle.ID)
+
         name, part = particle.update()
         return name, part
 
@@ -144,11 +152,25 @@ class ParticleManager():
         :param time_since: a dictionary of the time since the last flow event for each endpoint.
         """
 
+
         global logfile
         self.time_since = time_since
         index = self.particle_index.copy()
         particles = list(index.values())
+        print("p#: ", len(particles))
+        # print("updating particles")
+        # results = []
+        # pool = Pool(processes = 4)
+
+
+        # for result in self.pool.map(self.update_caller, particles):
+        #     print("result: ", result)
+            # print("result")
+            # results.append(result)
+        # particles = results
+        # self.particle_positions = self.particle_update_helper(results)
         rval = map(self.update_caller, particles)
+        # rval = Parallel(n_jobs=4)(delayed(self.update_caller)(i) for i in particles)
         self.particle_positions = self.particle_update_helper(rval)
         if self.time.get_time() % 1000 == 999:
             self.update_particle_info()
@@ -233,6 +255,8 @@ class ParticleManager():
             part = self.particle(root, concentration_dict=self.concentration_dict)
             part.position = current_distance
             current_distance += density
+
+        print("particles added: ", len(particles))
 
     def update_particle_info(self):
         """
@@ -1006,6 +1030,7 @@ class Endpoint(Pipe):
             parent_pipe = parent_pipe.parent
 
     def deactivate_pipes(self):
+        print("IN DEACTIVATE")
         """
         Deactivates self and reduces activation for upstream pipes.   
         """

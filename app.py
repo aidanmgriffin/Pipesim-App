@@ -362,6 +362,7 @@ def upload():
             # Catches and alerts users of errors in the simulation. These include errors involving output files being open,
             # errors involving the input files, and errors involving the simulation itself.
             try:
+                print("running sim...")
                 output_file = 0
                 output_file = sim.preset_simulation_button_handler(
                     pipes_save_location,
@@ -394,14 +395,8 @@ def upload():
                 # alertDanger.message = "Simulation Failed. Do the files contain the correct data?"
                 return render_template("upload.html", alert = alertDanger)
     
-
-    data = "hello"
-    
     return render_template("upload.html")
 
-@app.route('/data')
-def data():
-    return "hello"
 
 # Route to download page accessed by running a simulation from upload. If not redirected from the upload page, redirect to upload page.
 # Therefore, it is not possible to search pipesim.com/download directly. It will just make you upload.
