@@ -154,7 +154,7 @@ class Graphing:
         max_time = 0
         max_age = 0
         particle_data = particle_info
-        print("particle data: ", particle_data)
+        # print("particle data: ", particle_data)
         fig = plt.figure(figsize = graph_size, dpi=graph_resolution)
         xy = fig.add_subplot(111)
         data = [d for d in particle_data.values()]
@@ -166,7 +166,7 @@ class Graphing:
             element = data[i]
             name = names[i]
             x = list(map(lambda a: a[0], element))
-            y = list(map(lambda b: b[1], element))
+            y = list(map(lambda b: b[2], element))
             line = Line2D(x,y)
             line.set_linestyle("")
             line.set_marker(self.line_markers[1])
@@ -185,8 +185,8 @@ class Graphing:
         # print("max age: ", max_age, "time: ", timer.get_time())
         xy.legend(legend_lines, legend_names)
         xy.set_ylim(0, max_age * 1.1)
-        # xy.set_xlim(0, )
-        # xy.set_xlim(0, timer.get_time())
+        xy.set_xlim(0, max_age * 1.1)
+        xy.set_xlim(0, timer.get_time())
         xy.set_xlabel("Simulation Time (%s)" % self.step)
         xy.set_ylabel("Expelled Particle Age")
         try:
@@ -366,6 +366,9 @@ def movement_update(timestep0, timestep, root, density, instructions, max_time, 
         # for timestep in range(0, self.max_time):
         functions.start_time = progress_update(functions.start_time, max_time, timestep)
         # TODO: multiprocessing
+        # print("update")
+        # print("movement update" , manager.particle_index)
+        # print("move expelled: ", manager.expended_particles)
 
         timestep0[0] += 1
         for key in keys:
@@ -389,7 +392,7 @@ def movement_update(timestep0, timestep, root, density, instructions, max_time, 
             else:
                 pass
 
-        print("is root active? ", root.is_active)
+        # print("is root active? ", root.is_active)
         if root.is_active:
             manager.add_particles(density, root)
         counter.increment_time()
@@ -398,7 +401,7 @@ def movement_update(timestep0, timestep, root, density, instructions, max_time, 
         for endpoint in endpoints.values():
             sim_endpoint_preset(endpoint)
         
-        print("timer: ", counter.get_time(), len(manager.particle_index), len(manager.expended_particles))
+        # print("timer: ", counter.get_time(), len(manager.particle_index), len(manager.expended_particles))
         # return manager, counter
         # print(timestep)
         # return 4
@@ -502,8 +505,9 @@ class Supplemental:
 
         if second % 1000 == 0 and second > 0:
             end_time = time.time()
+            
             elapsed = end_time - start_time
-            line1 = "Simulating Timestep " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
+            line1 = "Simulating Timestep " + str(second) + " of " + str(max_time) + " " + str(start_time) + " " + str(end_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
             message += line1
             pipe_particles = len(self.manager.particle_index)
             expelled_particles = len(self.manager.expended_particles)
@@ -673,17 +677,19 @@ class Driver:
         
         timestep0 = [0]
 
-        max_time = 80
+        # max_time = 80
 
-        Parallel(n_jobs=1)(delayed(movement_update)(timestep0, timestep, root, density, instructions, max_time, keys, time_since, time_since_starts, endpoints, manager, self.counter, self.functions.add_activation, self.functions.sim_endpoint_preset, self.functions.progress_update, self.functions) for timestep in range(0, max_time))
+        # Parallel(n_jobs=2, prefer = "threads")(delayed(movement_update)(timestep0, timestep, root, density, instructions, max_time, keys, time_since, time_since_starts, endpoints, manager, self.counter, self.functions.add_activation, self.functions.sim_endpoint_preset, self.functions.progress_update, self.functions) for timestep in range(0, max_time))
         # Parallel(n_jobs=4)(delayed(movement_update)(timestep0, timestep, root, density, instructions, max_time, keys, time_since, time_since_starts, endpoints, manager, self.counter, self.functions.add_activation, self.functions.sim_endpoint_preset, self.functions.progress_update, self.functions) for timestep in range(0, max_time))
         
+        # print("Expended a: " , self.manager.expended_a)    
         # print("not parallel")
 # 
-        # for i in range(0, max_time):
-        #     movement_update(timestep0, i, root, density, instructions, max_time, keys, time_since, time_since_starts, endpoints, manager, self.counter, self.functions.add_activation, self.functions.sim_endpoint_preset, self.functions.progress_update, self.functions)
+        for i in range(0, max_time):
+            # print("time: ", i)
+            movement_update(timestep0, i, root, density, instructions, max_time, keys, time_since, time_since_starts, endpoints, manager, self.counter, self.functions.add_activation, self.functions.sim_endpoint_preset, self.functions.progress_update, self.functions)
         
-        print("end 0 t0", timestep0)
+        # print("end 0 t0", timestep0)
         
         # for timestep in range(0, max_time):
         #     start_time = self.progress_update(start_time, max_time, timestep)
@@ -1240,6 +1246,7 @@ class Driver:
                     os.mkdir(pathname)
                 g = Graphing(self.Queue)
                 
+                # print("Expelled: ", self.manager.expelled_particle_data)
                 g.graph_age(pathname, self.manager.expelled_particle_data, self.counter, self.flow_list, self.manager.decay_active_free_chlorine, self.TIME_STEP)
             except Exception as e:
                 raise Exception("Error generating graphs. [" + str(e) + "]") 

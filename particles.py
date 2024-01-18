@@ -37,6 +37,18 @@ class Counter:
     def reset():
         Counter.t = 0
 
+def update_caller(particle):
+        """
+        Calls the update function of the particle object.
+
+        :param particle: the particle object to be updated.
+        :return: the name of the pipe that the particle is in and the particle object.
+        """
+
+        name, part = particle.update()
+
+        return name, part
+    
 class ParticleManager():
     """
     A class that manages particles in a pipe system. It keeps track of particle positions, ages, and aggregate data by pipe membership.
@@ -59,6 +71,7 @@ class ParticleManager():
         self.particle_positions: dict = {} # stores lists of which particles are in which pipes. keys are pipe names.
         self.pipe_aggregates: dict = {} # stores details about the particles in each pipe in a tuple of the following. form: (min_age, max_age, average_age, num_particles). Keys are pipe names.
 
+        self.expended_a: dict = {}
        #Run Preferences (specified by user)
         self.diffusion_active = False
         self.diffusion_active_stagnant = False
@@ -71,6 +84,9 @@ class ParticleManager():
         self.time.reset()
         self.tolerance = math.pow(2, -16)
         self.timestep: int = 60
+
+        self.particlecount = 0
+        self.popped = []
 
         #Decay function vars
         self.molecular_diffusion_coefficient: float = None
@@ -132,18 +148,7 @@ class ParticleManager():
 
         self.timestep = timestep
 
-    def update_caller(self, particle):
-        """
-        Calls the update function of the particle object.
-
-        :param particle: the particle object to be updated.
-        :return: the name of the pipe that the particle is in and the particle object.
-        """
-
-        # print(particle.ID)
-
-        name, part = particle.update()
-        return name, part
+        # return name, part
 
     def update_particles(self, time_since):
         """
@@ -152,12 +157,14 @@ class ParticleManager():
         :param time_since: a dictionary of the time since the last flow event for each endpoint.
         """
 
+        # print("update_particles")
+
 
         global logfile
         self.time_since = time_since
         index = self.particle_index.copy()
         particles = list(index.values())
-        print("p#: ", len(particles))
+        # print("p#: ", len(particles))
         # print("updating particles")
         # results = []
         # pool = Pool(processes = 4)
@@ -169,8 +176,15 @@ class ParticleManager():
             # results.append(result)
         # particles = results
         # self.particle_positions = self.particle_update_helper(results)
-        rval = map(self.update_caller, particles)
+
+
+        # rval = map(update_caller, particles)
+        # rval = Parallel(n_jobs=2)(delayed(update_caller)(particle) for particle in particles)
+        rval = Parallel(n_jobs=1)(delayed(update_caller)(particles[num]) for num in range(len(particles)))
+
         # rval = Parallel(n_jobs=4)(delayed(self.update_caller)(i) for i in particles)
+
+        #WE NEED THIS UNCOMMENTED!
         self.particle_positions = self.particle_update_helper(rval)
         if self.time.get_time() % 1000 == 999:
             self.update_particle_info()
@@ -205,6 +219,7 @@ class ParticleManager():
         global logfile 
 
         particles = self.particle_positions.get(root.name)
+        tot = 0
         
         free_chlorine_init = self.injected_particles_free_chlorine_concentration
         hypochlorous_acid_init = self.decay_monochloramine_dict['starting-particles-concentration-hypochlorous']
@@ -220,6 +235,11 @@ class ParticleManager():
 
         if particles == None:
             self.particle_positions[root.name] = particles = []
+
+         
+        # for i in particles:
+        #     tot += 1
+        # print("len particles", tot)
 
         if len(particles) < 1:
             free_chlorine_init = self.starting_particles_free_chlorine_concentration
@@ -252,11 +272,44 @@ class ParticleManager():
         self.concentration_dict['chlorine'] = chlorine_init
 
         while current_distance < min_distance + density:
-            part = self.particle(root, concentration_dict=self.concentration_dict)
+            if(len(self.popped) > 0):
+                part = self.popped.pop()
+                part.ID = self.num_particles
+                container = root
+                concentration_dict = self.concentration_dict
+                part.contact: dict = {container.material: 0} # contact stores the number of seconds the particle has been in
+                part.ages: dict = {container.name: 0} # contact with each material it has touched, starting at 0.
+                part.container: Pipe = container  # records current parent container
+                part.position: float = 0 # stores particle position within pipe
+                part.sum_distance: float = 0 # stores total distance travelled by particle
+                part.route: list = [container.name]
+                part.age: float = 0
+                part.time: int = 0
+                part.manager.particle_index[part.ID] = part
+                # part.d_m = self.d_m
+                part.free_chlorine : float = concentration_dict['free_chlorine'] #1.0 #for now this is starting concentration
+                part.hypochlorous_acid : float = concentration_dict['hypochlorous_acid']
+                part.ammonia : float = concentration_dict['ammonia']
+                part.monochloramine : float = concentration_dict['monochloramine']
+                part.dichloramine : float = concentration_dict['dichloramine']
+                part.iodine : float = concentration_dict['iodine']
+                part.docb : float = concentration_dict['docb']
+                part.docbox : float = concentration_dict['docbox']
+                part.docw : float = concentration_dict['docw']
+                part.docwox : float = concentration_dict['docwox']
+                part.chlorine : float = concentration_dict['chlorine']
+            else:
+                part = self.particle(root, concentration_dict=self.concentration_dict)
+                self.particlecount += 1
+
+            self.num_particles += 1
+            
+            
+            # print(self.particlecount, self.num_particles)
             part.position = current_distance
             current_distance += density
 
-        print("particles added: ", len(particles))
+        # print("particles added: ", len(particles))
 
     def update_particle_info(self):
         """
@@ -382,8 +435,10 @@ class Particle:
         
         :return: the name of the pipe that the particle is in and the particle object.
         """
+        # print("B U")
 
         self.age += 1
+        logfile.write(str(self.manager.time.get_time()) + " " + str(self.ID) + " " + str(self.age) + " " + str(self.position) + " " + str(self.container.length) + "\n")
 
         if self.manager.decay_active_free_chlorine:
             self.free_chlorine_decay()
@@ -418,6 +473,7 @@ class Particle:
             elif self.manager.diffusion_active_stagnant:
                 container_name = self.diffuse()
         elif self.container.is_active:
+            # print("moove")
             container_name = self.movement()
 
         return container_name, self
@@ -432,7 +488,7 @@ class Particle:
 
         :return: the name of the pipe that the particle is in.
         """
-        
+        # logfile.write(self.container.type, self.age, self.ID, self.position)
         remaining_time = 1
         container_name = self.container.name
         while remaining_time > self.manager.tolerance:  # calculate particle movement until flow consumes available time (1 second)
@@ -484,7 +540,10 @@ class Particle:
                     self.manager.expelled_particle_data[self.container.name] = []
                 dataset = self.manager.expelled_particle_data.get(self.container.name)
                 dataset.append(particle_info)
+                self.manager.expended_a = dataset
+                # print("movin n shaking")
                 self.manager.particle_index.pop(self.ID)
+                self.manager.popped.append(self)
                 self.manager.expended_particles[self.ID] = self
                 container_name = None
                 break
@@ -787,7 +846,7 @@ class Pipe:
         self.doc2_lambda: float = doc2_lambda
         self.area: float = math.pi * math.pow((self.radius), 2) #cross-sectional-area
         self.children: list[Pipe] = []
-        self.is_active = False
+        self.is_active = True 
         self.activity = 0
         self.type = "pipe"
         self.flow_rate: int = 0  # gallons per minute
@@ -804,6 +863,8 @@ class Pipe:
             self.areavelocity = self.area / self.velocity
 
     def activate(self):
+
+        print("Activate!")
         """
         Function to track activations for a pipe. if activity is positive,
         one or more endpoints downstream from this pipe are active (flowing)
@@ -831,6 +892,7 @@ class Pipe:
             self.is_active = True
         else:
             self.is_active = False
+        print("setting activity ", self.activity, self.is_active)
 
     def create_child(self,name, length, diameter, material):
         """
