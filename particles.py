@@ -56,6 +56,7 @@ class ParticleManager():
         self.expelled_particle_data: dict = {} # stores data about which particles were expelled from which endpoints and
         self.particle_positions: dict = {} # stores lists of which particles are in which pipes. keys are pipe names.
         self.pipe_aggregates: dict = {} # stores details about the particles in each pipe in a tuple of the following. form: (min_age, max_age, average_age, num_particles). Keys are pipe names.
+        self.reuse_stack = []
 
        #Run Preferences (specified by user)
         self.diffusion_active = False
@@ -63,6 +64,8 @@ class ParticleManager():
         self.diffusion_active_advective = False 
         self.decay_active_free_chlorine = False
         self.decay_active_monochloramine = False
+
+        
 
         # timestep vars
         self.time = time
@@ -230,7 +233,39 @@ class ParticleManager():
         self.concentration_dict['chlorine'] = chlorine_init
 
         while current_distance < min_distance + density:
+            #Reusing particles
+
+            # if(len(self.reuse_stack) > 0):
+            #     part = self.reuse_stack.pop()
+            #     part.ID: int = self.num_particles
+            #     container = root
+            #     concentration_dict = self.concentration_dict
+            #     self.num_particles += 1
+            #     part.contact: dict = {container.material: 0} # contact stores the number of seconds the particle has been in
+            #     part.ages: dict = {container.name: 0} # contact with each material it has touched, starting at 0.
+            #     part.container: Pipe = container  # records current parent container
+            #     part.position: float = 0 # stores particle position within pipe
+            #     part.sum_distance: float = 0 # stores total distance travelled by particle
+            #     part.route: list = [container.name]
+            #     part.age: float = 0
+            #     part.time: int = 0
+            #     self.particle_index[part.ID] = part
+            #     part.d_m = self.d_m
+            #     part.free_chlorine : float = concentration_dict['free_chlorine'] #1.0 #for now this is starting concentration
+            #     part.hypochlorous_acid : float = concentration_dict['hypochlorous_acid']
+            #     part.ammonia : float = concentration_dict['ammonia']
+            #     part.monochloramine : float = concentration_dict['monochloramine']
+            #     part.dichloramine : float = concentration_dict['dichloramine']
+            #     part.iodine : float = concentration_dict['iodine']
+            #     part.docb : float = concentration_dict['docb']
+            #     part.docbox : float = concentration_dict['docbox']
+            #     part.docw : float = concentration_dict['docw']
+            #     part.docwox : float = concentration_dict['docwox']
+            #     part.chlorine : float = concentration_dict['chlorine']
+
+            # else:
             part = self.particle(root, concentration_dict=self.concentration_dict)
+
             part.position = current_distance
             current_distance += density
 
@@ -461,6 +496,7 @@ class Particle:
                 dataset = self.manager.expelled_particle_data.get(self.container.name)
                 dataset.append(particle_info)
                 self.manager.particle_index.pop(self.ID)
+                self.manager.reuse_stack.append(self)
                 self.manager.expended_particles[self.ID] = self
                 container_name = None
                 break
@@ -617,6 +653,7 @@ class Particle:
                 dataset = self.manager.expelled_particle_data.get(self.container.name)
                 dataset.append(particle_info)
                 self.manager.particle_index.pop(self.ID)
+                self.manager.reuse_stack.append(self)
                 self.manager.expended_particles[self.ID] = self
                 container_name = None
                 break
