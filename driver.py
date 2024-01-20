@@ -607,7 +607,7 @@ class Driver:
             expelled_particles = len(self.manager.expended_particles)
             line2 = "There are currently {} particles in the pipe network and {} particles expelled.".format(
                     pipe_particles, expelled_particles)
-            # message += line2
+            message += line2
 
             with open("static/update-text.txt", "w") as update_text:
                 update_text.write(message)
