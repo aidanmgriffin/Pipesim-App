@@ -1,7 +1,0 @@
-run data
-pipe model file: input\onepipe.csv
-flow preset file: input\onepipeflows.csv
-d_m: 2.8022
-d_inf: 2.8022
-granularity: minute
-time: 2880

@@ -1,29 +1,26 @@
-import driver
-# import builder
-# import preview
-# import showimage
-# import numpy as np
-# from functools import partial
-# import threading
-from multiprocessing import Queue, Process
-import multiprocessing #, Manager
+"""
+This file contains the SimulationWindow class which is responsible for the graphical user interface of the application.
+"""
+
 import os
-# import datetime
 import csv
+import driver
 import traceback
-import sys
+import multiprocessing #, Manager
+from multiprocessing import Queue, Process
 
 
-# this function takes in a dictionary containing one or more lists. each list contains the age of particles
-# that left the pipe network from a specific endpoint, along with the exit time. This function graphs these
-# on an age vs time graph for each endpoint.
+class SimulationWindow():
+    """
+    This class represents the view or graphical user interface of this simulation application. It allows for
+    test setup and provided feedback on results.
+    """
 
-# This class represents the view or graphical user interface of this simulation application. It allows for
-# test setup and provided feedback on results.
-class simulation_window():
-
-    # establish initial window state including text, buttons, and data entry boxes.
     def __init__(self):
+        """
+        Establish initial window state including text, buttons, and data entry boxes.
+        """
+
         #window initialization
         super().__init__()
         self.window = self
@@ -33,30 +30,29 @@ class simulation_window():
         self.diffusion_status = False
         logfile = "ParticleDiffusion.log"
         logfile = open(logfile, 'w')
-        # particlelogfile = "SingleParticle.csv"
-        # particlelogfile = open(particlelogfile, 'w')
-
-        self.options = {"Seconds":1, "Minutes":2, "Hours":3}
+        self.options = {"Seconds":1, "Minutes":2, "Hours":3, "Custom":4}
         self.step_size = 1
         self.step_var = 1
 
-        
     def setDiffusionStatus(self):
+        """
+        Sets the diffusion status to true or false based on the value of the diffusion check box.
+        """
+
         if self.diffusion_check_internal.get() == 0:
             self.diffusion_status = False
         if self.diffusion_check_internal.get() == 1:
             self.diffusion_status = True
 
-    # this loop runs the graphical interface once it has been configured as above
-    def start(self):
-        pass
-        # self.window.after(500, self.check_queue)
-        #self.window.mainloop()
 
-    # in order to preserve data from subsequent executions of the simulator, a new save path is generated on each
-    # simulation run. the save path is in the format $currentFolder/logs/$currentTime/.
     def generate_path(self):
-        # path = "/logs/" + str(datetime.datetime.now())
+        """
+        In order to preserve data from subsequent executions of the simulator, a new save path is generated on each
+        simulation run. the save path is in the format $currentFolder/logs/$currentTime/.
+
+        :return: the path to the save location
+        """
+
         path = "/logs/output_batch"
         path = path.replace(" ", "-")
         path = path.replace(":", "-")
@@ -65,14 +61,16 @@ class simulation_window():
         if not os.path.isdir("./logs"):
             os.mkdir("./logs")
         self.outputLocation = path
-        #self.preview_manager.graph_counter = 0
         return path
 
-    # The application runs across several different processes which are not synchronized with each other.
-    # as a consequence, processes must communicate across a messaging pipeline to update the user and the rest of the
-    # application. This function receives messages (usually sent by the simulation) and updates the display or preview
-    # accordingly.
     def check_queue(self):
+       """
+       The application runs across several different processes which are not synchronized with each other.
+       as a consequence, processes must communicate across a messaging pipeline to update the user and the rest of the
+       application. This function receives messages (usually sent by the simulation) and updates the display or preview
+       accordingly.
+       """
+
        ending = False
        item = self.queue_get_next()
        while item != None:
@@ -101,21 +99,19 @@ class simulation_window():
            self.after(500, func=self.check_queue)
            return
 
-    # gets the next item from the message queue if it exists or returns None if empty.
     def queue_get_next(self):
+        """
+        Gets the next item from the message queue if it exists or returns None if empty.
+
+        :return: the next item in the queue or None if empty
+        """
+
         try:
             item = self.Queue.get(block=False, timeout=0)
         except:
             item = None
         return item
 
-    # updates step size as indicated by the step size variable (used by radio buttons). This function is called
-    # when the radio button selection changes.
-    def set_step_time(self):
-        #self.step_size = self.step_var.get()
-        self.step_size = self.step_var
-        # print(self.step_size)
-    
     def load_settings_csv(self, filename):
         file = open(filename,"r")
         csvfile = csv.reader(file,dialect="excel")
@@ -131,6 +127,15 @@ class simulation_window():
         return rval
 
     def exception_wrapper(self, func, exception_holder, *args):
+        """
+        This function is used to catch exceptions that occur in the simulation process and pass them back to the main
+
+        :param func: the function to be executed
+        :param exception_holder: a namespace object used to store the exception
+        :param args: arguments to be passed to the function
+        :return: the return value of the function
+        """
+
         try:
             return func(*args)
         except Exception as e:
@@ -138,62 +143,153 @@ class simulation_window():
             exception_holder.exception = e
 
     def settings_preset_simulation_button_handler(self, filename):
-        density = None
+        """
+        Takes parameters from the settings preset file and passes them to the simulation.
+
+        :param filename: the name of the settings preset file
+        :return: 1 if the simulation was successful and 0 otherwise
+        """
+
         valid = True
         f0 = None
 
         try:
-            #f0 = open(self.file0.get())
             f0 = open(filename)
             f0.close()
         except:
-            # tm.showerror(title = "Error", message = "invalid filename: settings file")
             valid = False
         
         if valid:
-            #contents = self.load_settings_csv(self.file0.get())
             contents = self.load_settings_csv(filename)
 
-            # print(contents, contents[0][3])
-            if contents[0][3] == 'Yes' or contents[0][3] == 'yes':
-                self.diffusion_status = True 
+            if contents[0][3] == 'Yes' or contents[0][2] == 'yes' or contents[0][2] == "YES":
+                self.diffusion_stagnant_status = True 
+            else:
+                self.diffusion_stagnant_status = False
+            
+            if contents[0][4] == 'Yes' or contents[0][3] == 'yes' or contents[0][3] == "YES":
+                self.diffusion_advective_status = True 
+            else:
+                self.diffusion_advective_status = False
+
+            if contents[0][7] == 'Yes' or contents[0][7] == 'yes' or contents[0][7] == "YES":
+                self.decay_free_chlorine_status = True
+            else:
+                self.decay_free_chlorine_status = False
+            
+            if contents[0][10] == 'Yes' or contents[0][10] == 'yes' or contents[0][10] == "YES":
+                self.decay_monochloramine_status = True
+            else:
+                self.decay_monochloramine_status = False
+
+            if contents[0][31] == 'Yes' or contents[0][31] == 'yes' or contents[0][31] == "YES":
+                self.groupby_status = True
+            else:
+               self.groupby_status = False
+            
+
+            if self.diffusion_advective_status == True or self.diffusion_stagnant_status == True:
+                self.diffusion_status = True
             else:
                 self.diffusion_status = False
-                
-            self.options = {"Seconds":1, "Minutes":2, "Hours":3}
-            #self.step_var.set(self.options[contents[0][5]])
-            self.step_var = self.options[contents[0][5]]
-            self.set_step_time()
-            self.generate_path()
-            # manager = Manager()
-            # exception_holder = manager.Namespace()
-            simulator = driver.Driver(self.Queue, step = self.step_size)
 
-            # print(" pathname : ", self.outputLocation)
-            #arguments = driver.execution_arguments(settingsfile = self.file0.get(), modelfile=contents[0][0], presetsfile=contents[0][1],
-            #                                       density= float(contents[0][2]), pathname=self.outputLocation,
-            #                                       diffuse=self.diffusion_status, diffusionCoefficient= float(contents[0][4]))
-            arguments = driver.execution_arguments(settingsfile = filename, modelfile=contents[0][0], presetsfile=contents[0][1],
-                                                   density= float(contents[0][2]), pathname=self.outputLocation,
-                                                   diffuse=self.diffusion_status, molecularDiffusionCoefficient= float(contents[0][4]))
+            self.step_size = float(contents[0][6]) / 60
+            self.generate_path()
+
             
-            sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, arguments))
-            # sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, exception_holder, arguments))
+            decay_monochloramine_dict = {}
+            decay_monochloramine_dict["starting-particles-concentration-hypochlorous"] = float(contents[0][11])
+            decay_monochloramine_dict["injected-particles-concentration-hypochlorous"] = float(contents[0][12])
+            decay_monochloramine_dict["starting-particles-concentration-ammonia"] = float(contents[0][13])
+            decay_monochloramine_dict["injected-particles-concentration-ammonia"] = float(contents[0][14])
+            decay_monochloramine_dict["starting-particles-concentration-monochloramine"] = float(contents[0][15])
+            decay_monochloramine_dict["injected-particles-concentration-monochloramine"] = float(contents[0][16])
+            decay_monochloramine_dict["starting-particles-concentration-dichloramine"] = float(contents[0][17])
+            decay_monochloramine_dict["injected-particles-concentration-dichloramine"] = float(contents[0][18])
+            decay_monochloramine_dict["starting-particles-concentration-iodine"] = float(contents[0][19])
+            decay_monochloramine_dict["injected-particles-concentration-iodine"] = float(contents[0][20])
+            decay_monochloramine_dict["starting-particles-concentration-docb"] = float(contents[0][21])
+            decay_monochloramine_dict["injected-particles-concentration-docb"] = float(contents[0][22])
+            decay_monochloramine_dict["starting-particles-concentration-docbox"] = float(contents[0][23])
+            decay_monochloramine_dict["injected-particles-concentration-docbox"] = float(contents[0][24])
+            decay_monochloramine_dict["starting-particles-concentration-docw"] = float(contents[0][25])
+            decay_monochloramine_dict["injected-particles-concentration-docw"] = float(contents[0][26])
+            decay_monochloramine_dict["starting-particles-concentration-docwox"] = float(contents[0][27])
+            decay_monochloramine_dict["injected-particles-concentration-docwox"] = float(contents[0][28])
+            decay_monochloramine_dict["starting-particles-concentration-chlorine"] = float(contents[0][29])
+            decay_monochloramine_dict["injected-particles-concentration-chlorine"] = float(contents[0][30])
+
+            manager = multiprocessing.Manager()
+            exception_holder = manager.Namespace()
             
+            simulator = driver.Driver(self.Queue, step = self.step_size)
+            arguments = driver.ExecutionArguments(settingsfile = filename, 
+                                                  modelfile=contents[0][0], 
+                                                  presetsfile=contents[0][1],
+                                                  density= float(contents[0][5]), 
+                                                  pathname=self.outputLocation,
+                                                  diffuse=self.diffusion_status, 
+                                                  diffuse_stagnant= self.diffusion_stagnant_status, 
+                                                  diffuse_advective=self.diffusion_advective_status, 
+                                                  molecular_diffusion_coefficient = float(contents[0][4]),
+                                                  decay_free_chlorine_status=self.decay_free_chlorine_status,
+                                                  decay_monochloramine_status=self.decay_monochloramine_status,
+                                                  starting_particles_free_chlorine_concentration=float(contents[0][8]),
+                                                  injected_particles_free_chlorine_concentration=float(contents[0][9]),
+                                                  decay_monochloramine_dict=decay_monochloramine_dict,
+                                                  groupby_status=self.groupby_status,
+                                                  timestep_group_size=float(contents[0][32]),
+                                                  )
+            
+            sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, exception_holder, arguments))
             sim.start()
             sim.join()
 
-            # if hasattr(exception_holder, 'exception'):
-            #     raise exception_holder.exception
-            
             if sim.exitcode == 0:
                 return([1, self.diffusion_status])
             else:
                 return(0)
+            
         
-    # function validates file name input for the two preset configuration files and (if valid)
-    # launches the simulation in preset mode.
-    def preset_simulation_button_handler(self, file1, file2, density1, diffusion_status, molecular_diffusion_coefficient, granularity):
+    def preset_simulation_button_handler(   self, 
+                                            file1, 
+                                            file2, 
+                                            density1, 
+                                            diffusion_status, 
+                                            stagnant_diffusion_status, 
+                                            advective_diffusion_status, 
+                                            molecular_diffusion_coefficient, 
+                                            granularity, 
+                                            decay_free_chlorine_status, 
+                                            decay_monochloramine_status, 
+                                            starting_particles_free_chlorine_concentration, 
+                                            injected_particles_free_chlorine_concentration,
+                                            decay_monochloramine_dict,
+                                            groupby_status,
+                                            timestep_group_size,
+                                         ):
+        """
+        Function validates file name input for the two preset configuration files and (if valid) launches the simulation in preset mode.
+        Takes parameters from the settings preset file and passes them to the simulation.
+
+        :param file1: the name of the model file
+        :param file2: the name of the preset file
+        :param density1: the density of the particles in the pipe network i.e. length between particles.
+        :param diffusion_status: the status of diffusion
+        :param stagnant_diffusion_status: the status of stagnant diffusion
+        :param advective_diffusion_status: the status of advective diffusion
+        :param molecular_diffusion_coefficient: the molecular diffusion coefficient
+        :param granularity: the granularity of the simulation
+        :param decay_free_chlorine_status: the status of free chlorine decay
+        :param decay_monochloramine_status: the status of monochloramine decay
+        :param starting_particles_free_chlorine_concentration: the starting concentration of free chlorine
+        :param injected_particles_free_chlorine_concentration: the injected concentration of free chlorine
+        :param decay_monochloramine_dict: the dictionary of monochloramine decay
+        :param groupby_status: the status of groupby
+        :param timestep_group_size: the size of the timestep group
+        :return: 1 if the simulation was successful and 0 otherwise
+        """
+
         density = None
         valid = True
         f1 = None
@@ -202,33 +298,43 @@ class simulation_window():
             f1 = open(file1)
             f1.close()
         except:
-            # tm.showerror(title = "Error", message = "invalid filename: pipes model")
             valid = False
         try:
             f2 = open(file2)
             f2.close()
         except:
-            # tm.showerror(title = "Error", message = "Invalid filename: test procedure")
             valid = False
         try:
-            #density = self.density1.get()
             density = float(density1)
         except:
-            # tm.showerror(title = "Error", message = "Invalid argument: non-numeric density")
             valid = False
-        self.step_var = self.options[granularity]
-        self.set_step_time()
-        
+
+        self.step_size = granularity
+
         manager = multiprocessing.Manager()
         exception_holder = manager.Namespace()
 
-        # molecular_diffusion_coefficient = molecular_diffusion_coefficient  #/ self.step_var
         if valid:
             self.generate_path()
             simulator = driver.Driver(self.Queue, step = self.step_size)
-            arguments = driver.execution_arguments(settingsfile = None, modelfile=file1, presetsfile=file2,
-                                                   density=density, pathname=self.outputLocation,
-                                                   diffuse=diffusion_status, molecularDiffusionCoefficient=molecular_diffusion_coefficient)
+            arguments = driver.ExecutionArguments(
+                settingsfile = None, 
+                modelfile=file1,
+                presetsfile=file2,
+                density=density,
+                pathname=self.outputLocation,
+                diffuse=diffusion_status,
+                diffuse_stagnant =stagnant_diffusion_status,
+                diffuse_advective = advective_diffusion_status,
+                molecular_diffusion_coefficient=molecular_diffusion_coefficient,
+                decay_free_chlorine_status=decay_free_chlorine_status,
+                decay_monochloramine_status=decay_monochloramine_status,
+                starting_particles_free_chlorine_concentration=starting_particles_free_chlorine_concentration,
+                injected_particles_free_chlorine_concentration=injected_particles_free_chlorine_concentration,
+                decay_monochloramine_dict=decay_monochloramine_dict,
+                groupby_status=groupby_status,
+                timestep_group_size=timestep_group_size,
+                )
             
             sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset,exception_holder, arguments))
 
@@ -236,104 +342,15 @@ class simulation_window():
             sim.join()
 
             if hasattr(exception_holder, 'exception'):
+                print("exception holder")
                 raise exception_holder.exception
             
             if sim.exitcode == 0:
                 return(1)
             else:
                 return(0)
+        else:
+            return(0)
             
 
-    # this function validates all the inputs int he window to ensure they are valid and will result in a successful
-    # simulation. The function will raise an error describing the problem if there is one, allowing the user
-    # to correct their input. If the input validates successfully, then this function will close the configurator
-    # window and call another function that begins the simulation in random mode.
-    # def validate_configuration(self):
-    #     valid = True
-    #     for element in self.frequencies:
-    #         val = element.get()
-    #         try:
-    #             val = float(val)
-    #             if val < 0 or val > 1:
-    #               raise Exception
-    #         except:
-    #             tm.showerror("A frequency input is non-numeric or out of range [0,1]")
-    #             valid = False
-    #     for element in self.flowrates:
-    #         flow = element.get()
-    #         try:
-    #             flow = float(flow)
-    #             if flow < 0:
-    #                 raise Exception
-    #         except:
-    #             tm.showerror("A flowrate input is non-numeric or out of range [0,infinity)")
-    #             valid = False
-    #     start_time = None
-    #     end_time = None
-    #     try:
-    #         start_time = float(self.active_start.get())
-    #         if start_time < 0.0 or start_time > 24.0:
-    #             raise Exception
-    #     except:
-    #         tm.showerror("Start time is non-numeric or out of range")
-    #         valid = False
-    #     try:
-    #         end_time = float(self.active_end.get())
-    #         if end_time < 0.0 or end_time > 24.0:
-    #             raise Exception
-    #     except:
-    #         tm.showerror("end time is non-numeric or out of range")
-    #         valid = False
-    #     duration = None
-    #     try:
-    #         duration = int(self.runtime.get())
-    #         if duration < 1:
-    #             raise Exception
-    #     except:
-    #         tm.showerror("simulation duration is not an integer or less than one.")
-    #         valid = False
-    #     density = None
-    #     try:
-    #         density = float(self.densityEntry.get())
-    #         if density <= 0.0:
-    #             raise Exception
-    #     except:
-    #         tm.showerror("density is nonpositive or nonnumeric")
-    #         valid = False
-    #     randLow = None
-    #     randHigh = None
-    #     try:
-    #         randLow = int(self.lowDuration.get())
-    #         randHigh = int(self.highDuration.get())
-    #         if randLow < 1 or randHigh < 0:
-    #             raise Exception
-    #         elif randLow > randHigh:
-    #             raise Exception
-    #     except:
-    #         tm.showerror("nonnumeric entry or invalid range: a > b or a,b < 1.")
-    #         valid = False
-    #     if valid:
-    #         for i in range(len(self.checks)):
-    #             checkval = self.checks[i].cget("text")
-    #             if checkval == 1:
-    #                 instruction = (self.endpointNames[i], float(self.frequencies[i].get()), float(self.flowrates[i].get()))
-    #                 self.activation_instructions.append(instruction)
-    #                 #print(instruction)
-    #         #update the configuration object so that it does not contain the model anymore, only needs the filename
-    #         #self.root, self.endpoints, self.manager, self.timer
-    #         configuration = (self.fname, (start_time, end_time), (randLow, randHigh), duration, density, self.activation_instructions)
-    #         self.parent.Queue.put(("random_sim_configuration", configuration))
-    #         self.configurator.destroy()
-
-            #self.parent.random_simulation_handler(configuration)
-
-# starts main window thread
-# def main():
-#     sim = simulation_window()
-#     sim.start()
-
-# # executes when python is run from the command line or executed.
-# if __name__ == "__main__":
-#     main()
-
-
+  

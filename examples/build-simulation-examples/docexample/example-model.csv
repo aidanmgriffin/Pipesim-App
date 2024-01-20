@@ -1,7 +1,9 @@
-Name,Material,Width (inches),Length (feet),Parent,Root,Endpoint,D_INF,Alpha,Lambda
-root,copper,2,100,NONE,TRUE,,0.01946,114,0.1
-Arterial-1,copper,1,100,root,,,0.01946,114,0.1
-Arterial-2,copper,1,100,root,,,0.01946,114,0.1
-a2-branch-2,PVC,0.5,200,Arterial-2,,,0.01946,114,0.1
-Endpoint-1,None,0,0,Arterial-1,,TRUE,0.01946,114,0.1
-Endpoint-2,None,0,0,a2-branch-2,,TRUE,0.01946,114,0.1
+Name,Material,Width (inches),Length (feet),Parent,Root,Endpoint,D_INF,Alpha,Lambda,Free Chlorine Lambda,Monochloramine Lambda,Hypochlorous Acid Lambda,DOC1 Lambda,DOC2 Lambda
+root,copper,2,60,NONE,TRUE,,0.01946,114,0.1,,,,,
+Arterial-1,copper,1,40,root,,,0.01946,114,0.1,,,,,
+Arterial-2,copper,1,40,root,,,0.01946,114,0.1,,,,,
+Endpoint-1,None,0,0,Arterial-1,,TRUE,0.01946,114,0.1,,,,,
+a2-branch-1,PVC,0.5,25,Arterial-1,,,0.01946,114,0.1,,,,,
+a2-branch-2,PVC,0.75,15,Arterial-2,,,0.01946,114,0.1,,,,,
+Endpoint-2,None,0,0,a2-branch-1,,TRUE,0.01946,114,0.1,,,,,
+Endpoint-3,None,0,0,a2-branch-2,,TRUE,0.01946,114,0.1,,,,,

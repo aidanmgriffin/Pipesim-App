@@ -1,3 +1,0 @@
-endpoint,starttime (minutes),endtime (minutes),flowrate (gallons per minute),simlifetime (days)
-Tap,50,200,8,0.4
-Tap,300,700,4,

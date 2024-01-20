@@ -10,12 +10,13 @@
     <div class="col-2 bg-light" id="docs-sidebar">
       <div class="sticky-top">
         <br>
-        <h2 class="text-center">Contents</h2>
+        <a class = "doc-content" href = "#"><h2 class="text-center">Contents</h2></a>
+
         <li><a class="doc-content" href="#">Get Started</a></li>
-        <li><a class="doc-content" href="#run-simulation">Run Simulation</a></li>
+        <!-- <li><a class="doc-content" href="#run-simulation">Run Simulation</a></li> -->
         <li><a class="doc-content-sub" href="#simulation-modes">Simulation Modes</a></li>
         <li><a class="doc-content" href="#settings-preset-file">Settings Preset File</a></li>
-        <li><a class="doc-content" href="#run-simulation">Buld Simulation Preset</a></li>
+        <li><a class="doc-content" href="#run-simulation">Build a Simulation</a></li>
         <li><a class="doc-content" href="#simulation-models">Simulation Models</a></li>
         <li><a class="doc-content-sub" href="#pipe-network">Pipe Network</a></li>
         <li><a class="doc-content-sub" href="#flow-description">Flow Description</a></li>
@@ -35,40 +36,55 @@
     </div>
 
     <div class="col-10" id="docs-main">
+        
       <br>
       <h1>Documentation</h1>
       <div class="foreground-spacer-block"></div>
       <br />
 
       <h2 id="get-started">Get Started</h2>
-      <p>Pipesim is a tool for simulating water residence times in a plumbing system or pipe network. It was
-        designed to provide data about how long water remains in pipes within a building plumbing system before being
-        expelled through a water faucet or other outlet. </p>
+      <p>Pipesim is a tool for simulating water residence
+        times in a plumbing system inside a building (“premise
+        plumbing”). It takes as input the pipe network e.g. from building
+        blueprints, and a time series of flow events at outlets such as
+        fountains or faucets, and simulates aging of water in the system as
+        well as disinfectant decay and resulting concentrations. Ages and
+        concentrations at effluent water are computed, with some simple
+        automatic graphing of these quantities. Pipesim is a
+        “particle-tracking” code in that is sprinkles imaginary particles
+        both initially along the entire network and in the influent during
+        flow events. Each particle has a list of attributes including Age
+        (total, and age in each pipe traversed) and disinfectant
+        concentration (that decays according to specified rates). The
+        simulation will run at time steps specified by the user and for a
+        total Run Time before producting charts and raw data. Simple
+        demonstration files are provided to exploring how the code
+        works. </p>
 
-      <h2 id="run-simulation">Run Simulation</h2>
-      <p>The PipeSim pipe network residence time simulation will run for a given amount of time before producing visual charts and raw data.</p>
       <h3 id="simulation-modes">Simulation Modes</h3>
-      <p>There are two ways to run PipeSim: with a <a href = "#settings-preset-file">settings preset file</a> or with a
-        <a href = "#build-simulation-preset">build simulation preset</a>. Each method allows for control over all aspects of the simulation.</p>
-       <p> Both require two <em>CSV</em> files: one for the <a href = "#pipe-network">pipe network</a> and one for the <a href = "#flow-description">flow description</a>. </p>
+      <p>There are two ways to run PipeSim: with a <a class = "linked-text" href = "#settings-preset-file">settings preset file</a> or with a
+        <a class = "linked-text" href = "#build-simulation-preset">custom built simulation</a>. Each method allows for control over all aspects of the simulation.</p>
+       <p> Both require two <em>CSV</em> files: one for the <a class = "linked-text" href = "#pipe-network">pipe network</a> and one for the <a class = "linked-text" href = "#flow-description">flow description</a>. </p>
 
       <h2 id="settings-preset-file">Settings Preset File</h2>
-      <p> To get started, open a new <em>CSV</em> file. </p>
+      <p> To get started, open a new <em>CSV</em> file or download the <a class = "linked-text" class = "linked-text" href = "/examples/templates/settingspresettemplate.csv" download>sample template <i class="bi bi-download"></i></a></p>
 
-      <div class="alert alert-secondary align-middle" role="alert">
-        <h1><i class="bi bi-exclamation"></i> <span class = "align-middle">Note that the Parent, Root?, and Endpoint? entries are <em>case-sensitive</em>. </span></h1> </div>
+      <!-- <div class="alert alert-secondary align-middle" role="alert">
+        <h1><i class="bi bi-exclamation"></i> <span class = "align-middle">Note that the Parent, Root?, and Endpoint? entries are <em>case-sensitive</em>. </span></h1> </div> -->
         
-      <p>The first row (header) of the <em>CSV</em> file is as folows: </p>
-      <!-- <p> This will require both a <a href = "#pipes-network">pipes network</a></p> -->
+      <p>The first row (header) of the <em>CSV</em> file is as follows: </p>
+      <!-- <p> This will require both a <a class = "linked-text" href = "#pipes-network">pipes network</a></p> -->
       <table class="table table-bordered">
         <thead>
           <tr>
             <th scope="col" class="table-widths">Pipes File Path</th>
             <th scope="col" class="table-widths">Flows Presets File Path</th>
-            <th scope="col" class="table-widths">Density [0-1]</th>
             <th scope="col" class="table-widths">Diffusion Status [Yes/No]</th>
-            <th scope="col" class="table-widths">Molecular Diffusion Coefficient</th>
-            <th scope="col" class="table-widths">Granularity</th>
+            <th scope="col" class="table-widths">Diffusion - Stagnant [Yes/No]</th>
+            <th scope="col" class="table-widths">Diffusion - Advective [Yes/No]</th>
+            <th scope="col" class="table-widths">Diffusion Coefficient [cm^2/min]</th>
+            <th scope="col" class="table-widths">Density [0-1"]</th>
+            <th scope="col" class="table-widths">Computation Time Step [Seconds]</th>
           </tr>
         </thead>
       </table>
@@ -76,12 +92,14 @@
       <table class="table table-bordered">
         <tbody>
           <tr>
-            <td scope="col" class="table-widths">C:\path\to\example-model.csv</td>
-            <td scope="col" class="table-widths">C:\path\to\example-preset.csv</td>
-            <td scope="col" class="table-widths">0.5</td>
+            <td scope="col" class="table-widths">c:\file\path.csv</td>
+            <td scope="col" class="table-widths">c:\file\path.csv</td>
+            <td scope="col" class="table-widths">Yes</td>
+            <td scope="col" class="table-widths">No</td>
             <td scope="col" class="table-widths">Yes</td>
             <td scope="col" class="table-widths">2.14</td>
-            <td scope="col" class="table-widths">Minutes</td>
+            <td scope="col" class="table-widths">0.5</td>
+            <td scope="col" class="table-widths">60</td>
           </tr>
         </tbody>
       </table>
@@ -91,21 +109,25 @@
       <p>The path to your local pipe network (<em>.CSV</em>) file. </p>
       <strong>Flows Presets File Path: </strong>
       <p>The path to your local flows preset (<em>.CSV</em>) file. </p>
-      <strong>Density [0-1]: </strong>
-      <p>Particle density per inch. The distance between new particles placed in the pipe siumulation. Values withheld to range of [0.1, 1]</p>
-      <strong>Diffusion Status [Yes/No]: </strong>
-      <p>Indicates whether diffusion, the net spreading of water particles in the pipe network is turned on or off. </p>
+      <!-- <strong>Diffusion Status [Yes/No]: </strong>
+      <p>Indicates whether diffusion, the net spreading of water particles in the pipe network is turned on or off. If set to "No"</p> -->
+      <strong>Diffusion - Stagnant [Yes/No]: </strong>
+      <p>Indicates whether diffusion is activated during stagnant periods. </p>
+      <strong>Diffusion - Advective [Yes/No]: </strong>
+      <p>Indicates whether diffusion and dispersion are activated during advective periods. </p>
       <strong>Molecular Diffusion Coefficient: </strong>
       <p> The specification of the molecular diffusion coefficient, just one part of the diffusion equation. Can be left blank if diffusion status is 'No' </p>
+      <strong>Density [0-1]: </strong>
+     <p>See <a class = "linked-text" href = #particle-density>Particle Density</a></p>
       <strong>Granularity: </strong>
-      <p> The computational time step of the simulation. Can be set to seconds, minutes, or hours. </p>
-      <h2 id="build-simulation-preset">Build Simulation Preset</h2>
+      <p> The computational time step of the simulation. Can be set in units of seconds. </p>
+      <h2 id="build-simulation-preset">Build a Simulation</h2>
       <h2 id="simulation-models">Simulation Models</h2>
       <p> This simulation requires input in the form of two <em>CSV</em> files: one for the pipe network and one for the
         flow diagram</p>
 
       <h3 id="pipe-network">Pipe Network </h3>
-      <p> First, we will build the pipe network file. To get started, open a new <em>CSV</em> file. </p>
+      <p> To get started building a pipe network file, open a new <em>CSV</em> file or download the <a class = "linked-text" class = "linked-text" href = "/examples/templates/settingspresettemplate.csv" download>sample template <i class="bi bi-download"></i></a> </p>
       <p>The first row (header) of the <em>CSV</em> file is as follows:</p>
       <table class="table table-bordered">
         <thead>
@@ -159,8 +181,8 @@
         <li>a2-branch-1</li>
         <li>a2-branch-2</li>
       </ol>
-      <p>The five pipes are connected as diagrammed below:</p>
-      <img src="static/images/tree-graph.png" alt="pipe network" class="img-fluid">
+      <!-- <p>The five pipes are connected as diagrammed below:</p> -->
+      <!-- <img src="static/images/tree-graph.png" alt="pipe network" class="img-fluid"> -->
       <p>This pipe network has three endpoints. One at the end of arterial-1, one at the end of a2-branch-1, and one at
         the end of a2-branch-2. You will need to explicitly state these endpoints and give them names in the model file,
         or else these pipes will be dead-ends.</p>
@@ -173,7 +195,7 @@
       <p>Now our pipe network looks like:</p>
       <img src="static/images/tree-graph-scaled.png" alt="pipe network" class="img-fluid">
       <br/><br/>
-      <p>With a visualization of the pipe network created, let's show how this must be written into the pipe network model file.</p>
+      <p>With a visualization of the pipe network created, let's show how this network will be written into the pipe network model file.</p>
 
       <table class="table table-bordered">
         <thead>
@@ -303,16 +325,164 @@
       </table>
 
       <div class="alert alert-secondary align-middle" role="alert">
-        <h1><i class="bi bi-exclamation"></i> <span class = "align-middle">Note that a pipe must appear after it's parent pipe in the pipe network file. </span></h1>
+        <h1><i class="bi bi-exclamation"></i> <span class = "align-middle">The first row of the pipe network spreadsheet must describe the root of the pipe network. </span></h1>
       </div>
       
+      <p>The columns of this table describe the following: </p>
+      <strong>Name </strong>
+      <p>The name of an individual pipe. Each name must be unique. </p>
+
+      <strong>Material </strong>
+      <p>The Material of the given pipe.</p>
+
+      <p> Pipes with the same material type must be given the same name. The program will group pipes by material type in order to measure residence times by material.</p>
+        
+       <p> If describing an endpoint, input "NONE" into the pipe's corresponding material cell. </p>
+
+      <strong>Width </strong>
+      <p>The width of the given pipe in inches. </p>
+     
+      <strong>Length </strong>
+      <p>The length of the given pipe in feet.</p>
+
+      <strong>Parent </strong>
+      <p>The name of the pipe that is the parent of the given pipe. Multiple pipes may be connected to the same parent. Each individual pipe must have a single parent. </p>
+
+      <p>If describing the root of a pipe network, input "NONE" into the pipe's corresponding parent cell. This row must be the first of the spreadsheet. </p>
+
+      <p>Note that each pipe must appear below its parent in the pipe network file.</p>
+
+      <strong>Root? </strong>
+      <p>Indicates whether the given pipe is the root of the pipe network. Indicate "TRUE" in the Root? column of the first row of the spreadsheet, as this describes the root of the pipe network.</p>
+
+      <strong>Endpoint? </strong>
+      <p>Indicates whether the given pipe is an endpoint of the pipe network. Indicate "TRUE" in the Endpoint? column of each row describing an endpoint. Pipes designated as endpoints must not act as the parents of any other pipes in the network.</p>
+
+      <strong id = "D_INF">D_INF </strong>
+      <p>The molecular diffusion coefficient of the given pipe. This value is used to calculate the diffusion of particles in the pipe network. This should be entered in units: cm^2/min. If making a simulation run without diffusion ebabled, this column may be left blank. </p>
+
+      <strong id = "Alpha">Alpha </strong>
+      <p>The alpha value of the given pipe. This value is used in the calculation of diffusion for particles in the pipe network. This should be given in units of minutes. If making a simulation run without diffusion ebabled, this column may be left blank.</p>
+
+      <strong>Lambda </strong>
+      <p>Lambdas for the given pipe affecting various chemical decay formulas given here. </p>
+
      <h3 id = "flow-description">Flow Description</h3>
+     <p> To get started building a pipe network file, open a new <em>CSV</em> file or download the <a class = "linked-text" class = "linked-text" href = "/examples/templates/settingspresettemplate.csv" download>sample template <i class="bi bi-download"></i></a> </p>
+      <p>The first row (header) of the <em>CSV</em> file is as follows:</p>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th scope="col" class="table-widths">endpoint</th>
+            <th scope="col" class="table-widths">Start Time</th>
+            <th scope="col" class="table-widths">End Time</th>
+            <th scope="col" class="table-widths">Flowrate</th>
+            <th scope="col" class="table-widths">Sim Lifetime</th>
+          
+          </tr>
+        </thead>
+      </table>
+
+      <p>The following rows describe the flow events occuring in the pipe system.</p>
+      <p> The first row following the header must also contain the total runtime of the simulation. </p>
+      <p> A completed flows spreadsheet will look something like the following: </p>
+      <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th scope="col" class="table-widths">endpoint</th>
+          <th scope="col" class="table-widths">Start Time</th>
+          <th scope="col" class="table-widths">End Time</th>
+          <th scope="col" class="table-widths">Flowrate</th>
+          <th scope="col" class="table-widths">Sim Lifetime</th>
+        
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-1</th>
+          <td scope="col" class="table-widths">0</th>
+          <td scope="col" class="table-widths">120</th>
+          <td scope="col" class="table-widths">5</th>
+          <td scope="col" class="table-widths">1</th>
+        </tr>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-2</th>
+          <td scope="col" class="table-widths">90</th>
+          <td scope="col" class="table-widths">410</th>
+          <td scope="col" class="table-widths">1</th>
+          <td scope="col" class="table-widths"></th>
+        </tr>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-1</th>
+          <td scope="col" class="table-widths">900</th>
+          <td scope="col" class="table-widths">1025</th>
+          <td scope="col" class="table-widths">1.25</th>
+          <td scope="col" class="table-widths"></th>
+        </tr>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-2</th>
+          <td scope="col" class="table-widths">1000</th>
+          <td scope="col" class="table-widths">2000</th>
+          <td scope="col" class="table-widths">1</th>
+          <td scope="col" class="table-widths"></th>
+        </tr>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-1</th>
+          <td scope="col" class="table-widths">2480</th>
+          <td scope="col" class="table-widths">3000</th>
+          <td scope="col" class="table-widths">0.5</th>
+          <td scope="col" class="table-widths"></th>
+        </tr>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-3</th>
+          <td scope="col" class="table-widths">500</th>
+          <td scope="col" class="table-widths">900</th>
+          <td scope="col" class="table-widths">1</th>
+          <td scope="col" class="table-widths"></th>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>The columns of this table describe the following:</p>
+    <strong>Endpoint </strong>
+    <p>The name of the endpoint of the pipe network. This must match the name of an endpoint in the pipe network file. Each endpoint represents a tap in the pipe system. </p>
+
+    <strong>Start Time </strong>
+    <p>The time at which the tap opens. This value is given in minutes. </p>
+
+    <strong>End Time </strong>
+    <p>The time at which the tap closes. This value is given in minutes. </p>
+
+    <strong>Flowrate </strong>
+    <p>The flowrate of the tap. This value is given in gallons/minute. </p>
+    
+    <strong>Sim Lifetime </strong>
+    <p>The total duration of the simulation. This value is given in days. </p>
 
      <h2 id = "simulation-arguments">Simulation Arguments</h2>
+
+     <p>When running a new simulation, there are several arguments which must be initially defined. These include diffusion status / rate, particle density, and time granularity. </p>
      <h3 id = "diffusion">Diffusion</h3>
+      <p>Diffusion is the net spreading of water particles in the pipe network. This can be turned on or off by setting the diffusion status to "Yes" or "No" in the settings preset file, or by selecting the "Diffusion Enabled" box while building a simulation. </p>
+      <p>The (pre-asymptotic) dispersion coefficient is D(ω) = (D_inf - D_m)(1 - e ^ (- ω / α)) where ω is time in flow, D_m s molecular diffusion coefficient, D_inf is asymptotic dispersion coefficient, and ɑ is a scaling parameter. If you do not wish to model pre-asymptotic dispersion, set α = 1, and D_m = D_inf = the asymptotic diffusion coefficient for each pipe.</p>
+      <p>Once diffusion is chosen, it can be customized in multiple ways.</p>
+      <strong>Diffusion Rate </strong>
+      <p> The rate of diffusion is given in gallons per minute. </p>
+      <strong>Diffusion During Stagnant Periods </strong>
+      <p> Diffusion can be turned on / off for periods of no flow in the pipe system. </p>
+      <strong>Diffusion & Dispersion During Advective Periods</strong>
+      <p> Diffusion & dispersion can be turned on / off for periods of flow in the pipe system. Periods of flow are defined as time periods between an endpoint's starttime and endtime.</p>
      <h3 id = "particle-density">Particle Density</h3>
+     <p>The distance (in inches) between particle placements in the pipe network. A smaller particle density value results in more particles being entered into the pipe network. This way of adding particles to the inflow water does not maintain constant particle numbers per inflow volume.</p>
+     <p>Density range is held within [0.1,1]</p>
      <h3 id = "time-granularity">Time Granularity</h3>
+     <p>The time increment in which the simulation advances towards the total simulation lifetime, chosen in units of seconds.</p>
+     <p> i.e. if the total sim lifetime is given as 1 day: </p>
+     <p>If time granularity is chosen as hours (custom granularity of 3600), the simulation will update a total of 24 times. </p>
+     <p>If time granularity is chosen as minutes (custom granularity of 60), the simulation will update a total of 1440 times. </p>
+      <p>If time granularity is chosen as seconds (granularity of 1), the simulation will update a total of 86400 times. </p>
      <h2 id = "outputs">Outputs</h2>
+     <p>Pipesim outputs a variety of relevant plots, along with spreadsheet full of raw data</p>
      <h3 id = "age-plot">Age Plot</h3>
      <h3 id = "concentration-plot">Concentration Plot</h3>
      <h3 id = "particle-modifier-histogram">Particle Modifier Histogram</h3>
