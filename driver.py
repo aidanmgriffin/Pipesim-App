@@ -576,7 +576,10 @@ class Driver:
             if root.is_active:
                 self.manager.add_particles(density, vol_density, root)
             self.counter.increment_time()
+
+            init_stack = len(self.manager.reuse_stack)
             self.manager.update_particles(time_since)
+            # print("Timestep: ", timestep, " Expended: ", len(self.manager.reuse_stack) - init_stack)
             for endpoint in endpoints.values():
                 self.sim_endpoint_preset(endpoint)
 
@@ -1133,15 +1136,16 @@ class Driver:
       
             try:
                 # Compile list of pipes to calculate total volume.
+                self.root.manager.pipe_net.append(self.root)
                 self.root.generate_pipe_net()
 
                 #Calculate volume of each pipe and number of particles assigned to each pipe.
                 vol_total = 0
-                pipe_densities: dict = {}
                 for k in  self.root.manager.pipe_net:
+                    print("k: ", k.name)
                     vol_k = (((math.pi)*(k.length)*(math.pow((k.width), 2))) / 4) / 144
                     n_k = (vol_k) * (vol_density)
-                    pipe_densities.setdefault(k, n_k)
+                    self.manager.pipe_densities.setdefault(k, n_k)
                     vol_total += vol_k
                 
                 print("Vol total: ", vol_total, " Number of particles in pipe network: ", len(self.manager.particle_index))

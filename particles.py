@@ -96,6 +96,8 @@ class ParticleManager():
         self.prev_length = 0
 
         self.pipe_net: list = []
+        self.pipe_densities: dict = {}
+
 
 
 
@@ -233,6 +235,20 @@ class ParticleManager():
         self.concentration_dict['docw'] = docw_init
         self.concentration_dict['docwox'] = docwox_init
         self.concentration_dict['chlorine'] = chlorine_init
+
+        # print("rn: " , root.name)
+        dx = root.length / (self.pipe_densities[root] + 1)
+
+        # print("Dx: ", dx)
+
+        current_position = 0
+
+        # while current_position < min_distance + dx:
+        #     part = self.particle(root, concentration_dict=self.concentration_dict)
+
+        #     part.position = current_position
+
+        #     current_position += dx
 
         # while current_distance < min_distance + density:
         while current_distance < min_distance + density:
@@ -436,6 +452,8 @@ class Particle:
                 container_name = self.diffuse()
         elif self.container.is_active:
             container_name = self.movement()
+
+        
 
         return container_name, self
 
