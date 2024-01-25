@@ -95,6 +95,8 @@ class ParticleManager():
         self.prev_area = 0
         self.prev_length = 0
 
+        self.pipe_net: list = []
+
 
 
     def particle(self, container, concentration_dict):
@@ -173,7 +175,7 @@ class ParticleManager():
                 particle_positions_by_pipe[pipe_name].append(particle_object)
         return particle_positions_by_pipe
 
-    def add_particles(self, density: float, root):
+    def add_particles(self, density: float, vol_density: float, root):
         """
         each pipe tracks particles that are inside it and tracks their progress along it.
         this function is meant to be called by the root pipe. fills pipe with particles
@@ -232,6 +234,7 @@ class ParticleManager():
         self.concentration_dict['docwox'] = docwox_init
         self.concentration_dict['chlorine'] = chlorine_init
 
+        # while current_distance < min_distance + density:
         while current_distance < min_distance + density:
             #Reusing particles
 
@@ -267,6 +270,9 @@ class ParticleManager():
             part = self.particle(root, concentration_dict=self.concentration_dict)
 
             part.position = current_distance
+            # current_distance += density
+            vol_total = 0 
+
             current_distance += density
 
     def update_particle_info(self):
@@ -918,6 +924,22 @@ class Pipe:
         height = data.most_common(1)[0][1] # most_common returns a tuple with (mode, frequency)
         depth = max(dim)
         return depth, height
+    
+    def generate_pipe_net(self):
+        """
+        This function creates a list of all pipes in the network to calculate total volume for volume-based density calculations.
+        """
+
+        if self.children is not None:
+            for child in self.children:
+                # Append non-root nodes to pipe net.
+                if child is not None:
+                    self.manager.pipe_net.append(child)
+                    child.generate_pipe_net()
+                # Append root node to pipe net.
+                elif self.parent is None:
+                    self.manager.pipe_net.append(self)
+
 
     def generate_tree(self):
         """
@@ -927,6 +949,7 @@ class Pipe:
 
         if self.children is not None:
             for child in self.children:
+                # print("child: ", child.name)
                 if child is not None and child.type != "endpoint":
                     level = [self.name, child.name]
                     self.manager.edge_list.append(level)
@@ -947,7 +970,9 @@ class Pipe:
         :param path: the path to save the graph to.
         :param age_dict: a dictionary of the ages of the particles.
         """
-        
+        # print("edge list: ", self.manager.edge_list)
+        # for child in self.children:
+        #     print(child.name)
         pipe_edges = ['Base']
         for edge in self.manager.edge_list:
             for num, pipe in enumerate(edge):

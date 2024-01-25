@@ -121,6 +121,20 @@ def upload():
             except:
                 alertDanger.message = "Density must be a number between 0 and 1"
                 raise Exception
+            
+            try:
+                vol_density = request.values['vol_density']
+
+                # If no density is input, default to 0.5.
+                if vol_density == '':                
+                    vol_density = 120
+                vol_density = float(vol_density)
+                # if vol_density < 0 or vol_density > 12000:
+                #     alertDanger.message = "Density must be between 1 and 120000"
+                #     raise Exception
+            except:
+                alertDanger.message = "Density must be a number between 0 and 1"
+                raise Exception
                 
             # Validating granularity input. Input is a number in unit: seconds, which is converted to unit: minutes granularity for the simulation.
             granularity = request.values['custom-granularity']
@@ -366,7 +380,7 @@ def upload():
                 output_file = sim.preset_simulation_button_handler(
                     pipes_save_location,
                     flows_save_location,
-                    density, diffusion_status, 
+                    density, vol_density, diffusion_status, 
                     stagnant_diffusion_status, 
                     advective_diffusion_status, 
                     molecular_diffusion_coefficient, 
