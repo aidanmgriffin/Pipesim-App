@@ -97,6 +97,7 @@ class ParticleManager():
 
         self.pipe_net: list = []
         self.pipe_densities: dict = {}
+        self.particle_layout: dict = {}
 
 
 
@@ -176,6 +177,86 @@ class ParticleManager():
             else:
                 particle_positions_by_pipe[pipe_name].append(particle_object)
         return particle_positions_by_pipe
+    
+    def init_add_particles(self, density: float, vol_density: float, root):
+        # dx = root.length / (self.pipe_densities[root] + 1)
+        dx = 0.5
+
+        particles = self.particle_positions.get(root.name)
+    
+        if particles == None:
+            self.particle_positions[root.name] = particles = []
+
+        free_chlorine_init = self.starting_particles_free_chlorine_concentration
+        hypochlorous_acid_init = self.decay_monochloramine_dict['starting-particles-concentration-hypochlorous']
+        ammonia_init = self.decay_monochloramine_dict['starting-particles-concentration-ammonia']
+        monochloramine_init = self.decay_monochloramine_dict['starting-particles-concentration-monochloramine']
+        dichloramine_init = self.decay_monochloramine_dict['starting-particles-concentration-dichloramine']
+        iodine_init = self.decay_monochloramine_dict['starting-particles-concentration-iodine']
+        docb_init = self.decay_monochloramine_dict['starting-particles-concentration-docb']
+        docbox_init = self.decay_monochloramine_dict['starting-particles-concentration-docbox']
+        docw_init = self.decay_monochloramine_dict['starting-particles-concentration-docw']
+        docwox_init = self.decay_monochloramine_dict['starting-particles-concentration-docwox']
+        chlorine_init = self.decay_monochloramine_dict['starting-particles-concentration-chlorine']
+
+
+        self.concentration_dict['free_chlorine'] = free_chlorine_init
+        self.concentration_dict['hypochlorous_acid'] = hypochlorous_acid_init
+        self.concentration_dict['ammonia'] = ammonia_init
+        self.concentration_dict['monochloramine'] = monochloramine_init
+        self.concentration_dict['dichloramine'] = dichloramine_init
+        self.concentration_dict['iodine'] = iodine_init
+        self.concentration_dict['docb'] = docb_init
+        self.concentration_dict['docbox'] = docbox_init
+        self.concentration_dict['docw'] = docw_init
+        self.concentration_dict['docwox'] = docwox_init
+        self.concentration_dict['chlorine'] = chlorine_init
+
+        # if len(particles) < 1:
+
+        #     min_distance = root.length
+        # else:
+        #     min_distance = min(part.position for part in particles)
+        # current_distance = 0
+        x = 0
+        # print(self.pipe_net[-1])
+        # print("pipe net: ")
+        for i in self.pipe_net: print(i.name)
+
+        for pipe in self.pipe_net[::-1]:
+            
+            # dx = root.length / (self.pipe_densities[root] + 1)
+            # dx = pipe.length / (self.pipe_densities[pipe] + 1)
+
+            min_distance = pipe.length
+
+            current_position = min_distance
+
+            while current_position >= 0 + dx:
+            
+                part = self.particle(pipe, concentration_dict=self.concentration_dict)
+
+                part.position = current_position
+
+                self.particle_layout.setdefault(part.container.name, [])
+                self.particle_layout[part.container.name].append([part.ID, current_position])
+
+                current_position -= dx
+                x += 1
+
+            # current_position = 0
+
+            # while current_position < min_distance + dx:
+            
+            #     part = self.particle(pipe, concentration_dict=self.concentration_dict)
+
+            #     part.position = current_position
+
+            #     current_position += dx
+            #     x += 1
+        
+        print("X: ", x, self.particle_layout) #, self.particle_layout)
+    
 
     def add_particles(self, density: float, vol_density: float, root):
         """
@@ -236,60 +317,105 @@ class ParticleManager():
         self.concentration_dict['docwox'] = docwox_init
         self.concentration_dict['chlorine'] = chlorine_init
 
-        # print("rn: " , root.name)
-        dx = root.length / (self.pipe_densities[root] + 1)
+        # dx = root.length / (self.pipe_densities[root] + 1)
+        dx = 0.5
+        # print("rn: " , root.name, "dx: ", dx)
 
-        # print("Dx: ", dx)
+        # print("Dx2: ", dx)
 
-        current_position = 0
+        current_position = min_distance
 
-        # while current_position < min_distance + dx:
+        while current_position >= 0 + dx:
+
+            print("TIME: " , self.time.get_time())
+           
+            positions = [[i, self.particle_index[i].ID] for i in self.particle_index.keys()]
+            reuse = [i.ID for i in self.reuse_stack]
+            expended = [i.ID for i in self.expended_particles.values()]
+            
+            print( " positions: ", positions, "\n expended: ", expended, " \n reuse: ", reuse)
+
+            if(len(self.reuse_stack) > 0):
+                part = self.reuse_stack.pop(0)
+                part.manager = self
+                part.ID: int = self.num_particles
+                container = root
+                concentration_dict = self.concentration_dict
+                self.num_particles += 1
+                part.contact: dict = {container.material: 0} # contact stores the number of seconds the particle has been in
+                part.ages: dict = {container.name: 0} # contact with each material it has touched, starting at 0.
+                part.container: Pipe = container  # records current parent container
+                part.position: float = 0 # stores particle position within pipe
+                part.sum_distance: float = 0 # stores total distance travelled by particle
+                part.route: list = [container.name]
+                part.age: float = 0
+                part.time: int = 0
+                self.particle_index[part.ID] = part
+
+                part.d_m = self.d_m
+                part.free_chlorine : float = concentration_dict['free_chlorine'] #1.0 #for now this is starting concentration
+                part.hypochlorous_acid : float = concentration_dict['hypochlorous_acid']
+                part.ammonia : float = concentration_dict['ammonia']
+                part.monochloramine : float = concentration_dict['monochloramine']
+                part.dichloramine : float = concentration_dict['dichloramine']
+                part.iodine : float = concentration_dict['iodine']
+                part.docb : float = concentration_dict['docb']
+                part.docbox : float = concentration_dict['docbox']
+                part.docw : float = concentration_dict['docw']
+                part.docwox : float = concentration_dict['docwox']
+                part.chlorine : float = concentration_dict['chlorine']
+
+                # print("id: ", part.ID)
+
+            else:
+                part = self.particle(root, concentration_dict=self.concentration_dict)
+                # print("part #", part.ID)
+
+            # print(part.ID)
+            part.position = current_position
+
+            current_position -= dx
+
+        # # while current_distance < min_distance + density:
+        # while current_distance < min_distance + density:
+        #     #Reusing particles
+
+        #     # if(len(self.reuse_stack) > 0):
+        #     #     part = self.reuse_stack.pop()
+        #     #     part.ID: int = self.num_particles
+        #     #     container = root
+        #     #     concentration_dict = self.concentration_dict
+        #     #     self.num_particles += 1
+        #     #     part.contact: dict = {container.material: 0} # contact stores the number of seconds the particle has been in
+        #     #     part.ages: dict = {container.name: 0} # contact with each material it has touched, starting at 0.
+        #     #     part.container: Pipe = container  # records current parent container
+        #     #     part.position: float = 0 # stores particle position within pipe
+        #     #     part.sum_distance: float = 0 # stores total distance travelled by particle
+        #     #     part.route: list = [container.name]
+        #     #     part.age: float = 0
+        #     #     part.time: int = 0
+        #     #     self.particle_index[part.ID] = part
+        #     #     part.d_m = self.d_m
+        #     #     part.free_chlorine : float = concentration_dict['free_chlorine'] #1.0 #for now this is starting concentration
+        #     #     part.hypochlorous_acid : float = concentration_dict['hypochlorous_acid']
+        #     #     part.ammonia : float = concentration_dict['ammonia']
+        #     #     part.monochloramine : float = concentration_dict['monochloramine']
+        #     #     part.dichloramine : float = concentration_dict['dichloramine']
+        #     #     part.iodine : float = concentration_dict['iodine']
+        #     #     part.docb : float = concentration_dict['docb']
+        #     #     part.docbox : float = concentration_dict['docbox']
+        #     #     part.docw : float = concentration_dict['docw']
+        #     #     part.docwox : float = concentration_dict['docwox']
+        #     #     part.chlorine : float = concentration_dict['chlorine']
+
+        #     # else:
         #     part = self.particle(root, concentration_dict=self.concentration_dict)
 
-        #     part.position = current_position
+        #     part.position = current_distance
+        #     # current_distance += density
+        #     vol_total = 0 
 
-        #     current_position += dx
-
-        # while current_distance < min_distance + density:
-        while current_distance < min_distance + density:
-            #Reusing particles
-
-            # if(len(self.reuse_stack) > 0):
-            #     part = self.reuse_stack.pop()
-            #     part.ID: int = self.num_particles
-            #     container = root
-            #     concentration_dict = self.concentration_dict
-            #     self.num_particles += 1
-            #     part.contact: dict = {container.material: 0} # contact stores the number of seconds the particle has been in
-            #     part.ages: dict = {container.name: 0} # contact with each material it has touched, starting at 0.
-            #     part.container: Pipe = container  # records current parent container
-            #     part.position: float = 0 # stores particle position within pipe
-            #     part.sum_distance: float = 0 # stores total distance travelled by particle
-            #     part.route: list = [container.name]
-            #     part.age: float = 0
-            #     part.time: int = 0
-            #     self.particle_index[part.ID] = part
-            #     part.d_m = self.d_m
-            #     part.free_chlorine : float = concentration_dict['free_chlorine'] #1.0 #for now this is starting concentration
-            #     part.hypochlorous_acid : float = concentration_dict['hypochlorous_acid']
-            #     part.ammonia : float = concentration_dict['ammonia']
-            #     part.monochloramine : float = concentration_dict['monochloramine']
-            #     part.dichloramine : float = concentration_dict['dichloramine']
-            #     part.iodine : float = concentration_dict['iodine']
-            #     part.docb : float = concentration_dict['docb']
-            #     part.docbox : float = concentration_dict['docbox']
-            #     part.docw : float = concentration_dict['docw']
-            #     part.docwox : float = concentration_dict['docwox']
-            #     part.chlorine : float = concentration_dict['chlorine']
-
-            # else:
-            part = self.particle(root, concentration_dict=self.concentration_dict)
-
-            part.position = current_distance
-            # current_distance += density
-            vol_total = 0 
-
-            current_distance += density
+        #     current_distance += density
 
     def update_particle_info(self):
         """
@@ -369,6 +495,7 @@ class Particle:
         self.age: float = 0
         self.time: int = 0
         self.manager.particle_index[self.ID] = self
+        
         self.d_m = self.manager.d_m
         self.free_chlorine : float = concentration_dict['free_chlorine'] #1.0 #for now this is starting concentration
         self.hypochlorous_acid : float = concentration_dict['hypochlorous_acid']
@@ -519,8 +646,8 @@ class Particle:
                     self.manager.expelled_particle_data[self.container.name] = []
                 dataset = self.manager.expelled_particle_data.get(self.container.name)
                 dataset.append(particle_info)
-                self.manager.particle_index.pop(self.ID)
                 self.manager.reuse_stack.append(self)
+                self.manager.particle_index.pop(self.ID)
                 self.manager.expended_particles[self.ID] = self
                 container_name = None
                 break

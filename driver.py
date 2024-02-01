@@ -167,6 +167,7 @@ class Graphing:
             name = names[i]
             x = list(map(lambda a: a[0], element))
             y = list(map(lambda b: b[2], element))
+            # print(y)
             line = Line2D(x,y)
             line.set_linestyle("")
             line.set_marker(self.line_markers[1])
@@ -548,6 +549,9 @@ class Driver:
                 except Exception as e: 
                     pass
         
+        #Add condition to check for root activation?
+        self.manager.init_add_particles(density, vol_density, root)
+
         for timestep in range(0, max_time):
             start_time = self.progress_update(start_time, max_time, timestep)
             # TODO: multiprocessing
@@ -1141,14 +1145,15 @@ class Driver:
 
                 #Calculate volume of each pipe and number of particles assigned to each pipe.
                 vol_total = 0
-                for k in  self.root.manager.pipe_net:
-                    print("k: ", k.name)
+                for k in self.root.manager.pipe_net:
+                    # print("k: ", k.name)
                     vol_k = (((math.pi)*(k.length)*(math.pow((k.width), 2))) / 4) / 144
                     n_k = (vol_k) * (vol_density)
                     self.manager.pipe_densities.setdefault(k, n_k)
+                    
                     vol_total += vol_k
                 
-                print("Vol total: ", vol_total, " Number of particles in pipe network: ", len(self.manager.particle_index))
+                # print("Vol total: ", vol_total, " Number of particles in pipe network: ", len(self.manager.particle_index))
 
 
                 # print("pipe net: ")
