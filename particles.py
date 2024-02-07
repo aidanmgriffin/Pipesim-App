@@ -52,10 +52,13 @@ class ParticleManager():
         self.num_particles: int = 0
         self.deleted_particles: int = 0
         self.particle_index: dict = {}  # this stores all the particles in the pipe system. Particle objects can be accessed by ID.
-        self.expended_particles: dict = {}  # stores all particles that have passed through an endpoint, for data collection.
+        # self.expended_particles: dict = {}  # stores all particles that have passed through an endpoint, for data collection.
+        self.expended_particles: list = []
+        self.expelled_particles: list = []
         self.expelled_particle_data: dict = {} # stores data about which particles were expelled from which endpoints and
         self.particle_positions: dict = {} # stores lists of which particles are in which pipes. keys are pipe names.
         self.pipe_aggregates: dict = {} # stores details about the particles in each pipe in a tuple of the following. form: (min_age, max_age, average_age, num_particles). Keys are pipe names.
+        self.reuse_stack = []
 
        #Run Preferences (specified by user)
         self.diffusion_active = False
@@ -63,6 +66,8 @@ class ParticleManager():
         self.diffusion_active_advective = False 
         self.decay_active_free_chlorine = False
         self.decay_active_monochloramine = False
+
+        
 
         # timestep vars
         self.time = time
@@ -91,6 +96,11 @@ class ParticleManager():
         self.prev_flow = 0
         self.prev_area = 0
         self.prev_length = 0
+
+        self.pipe_net: list = []
+        self.pipe_densities: dict = {}
+        self.particle_layout: dict = {}
+
 
 
 
@@ -148,6 +158,7 @@ class ParticleManager():
         self.time_since = time_since
         index = self.particle_index.copy()
         particles = list(index.values())
+        # print(len(particles))
         rval = map(self.update_caller, particles)
         self.particle_positions = self.particle_update_helper(rval)
         if self.time.get_time() % 1000 == 999:
@@ -169,6 +180,59 @@ class ParticleManager():
             else:
                 particle_positions_by_pipe[pipe_name].append(particle_object)
         return particle_positions_by_pipe
+    
+    def init_add_particles(self, density: float, root):
+
+        particles = self.particle_positions.get(root.name)
+    
+        if particles == None:
+            self.particle_positions[root.name] = particles = []
+
+        free_chlorine_init = self.starting_particles_free_chlorine_concentration
+        hypochlorous_acid_init = self.decay_monochloramine_dict['starting-particles-concentration-hypochlorous']
+        ammonia_init = self.decay_monochloramine_dict['starting-particles-concentration-ammonia']
+        monochloramine_init = self.decay_monochloramine_dict['starting-particles-concentration-monochloramine']
+        dichloramine_init = self.decay_monochloramine_dict['starting-particles-concentration-dichloramine']
+        iodine_init = self.decay_monochloramine_dict['starting-particles-concentration-iodine']
+        docb_init = self.decay_monochloramine_dict['starting-particles-concentration-docb']
+        docbox_init = self.decay_monochloramine_dict['starting-particles-concentration-docbox']
+        docw_init = self.decay_monochloramine_dict['starting-particles-concentration-docw']
+        docwox_init = self.decay_monochloramine_dict['starting-particles-concentration-docwox']
+        chlorine_init = self.decay_monochloramine_dict['starting-particles-concentration-chlorine']
+
+
+        self.concentration_dict['free_chlorine'] = free_chlorine_init
+        self.concentration_dict['hypochlorous_acid'] = hypochlorous_acid_init
+        self.concentration_dict['ammonia'] = ammonia_init
+        self.concentration_dict['monochloramine'] = monochloramine_init
+        self.concentration_dict['dichloramine'] = dichloramine_init
+        self.concentration_dict['iodine'] = iodine_init
+        self.concentration_dict['docb'] = docb_init
+        self.concentration_dict['docbox'] = docbox_init
+        self.concentration_dict['docw'] = docw_init
+        self.concentration_dict['docwox'] = docwox_init
+        self.concentration_dict['chlorine'] = chlorine_init
+
+        for pipe in self.pipe_net[::-1]:
+            
+            dx = pipe.length / (self.pipe_densities[pipe] + 1)
+
+            min_distance = pipe.length
+
+            current_position = min_distance
+
+            if(pipe.type == "pipe"):
+                while current_position > 0 + dx:
+                
+                    part = self.particle(pipe, concentration_dict=self.concentration_dict)
+
+                    part.position = current_position
+
+                    self.particle_positions.setdefault(pipe.name, [])
+                    self.particle_positions[pipe.name].append(part)
+
+                    current_position -= dx
+    
 
     def add_particles(self, density: float, root):
         """
@@ -183,6 +247,9 @@ class ParticleManager():
         global logfile 
 
         particles = self.particle_positions.get(root.name)
+        # particles = self.particle_layout.get(root.name)
+
+        # print("particles: ", len(particles))
         
         free_chlorine_init = self.injected_particles_free_chlorine_concentration
         hypochlorous_acid_init = self.decay_monochloramine_dict['starting-particles-concentration-hypochlorous']
@@ -229,10 +296,48 @@ class ParticleManager():
         self.concentration_dict['docwox'] = docwox_init
         self.concentration_dict['chlorine'] = chlorine_init
 
-        while current_distance < min_distance + density:
-            part = self.particle(root, concentration_dict=self.concentration_dict)
-            part.position = current_distance
-            current_distance += density
+        dx = root.length / (self.pipe_densities[root] + 1)
+
+        current_position = min_distance
+
+        while current_position > 0 + dx:
+
+            if(len(self.reuse_stack) > 0):
+                part = self.reuse_stack.pop(0)
+
+                part.manager = self
+                container = root
+                concentration_dict = self.concentration_dict
+                self.num_particles += 1
+                part.contact: dict = {container.material: 0} # contact stores the number of seconds the particle has been in
+                part.ages: dict = {container.name: 0} # contact with each material it has touched, starting at 0.
+                part.container: Pipe = container  # records current parent container
+                part.position: float = 0 # stores particle position within pipe
+                part.sum_distance: float = 0 # stores total distance travelled by particle
+                part.route: list = [container.name]
+                part.age: float = 0
+                part.time: int = self.time.get_time()
+                self.particle_index[part.ID] = part
+
+                part.d_m = self.d_m
+                part.free_chlorine : float = concentration_dict['free_chlorine'] #1.0 #for now this is starting concentration
+                part.hypochlorous_acid : float = concentration_dict['hypochlorous_acid']
+                part.ammonia : float = concentration_dict['ammonia']
+                part.monochloramine : float = concentration_dict['monochloramine']
+                part.dichloramine : float = concentration_dict['dichloramine']
+                part.iodine : float = concentration_dict['iodine']
+                part.docb : float = concentration_dict['docb']
+                part.docbox : float = concentration_dict['docbox']
+                part.docw : float = concentration_dict['docw']
+                part.docwox : float = concentration_dict['docwox']
+                part.chlorine : float = concentration_dict['chlorine']
+
+            else:
+                part = self.particle(root, concentration_dict=self.concentration_dict)
+
+            part.position = current_position
+
+            current_position -= dx
 
     def update_particle_info(self):
         """
@@ -289,7 +394,7 @@ class Particle:
     about the pipes it travels through and about how long it remains in contact with each pipe.
     """
     
-    def __init__(self, container, manager, concentration_dict):
+    def __init__(self, container, manager, concentration_dict, ID = None):
         """
         This constructor requires a container (pipe object) to instantiate, because particles should always be tied to one
         pipe. upon creation, the particle assigns itself an id based on the global num_particles variable, adds itself to
@@ -301,7 +406,10 @@ class Particle:
         """
 
         self.manager = manager
-        self.ID: int = self.manager.num_particles
+        if ID:
+            self.ID = ID
+        else:
+            self.ID: int = self.manager.num_particles
         self.manager.num_particles += 1
         self.contact: dict = {container.material: 0} # contact stores the number of seconds the particle has been in
         self.ages: dict = {container.name: 0} # contact with each material it has touched, starting at 0.
@@ -312,6 +420,7 @@ class Particle:
         self.age: float = 0
         self.time: int = 0
         self.manager.particle_index[self.ID] = self
+        
         self.d_m = self.manager.d_m
         self.free_chlorine : float = concentration_dict['free_chlorine'] #1.0 #for now this is starting concentration
         self.hypochlorous_acid : float = concentration_dict['hypochlorous_acid']
@@ -382,6 +491,11 @@ class Particle:
         self.ages.setdefault(container_name, 0)
         self.ages[container_name] += 1
 
+        if self.ID == 1000: 
+            # print("update")
+            logfile.write("all_position" + str(self.position) + str(self.manager.time.get_time()) + "\n")
+               
+
         # Originally checks if container is active (water is flowing) before checking diffusion value. With issue 165
         # this is reversed. If diffusion is active then dispersion function will be called in lieu of movement. 
         # (The two are similar, but dispersion includes diffusive activity.)
@@ -395,6 +509,8 @@ class Particle:
                 container_name = self.diffuse()
         elif self.container.is_active:
             container_name = self.movement()
+
+        
 
         return container_name, self
 
@@ -415,6 +531,7 @@ class Particle:
             if self.container.type != "endpoint":
                 flow = self.container.flow * remaining_time
                 position = self.position
+                
                 new_position = (flow * (CUBIC_INCHES_PER_GALLON / self.container.area)) + position
                 if new_position > self.container.length:
                     travelled_distance = self.container.length - self.position
@@ -433,13 +550,16 @@ class Particle:
             elif self.container.type == "endpoint":
                 particle_info = []
                 self.time = self.manager.time.get_time()
-                particle_info.append(self.time)
                 expelledTime = self.age + (1 - remaining_time)
                 self.age = expelledTime
-                # print(expelledTime)
                 particle_info.append(self.ID)
+                particle_info.append(self.time)
                 particle_info.append(self.age)
-                # particle_info.append(counter.get_time())
+                particle_info.append(self.container.name)
+                contact_list = []
+                for key in self.contact.keys():
+                    contact_list.append([key, self.contact[key]])
+                particle_info.append(contact_list)
 
                 if(self.manager.decay_active_free_chlorine):
                     particle_info.append(self.free_chlorine)
@@ -460,8 +580,10 @@ class Particle:
                     self.manager.expelled_particle_data[self.container.name] = []
                 dataset = self.manager.expelled_particle_data.get(self.container.name)
                 dataset.append(particle_info)
+                self.manager.reuse_stack.append(self)
                 self.manager.particle_index.pop(self.ID)
-                self.manager.expended_particles[self.ID] = self
+                self.manager.expended_particles.append(self)
+                self.manager.expelled_particles.append(particle_info)
                 container_name = None
                 break
         return container_name
@@ -563,6 +685,11 @@ class Particle:
                 modifier = np.random.normal(0.0, standard_dev)
                 position = self.position + modifier
                 new_position = (flow * (CUBIC_INCHES_PER_GALLON / self.container.area)) + position
+
+                if self.ID == 1000: 
+                    # print("disperse")
+                    logfile.write("new_position" + str(new_position) + "modifier : " + str(modifier) + "old position: " + str(position) + "\n")
+               
                 if new_position > self.container.length:
                     travelled_distance = self.container.length - self.position
                     partial_flow = remaining_time * (travelled_distance / CUBIC_INCHES_PER_GALLON) * self.container.area
@@ -592,10 +719,17 @@ class Particle:
 
                 # Remove the time that the particle has been accounted for while being expelled from the system. The length, flow, and area of the endpoint is irrelevant and not used in the calculation.
                 em = ( self.manager.new_pos - self.manager.prev_length) / (self.manager.prev_flow / self.manager.prev_area) 
-                expelledTime -= em
+               
+                if self.ID == 1000: 
+                    # print("disperse")
+                    logfile.write("Expelled time: " + str(expelledTime) + " em: " + str(em) + " newpos" + str(self.manager.new_pos - self.manager.prev_length) +"\n")
+
+                # expelledTime -= em
                 self.age = expelledTime
                 particle_info.append(self.ID)
                 particle_info.append(self.age)
+
+               
                 
                 if(self.manager.decay_active_free_chlorine):
                     particle_info.append(self.free_chlorine)
@@ -616,8 +750,9 @@ class Particle:
                     self.manager.expelled_particle_data[self.container.name] = []
                 dataset = self.manager.expelled_particle_data.get(self.container.name)
                 dataset.append(particle_info)
+                self.manager.reuse_stack.append(self)
                 self.manager.particle_index.pop(self.ID)
-                self.manager.expended_particles[self.ID] = self
+                self.manager.expended_particles.append(self)
                 container_name = None
                 break
 
@@ -881,6 +1016,22 @@ class Pipe:
         height = data.most_common(1)[0][1] # most_common returns a tuple with (mode, frequency)
         depth = max(dim)
         return depth, height
+    
+    def generate_pipe_net(self):
+        """
+        This function creates a list of all pipes in the network to calculate total volume for volume-based density calculations.
+        """
+
+        if self.children is not None:
+            for child in self.children:
+                # Append non-root nodes to pipe net.
+                if child is not None:
+                    self.manager.pipe_net.append(child)
+                    child.generate_pipe_net()
+                # Append root node to pipe net.
+                elif self.parent is None:
+                    self.manager.pipe_net.append(self)
+
 
     def generate_tree(self):
         """
@@ -890,6 +1041,7 @@ class Pipe:
 
         if self.children is not None:
             for child in self.children:
+                # print("child: ", child.name)
                 if child is not None and child.type != "endpoint":
                     level = [self.name, child.name]
                     self.manager.edge_list.append(level)
@@ -910,7 +1062,9 @@ class Pipe:
         :param path: the path to save the graph to.
         :param age_dict: a dictionary of the ages of the particles.
         """
-        
+        # print("edge list: ", self.manager.edge_list)
+        # for child in self.children:
+        #     print(child.name)
         pipe_edges = ['Base']
         for edge in self.manager.edge_list:
             for num, pipe in enumerate(edge):

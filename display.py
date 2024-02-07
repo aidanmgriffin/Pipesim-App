@@ -255,6 +255,7 @@ class SimulationWindow():
                                             file1, 
                                             file2, 
                                             density1, 
+                                            # vol_density,
                                             diffusion_status, 
                                             stagnant_diffusion_status, 
                                             advective_diffusion_status, 
@@ -308,6 +309,10 @@ class SimulationWindow():
             density = float(density1)
         except:
             valid = False
+        # try:
+        #     vol_density = float(vol_density)
+        # except:
+        #     valid = False
 
         self.step_size = granularity
 
@@ -322,6 +327,7 @@ class SimulationWindow():
                 modelfile=file1,
                 presetsfile=file2,
                 density=density,
+                # vol_density=vol_density,
                 pathname=self.outputLocation,
                 diffuse=diffusion_status,
                 diffuse_stagnant =stagnant_diffusion_status,

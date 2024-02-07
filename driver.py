@@ -32,6 +32,7 @@ class ExecutionArguments:
                  activation_range = None,
                  length = None,
                  density = None,
+                #  vol_density = None,
                  diffuse: bool = False,
                  diffuse_stagnant: bool = False,
                  diffuse_advective: bool = False,
@@ -53,6 +54,7 @@ class ExecutionArguments:
         self.activation_range = activation_range
         self.length = length
         self.density = density
+        # self.vol_density = vol_density
         self.molecular_diffusion_coefficient = molecular_diffusion_coefficient
         self.instructions = instructions
         self.diffuse = diffuse
@@ -163,7 +165,7 @@ class Graphing:
         for i in range(len(data)):
             element = data[i]
             name = names[i]
-            x = list(map(lambda a: a[0], element))
+            x = list(map(lambda a: a[1], element))
             y = list(map(lambda b: b[2], element))
             line = Line2D(x,y)
             line.set_linestyle("")
@@ -546,10 +548,14 @@ class Driver:
                 except Exception as e: 
                     pass
         
+        #Add condition to check for root activation?
+        self.manager.init_add_particles(density, root)
+
         for timestep in range(0, max_time):
             start_time = self.progress_update(start_time, max_time, timestep)
             # TODO: multiprocessing
             for key in keys:
+                # print("key: ", key)
                 endpoint = endpoints[key]
                 actions = instructions[key]
                 if timestep >= time_since_starts[key]:
@@ -573,7 +579,10 @@ class Driver:
             if root.is_active:
                 self.manager.add_particles(density, root)
             self.counter.increment_time()
+
+            init_stack = len(self.manager.reuse_stack)
             self.manager.update_particles(time_since)
+            # print("Timestep: ", timestep, " Expended: ", len(self.manager.reuse_stack) - init_stack)
             for endpoint in endpoints.values():
                 self.sim_endpoint_preset(endpoint)
 
@@ -604,10 +613,10 @@ class Driver:
             line1 = "Simulating Timestep " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
             message += line1
             pipe_particles = len(self.manager.particle_index)
-            expelled_particles = len(self.manager.expended_particles)
+            expelled_particles = len(self.manager.expelled_particles)
             line2 = "There are currently {} particles in the pipe network and {} particles expelled.".format(
                     pipe_particles, expelled_particles)
-            # message += line2
+            message += line2
 
             with open("static/update-text.txt", "w") as update_text:
                 update_text.write(message)
@@ -647,9 +656,9 @@ class Driver:
             writer.writerow(["ParticleID", "Timestamp", "Age", "OutputEndpoint", "AgeByMaterial", "AgeByPipe"])
 
         for key in particles:
-            particle = particles[key]
-            data = particle.get_output()
-            writer.writerow(data)
+            # particle = key
+            # data = particle.get_output()
+            writer.writerow(key)
         results.close()
 
     def write_groupby_particles_output(self, filename, particles, groupby):
@@ -698,7 +707,8 @@ class Driver:
                         particle = particles[key + i]
                     except:
                         break
-                    data = particle.get_output()
+                    # data = particle.get_output()
+                    data = particle
 
                     sum_time += data[2]
 
@@ -796,8 +806,9 @@ class Driver:
 
         for key in range(len(particles)- 1):
             try:
-                particle = particles[key]
-                data = particle.get_output()
+                particle = key
+                data = particle
+                # data = particle.get_output()
 
                 if data[3] not in tap_list:
                     tap_list.append(data[3])
@@ -1074,8 +1085,9 @@ class Driver:
         age_dict = {}
         endpoint_names = [endpoint.name for endpoint in self.endpoints]
         for key in particles:
-            particle = particles[key]
-            particle_data = particle.get_output()
+            particle = key
+            # particle_data = particle.get_output()
+            particle_data = particle
             pipe_name = particle_data[3]
             if pipe_name not in endpoint_names:
                 age_dict.setdefault(pipe_name, [0,0])
@@ -1101,6 +1113,7 @@ class Driver:
             modelfile = arguments.modelfile
             presetsfile = arguments.presetsfile
             density = arguments.density
+            # vol_density = arguments.vol_density
             pathname = arguments.pathname
             self.manager.diffusion_active = arguments.diffuse
             self.manager.diffusion_active_stagnant = arguments.diffuse_stagnant
@@ -1128,6 +1141,28 @@ class Driver:
             self.Queue.put(send)
       
             try:
+                # Compile list of pipes to calculate total volume.
+                self.root.manager.pipe_net.append(self.root)
+                self.root.generate_pipe_net()
+
+                #Calculate volume of each pipe and number of particles assigned to each pipe.
+                vol_total = 0
+                for k in self.root.manager.pipe_net:
+                    # print("k: ", k.name)
+                    vol_k = (((math.pi)*(k.length)*(math.pow((k.width), 2))) / 4) / 144
+                    n_k = (vol_k) * (density)
+                    self.manager.pipe_densities.setdefault(k, n_k)
+                    
+                    vol_total += vol_k
+                
+                # print("Vol total: ", vol_total, " Number of particles in pipe network: ", len(self.manager.particle_index))
+
+
+                # print("pipe net: ")
+                
+                # for i in self.root.manager.pipe_net:
+                #     print(i.name)
+
                 max_time, instructions = builder.load_sim_preset(presetsfile)
                 max_time, instructions = self.parse_instructions(max_time, instructions)
                 
@@ -1148,11 +1183,12 @@ class Driver:
             except Exception as e:
                 raise Exception("Error generating graphs. [" + str(e) + "]") 
             
-            try:        
-                self.write_output(pathname+"\expelled.csv", self.manager.expended_particles)
+            try: 
+
+                self.write_output(pathname+"\expelled.csv", self.manager.expelled_particles)
 
                 if(self.arguments.groupby_status == 1):
-                    self.write_groupby_time_output(pathname+"\expelled_groups.csv", self.manager.expended_particles, self.arguments.timestep_group_size)
+                    self.write_groupby_time_output(pathname+"\expelled_groups.csv", self.manager.expelled_particles, self.arguments.timestep_group_size)
 
                 # This function slows everything down considerably, and is not currently used. Generates a particle modifier histogram...
                 # if self.manager.diffusionActive:
@@ -1170,9 +1206,15 @@ class Driver:
                 mean *= self.TIME_STEP
                 g.write_expel_bins(pathname+"\expelled_histogram", mean, var, self.manager.expelled_particle_data)
                 g.write_expel_bins(".\static\plots\expelled_histogram", mean, var,  self.manager.expelled_particle_data)
-                ageDict = self.write_pipe_ages(pathname+"\pipe_ages.csv", self.manager.expended_particles)
-                self.root.generate_tree()
-                self.root.show_tree(pathname+"tree_graph.png", ageDict)
+                ageDict = self.write_pipe_ages(pathname+"\pipe_ages.csv", self.manager.expelled_particles)
+                # self.root.generate_tree()
+
+                # for i in self.root.children:
+                #     print("childs: ", i.name)
+                # for i in self.endpoints:
+                #     print("endpoint: ", i.name)
+                # print(self.endpoints)
+                # self.root.show_tree(pathname+"tree_graph.png", ageDict)
 
             except Exception as e:
                 raise Exception("Error writing output files. Check uploaded files for errors and ensure that the output directory is not open in another program. [" + str(e) + "]" )
@@ -1181,7 +1223,6 @@ class Driver:
             self.Queue.put(send) 
         except Exception as e:
             raise Exception(e)
-        
 
     def parse_instructions(self, max_time, instructions):
         """
