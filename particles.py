@@ -491,11 +491,6 @@ class Particle:
         self.ages.setdefault(container_name, 0)
         self.ages[container_name] += 1
 
-        if self.ID == 1000: 
-            # print("update")
-            logfile.write("all_position" + str(self.position) + str(self.manager.time.get_time()) + "\n")
-               
-
         # Originally checks if container is active (water is flowing) before checking diffusion value. With issue 165
         # this is reversed. If diffusion is active then dispersion function will be called in lieu of movement. 
         # (The two are similar, but dispersion includes diffusive activity.)
@@ -556,6 +551,7 @@ class Particle:
                 particle_info.append(self.time)
                 particle_info.append(self.age)
                 particle_info.append(self.container.name)
+
                 contact_list = []
                 for key in self.contact.keys():
                     contact_list.append([key, self.contact[key]])
@@ -685,10 +681,6 @@ class Particle:
                 modifier = np.random.normal(0.0, standard_dev)
                 position = self.position + modifier
                 new_position = (flow * (CUBIC_INCHES_PER_GALLON / self.container.area)) + position
-
-                if self.ID == 1000: 
-                    # print("disperse")
-                    logfile.write("new_position" + str(new_position) + "modifier : " + str(modifier) + "old position: " + str(position) + "\n")
                
                 if new_position > self.container.length:
                     travelled_distance = self.container.length - self.position
@@ -714,23 +706,22 @@ class Particle:
             elif self.container.type == "endpoint":
                 particle_info = []
                 self.time = self.manager.time.get_time()
-                particle_info.append(self.time)
                 expelledTime = self.age + (1 - remaining_time)
-
                 # Remove the time that the particle has been accounted for while being expelled from the system. The length, flow, and area of the endpoint is irrelevant and not used in the calculation.
                 em = ( self.manager.new_pos - self.manager.prev_length) / (self.manager.prev_flow / self.manager.prev_area) 
-               
-                if self.ID == 1000: 
-                    # print("disperse")
-                    logfile.write("Expelled time: " + str(expelledTime) + " em: " + str(em) + " newpos" + str(self.manager.new_pos - self.manager.prev_length) +"\n")
-
                 # expelledTime -= em
                 self.age = expelledTime
-                particle_info.append(self.ID)
-                particle_info.append(self.age)
 
-               
+                particle_info.append(self.ID)
+                particle_info.append(self.time)
+                particle_info.append(self.age)
+                particle_info.append(self.container.name)
                 
+                contact_list = []
+                for key in self.contact.keys():
+                    contact_list.append([key, self.contact[key]])
+                particle_info.append(contact_list)
+
                 if(self.manager.decay_active_free_chlorine):
                     particle_info.append(self.free_chlorine)
                 
@@ -753,6 +744,7 @@ class Particle:
                 self.manager.reuse_stack.append(self)
                 self.manager.particle_index.pop(self.ID)
                 self.manager.expended_particles.append(self)
+                self.manager.expelled_particles.append(particle_info)
                 container_name = None
                 break
 
