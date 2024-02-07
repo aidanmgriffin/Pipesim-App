@@ -32,7 +32,7 @@ class ExecutionArguments:
                  activation_range = None,
                  length = None,
                  density = None,
-                 vol_density = None,
+                #  vol_density = None,
                  diffuse: bool = False,
                  diffuse_stagnant: bool = False,
                  diffuse_advective: bool = False,
@@ -54,7 +54,7 @@ class ExecutionArguments:
         self.activation_range = activation_range
         self.length = length
         self.density = density
-        self.vol_density = vol_density
+        # self.vol_density = vol_density
         self.molecular_diffusion_coefficient = molecular_diffusion_coefficient
         self.instructions = instructions
         self.diffuse = diffuse
@@ -165,9 +165,8 @@ class Graphing:
         for i in range(len(data)):
             element = data[i]
             name = names[i]
-            x = list(map(lambda a: a[0], element))
+            x = list(map(lambda a: a[1], element))
             y = list(map(lambda b: b[2], element))
-            # print(y)
             line = Line2D(x,y)
             line.set_linestyle("")
             line.set_marker(self.line_markers[1])
@@ -513,7 +512,7 @@ class Driver:
             rval[item.name] = item
         return rval
     
-    def sim_preset(self, root, endpoints, instructions, max_time, density, vol_density):
+    def sim_preset(self, root, endpoints, instructions, max_time, density):
         """
         This function controls the simulation. inputs include the root node,
         the list of endpoint nodes, a list including the indexes for endpoint nodes
@@ -550,7 +549,7 @@ class Driver:
                     pass
         
         #Add condition to check for root activation?
-        self.manager.init_add_particles(density, vol_density, root)
+        self.manager.init_add_particles(density, root)
 
         for timestep in range(0, max_time):
             start_time = self.progress_update(start_time, max_time, timestep)
@@ -578,7 +577,7 @@ class Driver:
                     pass
 
             if root.is_active:
-                self.manager.add_particles(density, vol_density, root)
+                self.manager.add_particles(density, root)
             self.counter.increment_time()
 
             init_stack = len(self.manager.reuse_stack)
@@ -614,7 +613,7 @@ class Driver:
             line1 = "Simulating Timestep " + str(second) + " of " + str(max_time) + f" at a rate of 1000 tics per {elapsed:0.4f} seconds.\n"
             message += line1
             pipe_particles = len(self.manager.particle_index)
-            expelled_particles = len(self.manager.expended_particles)
+            expelled_particles = len(self.manager.expelled_particles)
             line2 = "There are currently {} particles in the pipe network and {} particles expelled.".format(
                     pipe_particles, expelled_particles)
             message += line2
@@ -657,9 +656,9 @@ class Driver:
             writer.writerow(["ParticleID", "Timestamp", "Age", "OutputEndpoint", "AgeByMaterial", "AgeByPipe"])
 
         for key in particles:
-            particle = particles[key]
-            data = particle.get_output()
-            writer.writerow(data)
+            # particle = key
+            # data = particle.get_output()
+            writer.writerow(key)
         results.close()
 
     def write_groupby_particles_output(self, filename, particles, groupby):
@@ -708,7 +707,8 @@ class Driver:
                         particle = particles[key + i]
                     except:
                         break
-                    data = particle.get_output()
+                    # data = particle.get_output()
+                    data = particle
 
                     sum_time += data[2]
 
@@ -806,8 +806,9 @@ class Driver:
 
         for key in range(len(particles)- 1):
             try:
-                particle = particles[key]
-                data = particle.get_output()
+                particle = key
+                data = particle
+                # data = particle.get_output()
 
                 if data[3] not in tap_list:
                     tap_list.append(data[3])
@@ -1084,8 +1085,9 @@ class Driver:
         age_dict = {}
         endpoint_names = [endpoint.name for endpoint in self.endpoints]
         for key in particles:
-            particle = particles[key]
-            particle_data = particle.get_output()
+            particle = key
+            # particle_data = particle.get_output()
+            particle_data = particle
             pipe_name = particle_data[3]
             if pipe_name not in endpoint_names:
                 age_dict.setdefault(pipe_name, [0,0])
@@ -1111,7 +1113,7 @@ class Driver:
             modelfile = arguments.modelfile
             presetsfile = arguments.presetsfile
             density = arguments.density
-            vol_density = arguments.vol_density
+            # vol_density = arguments.vol_density
             pathname = arguments.pathname
             self.manager.diffusion_active = arguments.diffuse
             self.manager.diffusion_active_stagnant = arguments.diffuse_stagnant
@@ -1148,7 +1150,7 @@ class Driver:
                 for k in self.root.manager.pipe_net:
                     # print("k: ", k.name)
                     vol_k = (((math.pi)*(k.length)*(math.pow((k.width), 2))) / 4) / 144
-                    n_k = (vol_k) * (vol_density)
+                    n_k = (vol_k) * (density)
                     self.manager.pipe_densities.setdefault(k, n_k)
                     
                     vol_total += vol_k
@@ -1168,7 +1170,7 @@ class Driver:
                 raise Exception("Error loading preset file. Check preset file for errors. [" + str(e) + "]")
             
             try:
-                self.sim_preset(self.root, self.endpoints, instructions, max_time, density, vol_density)
+                self.sim_preset(self.root, self.endpoints, instructions, max_time, density)
             except Exception as e:
                 raise Exception("Error running simulation. Check uploaded files for errors. [" + str(e) + "]" )
             
@@ -1183,10 +1185,10 @@ class Driver:
             
             try: 
 
-                self.write_output(pathname+"\expelled.csv", self.manager.expended_particles)
+                self.write_output(pathname+"\expelled.csv", self.manager.expelled_particles)
 
                 if(self.arguments.groupby_status == 1):
-                    self.write_groupby_time_output(pathname+"\expelled_groups.csv", self.manager.expended_particles, self.arguments.timestep_group_size)
+                    self.write_groupby_time_output(pathname+"\expelled_groups.csv", self.manager.expelled_particles, self.arguments.timestep_group_size)
 
                 # This function slows everything down considerably, and is not currently used. Generates a particle modifier histogram...
                 # if self.manager.diffusionActive:
@@ -1204,15 +1206,15 @@ class Driver:
                 mean *= self.TIME_STEP
                 g.write_expel_bins(pathname+"\expelled_histogram", mean, var, self.manager.expelled_particle_data)
                 g.write_expel_bins(".\static\plots\expelled_histogram", mean, var,  self.manager.expelled_particle_data)
-                ageDict = self.write_pipe_ages(pathname+"\pipe_ages.csv", self.manager.expended_particles)
-                self.root.generate_tree()
+                ageDict = self.write_pipe_ages(pathname+"\pipe_ages.csv", self.manager.expelled_particles)
+                # self.root.generate_tree()
 
                 # for i in self.root.children:
                 #     print("childs: ", i.name)
                 # for i in self.endpoints:
                 #     print("endpoint: ", i.name)
                 # print(self.endpoints)
-                self.root.show_tree(pathname+"tree_graph.png", ageDict)
+                # self.root.show_tree(pathname+"tree_graph.png", ageDict)
 
             except Exception as e:
                 raise Exception("Error writing output files. Check uploaded files for errors and ensure that the output directory is not open in another program. [" + str(e) + "]" )
