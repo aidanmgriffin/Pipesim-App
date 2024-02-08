@@ -402,7 +402,7 @@ def upload():
             #If simulation is successful, redirect to download page. If failed, show error message.
             if(output_file):
                 print("Simulation Complete...")
-                return redirect(url_for('download' ,  concentration_status = decay_free_chlorine_status, diffusion_status = diffusion_status, date_time = date_time))
+                return redirect(url_for('download' ,  concentration_status = int(decay_free_chlorine_status), diffusion_status = diffusion_status, date_time = date_time))
 
             else:
                 # alertDanger.message = "Simulation Failed. Do the files contain the correct data?"
@@ -430,11 +430,10 @@ def download():
         date_time = request.args['date_time']
         diffusion_status = request.args['diffusion_status']
         concentration_status = request.args['concentration_status']
-
     except:
         return redirect(url_for('upload'))
 
-    return render_template('download.html', concentration_status = concentration_status, diffusion_status = diffusion_status, date_time = date_time)
+    return render_template('download.html', concentration_status = int(concentration_status), diffusion_status = diffusion_status, date_time = date_time)
 
 # Download log files from the output folder. This is a zip file containing all the output files from the simulation.
 @app.route('/download_log')

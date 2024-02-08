@@ -270,8 +270,8 @@ class Graphing:
         for i in range(len(data)):
             particle = data[i]
             name = names[i]
-            x = list(map(lambda a: a[0], particle))
-            y = list(map(lambda b: b[3], particle))
+            x = list(map(lambda a: a[1], particle))
+            y = list(map(lambda b: b[5], particle))
             line = Line2D(x,y)
             line.set_linestyle("")
             line.set_marker(self.line_markers[1])
