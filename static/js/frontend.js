@@ -1,6 +1,5 @@
 function CheckAll() {
     
-    console.log("check all!")
     var checkBox = document.getElementById("flexCheckDefault");
     var checkBoxStagnant = document.getElementById("flexCheckStagnant");
     var checkBoxAdvective = document.getElementById("flexCheckAdvective");
@@ -37,7 +36,6 @@ function CheckAll() {
 
 function UncheckAll() {
 
-    console.log("uncheck all!")
     var checkBox = document.getElementById("flexCheckDefault");
     var checkBoxStagnant = document.getElementById("flexCheckStagnant");
     var checkBoxAdvective = document.getElementById("flexCheckAdvective");
