@@ -63,7 +63,7 @@
  [],
  False,
  False,
- 1707267366,
+ 1707352094,
  [('run.exe',
    'C:\\Users\\mauda\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',
    'EXECUTABLE')])
