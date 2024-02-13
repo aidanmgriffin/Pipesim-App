@@ -7,7 +7,7 @@ import math
 import copy
 import numpy as np
 import random
-from igraph import *
+# from igraph import *
 import collections
 
 logfile = "ParticleDiffusion.log"

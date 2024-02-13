@@ -1,0 +1,5 @@
+steps:
+- name: 'gcr.io/cloud-builders/gcloud'
+  script: |
+    gcloud run deploy cloudrunservice --image us-west2-docker.pkg.dev/pipesim-app/quickstart-docker-repo/quickstart-image:tag1 --region us-west2 --platform managed --allow-unauthenticated
+   

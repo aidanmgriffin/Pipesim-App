@@ -464,9 +464,9 @@ def page_not_found_500(e):
 
 if __name__ == '__main__':
 
-    multiprocessing.freeze_support() # Required for multiprocessing to work on Windows
+    # multiprocessing.freeze_support() # Required for multiprocessing to work on Windows
 
     print("App Running...")
 
-    webbrowser.open("http://localhost:5000") # Open browser to localhost:5000
+    # webbrowser.open("http://localhost:5000") # Open browser to localhost:5000
     app.run()
