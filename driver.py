@@ -7,7 +7,7 @@ import csv
 import math
 import time
 import copy
-import cairo
+# import cairo
 import random
 import builder
 import particles
