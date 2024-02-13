@@ -159,6 +159,7 @@ class ParticleManager():
         index = self.particle_index.copy()
         particles = list(index.values())
         # print(len(particles))
+        # print(self.root.container.is_active)
         rval = map(self.update_caller, particles)
         self.particle_positions = self.particle_update_helper(rval)
         if self.time.get_time() % 1000 == 999:
@@ -501,7 +502,10 @@ class Particle:
                 else:
                     container_name = self.movement()
             elif self.manager.diffusion_active_stagnant:
+
                 container_name = self.diffuse()
+            else: 
+                pass
         elif self.container.is_active:
             container_name = self.movement()
 
@@ -601,9 +605,9 @@ class Particle:
         avg_distance = 4 * d_m
 
         # initialize with a random seed for added randomness
-        generator = random.Random()
         standard_dev = math.sqrt(avg_distance)
-        modifier = generator.normalvariate(mu=0.0, sigma=standard_dev)
+        modifier = np.random.normal(0.0, standard_dev)
+        # modifier = generator.normalvariate(mu=0.0, sigma=standard_dev)
         movement = modifier
         position = self.position
         new_position = position + movement
