@@ -443,12 +443,15 @@ def download_log():
     memory_file = BytesIO()
 
     with zipfile.ZipFile(memory_file, 'w') as zf:
-        zf.write('static/plots/age_graph.png')
-        zf.write('static/plots/concentration_graph.png')
-        zf.write('static/plots/expelled_histogram.png')
-        zf.write('static/plots/flow_graph.png')
-        zf.write('static/plots/graph_scaled.png')
-        zf.write('static/plots/modifier_histogram.png')
+        zf.write('static/output/age_graph.png')
+        zf.write('static/output/concentration_graph.png')
+        zf.write('static/output/expelled_histogram.png')
+        zf.write('static/output/flow_graph.png')
+        zf.write('static/output/graph_scaled.png')
+        zf.write('static/output/expelled.csv')
+
+
+        # zf.write('static/output/modifier_histogram.png')
 
     # with zipfile.ZipFile(memory_file, 'w') as zf:
     #     for root, dirs, files in os.walk(path):

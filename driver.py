@@ -118,10 +118,10 @@ class Graphing:
 
         self.step = (1 / step) * 60
 
-        age_display = './static/plots/age_graph.png'
-        age_display_large ='./static/plots/age_graph_large.png'
-        concentration_display = './static/plots/concentration_graph.png'
-        flows_display ='./static/plots/flow_graph.png'
+        age_display = './static/output/age_graph.png'
+        age_display_large ='./static/output/age_graph_large.png'
+        concentration_display = './static/output/concentration_graph.png'
+        flows_display ='./static/output/flow_graph.png'
         # filename_concentration = filename + '/concentration_graph.png'
         # filename_large = filename + '/age_graph_large.png'
         # filename_standard = filename + '/age_graph.png'
@@ -1186,14 +1186,14 @@ class Driver:
             
             try: 
 
-                self.write_output(pathname+"\expelled.csv", self.manager.expelled_particles)
+                self.write_output("./static/output/expelled.csv", self.manager.expelled_particles)
 
                 if(self.arguments.groupby_status == 1):
-                    self.write_groupby_time_output(pathname+"\expelled_groups.csv", self.manager.expelled_particles, self.arguments.timestep_group_size)
+                    self.write_groupby_time_output("./static/output/expelled_groups.csv", self.manager.expelled_particles, self.arguments.timestep_group_size)
 
                 # This function slows everything down considerably, and is not currently used. Generates a particle modifier histogram...
                 # if self.manager.diffusionActive:
-                #     g.write_modifier_bins(".\static\plots\modifier_histogram", self.manager.bins)
+                #     g.write_modifier_bins(".\static\output\modifier_histogram", self.manager.bins)
               
                 #Calculating mean, var, and skew to be added to the histogram of expelled particles. Designed to validate values of onpipe model.
                 fr = list(self.flow_list.values())[0][0][1]
@@ -1205,9 +1205,9 @@ class Driver:
                 var = (2 * lengthFeet * (self.manager.molecular_diffusion_coefficient /144)) / math.pow(velocity, 3)
                 skew = 3 * math.sqrt((2 * (self.manager.molecular_diffusion_coefficient /144)) / (lengthFeet * velocity))
                 mean *= self.TIME_STEP
-                g.write_expel_bins(pathname+"\expelled_histogram", mean, var, self.manager.expelled_particle_data)
-                g.write_expel_bins(".\static\plots\expelled_histogram", mean, var,  self.manager.expelled_particle_data)
-                ageDict = self.write_pipe_ages(pathname+"\pipe_ages.csv", self.manager.expelled_particles)
+                # g.write_expel_bins(pathname+"\expelled_histogram", mean, var, self.manager.expelled_particle_data)
+                g.write_expel_bins(".\static\output\expelled_histogram", mean, var,  self.manager.expelled_particle_data)
+                # ageDict = self.write_pipe_ages(pathname+"\pipe_ages.csv", self.manager.expelled_particles)
                 # self.root.generate_tree()
 
                 # for i in self.root.children:
