@@ -509,14 +509,14 @@ function disableText() {
     uploadButtonSettings.style.display = "none";
     loadingButtonSettings.style.display = "block";
 
-//     setInterval(function() {
-//     fetch("static/update-text.txt")
-//     .then(function (res) {
-//         return res.text();
-//     })
-//     .then(function (data) {
-//         console.log(data);
-//         document.getElementById("text-show").innerHTML = data;
-//     });
-// }, 2000)
+    setInterval(function() {
+    fetch("static/update-text.txt")
+    .then(function (res) {
+        return res.text();
+    })
+    .then(function (data) {
+        console.log(data);
+        document.getElementById("text-show").innerHTML = data;
+    });
+}, 2000)
 }
