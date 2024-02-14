@@ -119,23 +119,24 @@ class Graphing:
         self.step = (1 / step) * 60
 
         age_display = './static/plots/age_graph.png'
+        age_display_large ='./static/plots/age_graph_large.png'
         concentration_display = './static/plots/concentration_graph.png'
         flows_display ='./static/plots/flow_graph.png'
-        filename_concentration = filename + '/concentration_graph.png'
-        filename_large = filename + '/age_graph_large.png'
-        filename_standard = filename + '/age_graph.png'
-        filename_flows = filename + '/flow_graph.png'
+        # filename_concentration = filename + '/concentration_graph.png'
+        # filename_large = filename + '/age_graph_large.png'
+        # filename_standard = filename + '/age_graph.png'
+        # filename_flows = filename + '/flow_graph.png'
 
-        self.graph_helper([16,12], 300, filename_large, particle_info, counter)
-        self.graph_helper([8,6], 92, filename_standard, particle_info, counter)
+        # self.graph_helper([8,6], 92, filename_standard, particle_info, counter)
+        self.graph_helper([16,12], 300, age_display_large, particle_info, counter)
         self.graph_helper([8,6], 92, age_display, particle_info, counter)
         
-        self.flow_graph_helper([8,6], 92, filename_flows, particle_info, counter, flow_list)
+        # self.flow_graph_helper([8,6], 92, filename_flows, particle_info, counter, flow_list)
         self.flow_graph_helper([8,6], 92, flows_display, particle_info, counter, flow_list)
       
         if(free_chlorine_decay_status == True):
             self.concentration_graph_helper([8,6], 92, concentration_display, particle_info, counter)
-            self.concentration_graph_helper([8,6], 92, filename_concentration, particle_info, counter) 
+            # self.concentration_graph_helper([8,6], 92, filename_concentration, particle_info, counter) 
 
         send = ("graph_completed", filename)
         self.Queue.put(send)
