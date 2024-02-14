@@ -1206,7 +1206,7 @@ class Driver:
                 skew = 3 * math.sqrt((2 * (self.manager.molecular_diffusion_coefficient /144)) / (lengthFeet * velocity))
                 mean *= self.TIME_STEP
                 # g.write_expel_bins(pathname+"\expelled_histogram", mean, var, self.manager.expelled_particle_data)
-                g.write_expel_bins(".\static\output\expelled_histogram", mean, var,  self.manager.expelled_particle_data)
+                g.write_expel_bins("./static/output/expelled_histogram", mean, var,  self.manager.expelled_particle_data)
                 # ageDict = self.write_pipe_ages(pathname+"\pipe_ages.csv", self.manager.expelled_particles)
                 # self.root.generate_tree()
 

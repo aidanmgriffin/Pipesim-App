@@ -167,6 +167,7 @@ def upload():
             else:
                 molecular_diffusion_coefficient = 8.28 * math.pow(10, -4) 
 
+            global decay_free_chlorine_status 
             # Check if Free chlorine / monochloramine decay are enabled. Will affect whether the update function in particles.py will call the decay subroutines.
             if('flexCheckFreeChlorineDecay' in request.values):
                 decay_free_chlorine_status = 1
@@ -411,9 +412,6 @@ def upload():
     
     return render_template("upload.html")
 
-@app.route('/data')
-def data():
-    return "hello"
 
 # Route to download page accessed by running a simulation from upload. If not redirected from the upload page, redirect to upload page.
 # Therefore, it is not possible to search pipesim.com/download directly. It will just make you upload.
@@ -442,13 +440,16 @@ def download_log():
     path = pathlib.Path('logs\output_batch')
     memory_file = BytesIO()
 
+    
     with zipfile.ZipFile(memory_file, 'w') as zf:
         zf.write('static/output/age_graph.png')
-        zf.write('static/output/concentration_graph.png')
+        zf.write('static/output/age_graph_large.png')
         zf.write('static/output/expelled_histogram.png')
         zf.write('static/output/flow_graph.png')
-        zf.write('static/output/graph_scaled.png')
         zf.write('static/output/expelled.csv')
+        if(decay_free_chlorine_status == 1):
+            zf.write('static/output/concentration_graph.png')
+        # zf.write('static/output/graph_scaled.png')
 
 
         # zf.write('static/output/modifier_histogram.png')
