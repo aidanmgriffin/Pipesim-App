@@ -446,7 +446,7 @@ def download_log():
         zf.write('static/output/age_graph_large.png')
         zf.write('static/output/expelled_histogram.png')
         zf.write('static/output/flow_graph.png')
-        zf.write('static/output/expelled.csv')
+        # zf.write('static/output/expelled.csv')
         if(decay_free_chlorine_status == 1):
             zf.write('static/output/concentration_graph.png')
         # zf.write('static/output/graph_scaled.png')
