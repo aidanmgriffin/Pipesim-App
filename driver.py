@@ -1185,7 +1185,7 @@ class Driver:
                 raise Exception("Error generating graphs. [" + str(e) + "]") 
             
             try: 
-
+        
                 self.write_output("./static/output/expelled.csv", self.manager.expelled_particles)
 
                 if(self.arguments.groupby_status == 1):
