@@ -111,7 +111,7 @@ def upload():
             try:
                 density = request.values['density']
 
-                # If no density is input, default to 0.5.
+                # If no density is input, default to 120.
                 if density == '':                
                     density = 120
                 density = float(density)
@@ -121,20 +121,6 @@ def upload():
             except:
                 alertDanger.message = "Density must be a number between 1 and 12000"
                 raise Exception
-            
-            # try:
-            #     vol_density = request.values['vol_density']
-
-            #     # If no density is input, default to 0.5.
-            #     if vol_density == '':                
-            #         vol_density = 120
-            #     vol_density = float(vol_density)
-            #     # if vol_density < 0 or vol_density > 12000:
-            #     #     alertDanger.message = "Density must be between 1 and 120000"
-            #     #     raise Exception
-            # except:
-            #     alertDanger.message = "Density must be a number between 0 and 1"
-            #     raise Exception
                 
             # Validating granularity input. Input is a number in unit: seconds, which is converted to unit: minutes granularity for the simulation.
             granularity = request.values['custom-granularity']
@@ -167,6 +153,7 @@ def upload():
             else:
                 molecular_diffusion_coefficient = 8.28 * math.pow(10, -4) 
 
+            global decay_free_chlorine_status 
             # Check if Free chlorine / monochloramine decay are enabled. Will affect whether the update function in particles.py will call the decay subroutines.
             if('flexCheckFreeChlorineDecay' in request.values):
                 decay_free_chlorine_status = 1
@@ -411,9 +398,6 @@ def upload():
     
     return render_template("upload.html")
 
-@app.route('/data')
-def data():
-    return "hello"
 
 # Route to download page accessed by running a simulation from upload. If not redirected from the upload page, redirect to upload page.
 # Therefore, it is not possible to search pipesim.com/download directly. It will just make you upload.
@@ -442,10 +426,25 @@ def download_log():
     path = pathlib.Path('logs\output_batch')
     memory_file = BytesIO()
 
+    
     with zipfile.ZipFile(memory_file, 'w') as zf:
-        for root, dirs, files in os.walk(path):
-            for file in files:
-                zf.write(os.path.join(root, file))
+        zf.write('static/output/age_graph.png')
+        zf.write('static/output/age_graph_large.png')
+        zf.write('static/output/expelled_histogram.png')
+        zf.write('static/output/flow_graph.png')
+        zf.write('static/output/expelled.csv')
+        if(decay_free_chlorine_status == 1):
+            zf.write('static/output/concentration_graph.png')
+        # zf.write('static/output/graph_scaled.png')
+
+
+        # zf.write('static/output/modifier_histogram.png')
+
+    # with zipfile.ZipFile(memory_file, 'w') as zf:
+    #     for root, dirs, files in os.walk(path):
+    #         for file in files:
+    #             print(root, file)
+    #             zf.write(os.path.join(root, file))
     memory_file.seek(0)
     
     return send_file(memory_file, as_attachment=True, download_name='logs.zip')
