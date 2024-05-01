@@ -9,6 +9,9 @@ import numpy as np
 import random
 # from igraph import *
 import collections
+import numpy as np
+import multiprocessing as mp
+
 
 logfile = "ParticleDiffusion.log"
 logfile = open(logfile, 'a')
@@ -34,6 +37,8 @@ class Counter:
     @staticmethod
     def reset():
         Counter.t = 0
+
+
 
 class ParticleManager():
     """
@@ -146,6 +151,18 @@ class ParticleManager():
 
         name, part = particle.update()
         return name, part
+    
+    def worker(self, arg):
+        # obj, m, a = arg
+        return self.update_caller(arg)
+    
+    def test_update_caller(self, arg):
+        pass
+
+   
+        # Define a helper function for multiprocessing
+    def update_particle_wrapper(self, particle):
+        return self.test_update_caller(particle)
 
     def update_particles(self, time_since):
         """
@@ -158,10 +175,20 @@ class ParticleManager():
         self.time_since = time_since
         index = self.particle_index.copy()
         particles = list(index.values())
-        # print(len(particles))
-        # print(self.root.container.is_active)
+ 
         rval = map(self.update_caller, particles)
+
+
+            # Use multiprocessing Pool to parallelize the update_caller method over particles
+        # with mp.Pool() as pool:
+        #     rval = pool.map(self.update_particle_wrapper, particles)
+
+        # print(time_since)
+        # # Update particle positions using the results
         self.particle_positions = self.particle_update_helper(rval)
+
+        #Check if its time to update particle information.
+        # self.particle_positions = self.particle_update_helper(rval)
         if self.time.get_time() % 1000 == 999:
             self.update_particle_info()
 
@@ -461,7 +488,44 @@ class Particle:
 
         free_chlorine_lambda = self.container.free_chlorine_lambda
         self.free_chlorine = float(self.free_chlorine) * math.exp(-float(free_chlorine_lambda)*float(self.manager.timestep))
+
+    def diffusion_rate(self):
+        """"
+        TBD
+        """
+
+        flow_endpoint_list = list(self.manager.time_since.keys())
+                
+        #Particles i that already in the pipe system versus particles that enter the pipe system during the kth flow event.
+        if self.age >= self.manager.time_since[flow_endpoint_list[-1]]:
+            min_t = (Counter.get_time() - (Counter.get_time() - self.manager.time_since[flow_endpoint_list[-1]]))
+        else:
+            min_t = (Counter.get_time() - (Counter.get_time() - self.age))
+
+        if self.container.reynolds < 2000:
+            d_inf = (pow((self.container.width), 2) * pow((self.container.velocity), 2)) / (192 * self.d_m)
+            alpha = pow(self.container.width, 2) / (60 * self.d_m)
+
+            diffusion_rate_i = (d_inf - self.d_m) * (1 - math.exp((-min_t / alpha))) + self.d_m
+
+        elif self.container.reynolds >= 2000 and self.container.reynolds <= 20000:
+            d_inf = self.container.velocity * self.container.width * ((1.17 * pow(10, 9)) / pow(self.container.reynolds, 2.5) + 0.41)
+            alpha = pow(self.container.width, 2) / (60 * self.d_m * pow((math.log(self.container.reynolds) - 6.609), 2))
+
+            diffusion_rate_i = (d_inf - self.d_m) * (1 - math.exp((-min_t / alpha))) + self.d_m
+        else:
+            d_inf = self.container.velocity * self.container.width * (1170000000 / pow(self.container.reynolds, 2.5) + 0.41)
+            alpha = 1
+            diffusion_rate_i = d_inf
+
         
+        logfile.write(str(self.container.reynolds) + "\n")
+        # logfile.write(str(self.d_m) + "\n")
+        logfile.write(str(d_inf) + "\n")
+        logfile.write(str(alpha) + "\n")
+
+        return diffusion_rate_i
+            
     def update(self):
         """
         The update function increments the particle age and increments contact record according to the current container material type. If the particle container is active (flowing) then calls the movement function to compute particle flow.
@@ -608,9 +672,8 @@ class Particle:
         standard_dev = math.sqrt(avg_distance)
         modifier = np.random.normal(0.0, standard_dev)
         # modifier = generator.normalvariate(mu=0.0, sigma=standard_dev)
-        movement = modifier
         position = self.position
-        new_position = position + movement
+        new_position = position + modifier
 
         if new_position < 0:
             remaining_movement = new_position
@@ -672,13 +735,20 @@ class Particle:
                 else:
                     min_t = (Counter.get_time() - (Counter.get_time() - self.age))
                 
+
                 d_inf = self.container.d_inf 
                 alpha = self.container.alpha 
                 d_m = self.d_m 
 
+                logfile.write(str(self.container.reynolds) + "\n")
+                logfile.write(str(self.container.d_inf) + "\n")
+                logfile.write(str(self.container.alpha) + "\n")
+
                 #Diffusion rate for particle i during the kth flow event considering the d_inf and d_m values for the pipe segment.
                 diffusion_rate_i = (d_inf - d_m) * (1 - math.exp((-min_t / alpha))) + d_m
-       
+
+                # diffusion_rate_i = self.diffusion_rate()
+
                 # initialize with a random seed for added randomness
                 avg_distance = 4 * diffusion_rate_i 
                 standard_dev = math.sqrt(avg_distance)
@@ -702,7 +772,7 @@ class Particle:
                     container_name = self.container.name
                     
                 self.manager.prev_flow = self.container.flow
-                self.manager.prev_area =   math.pi * (1/2)**2
+                self.manager.prev_area = math.pi * (1/2)**2
                 self.manager.new_pos = new_position
                 if self.container.length > 0:
                     self.manager.prev_length = self.container.length
@@ -899,16 +969,20 @@ class Pipe:
         self.type = "pipe"
         self.flow_rate: int = 0  # gallons per minute
         self.flow: float = 0  # gallons per time unit
+        self.reynolds: int = 0 #reynolds number
+        self.update_reynolds()
+
         pipe_index[self.name] = self
-        if self.area == 0:
-            self.velocity = 0
-        else: 
-            self.velocity = self.flow / self.area
+        # if self.area == 0:
+        #     self.velocity = 0
+        # else: 
+        #     self.velocity = self.flow / self.area
         
-        if self.velocity == 0:
-            self.areavelocity = 0
-        else:
-            self.areavelocity = self.area / self.velocity
+        # if self.velocity == 0:
+        #     self.areavelocity = 0
+        # else:
+        #     self.areavelocity = self.area / self.velocity
+
 
     def activate(self):
         """
@@ -938,6 +1012,23 @@ class Pipe:
             self.is_active = True
         else:
             self.is_active = False
+
+    def update_reynolds(self):
+        
+        if self.area == 0:
+            self.velocity = 0
+        else: 
+            cubic_flow = self.flow * 3.85
+            self.velocity = cubic_flow / self.area
+        
+        if self.velocity == 0:
+            self.areavelocity = 0
+        else:
+            self.areavelocity = self.area / self.velocity
+
+        #Calculate reynolds number corresponding to pipe l and flow f. Diameter of l * velocity of flow in l / dynamic vescocity 
+        self.reynolds = ((self.width) * self.velocity) / 0.00177 
+        # print("calculating reynolds number: ", self.velocity, self.areavelocity, self.area, self.reynolds)
 
     def create_child(self,name, length, diameter, material):
         """
@@ -1155,6 +1246,8 @@ class Endpoint(Pipe):
             parent_pipe.activate()
             parent_pipe = parent_pipe.parent
 
+        
+
     def deactivate_pipes(self):
         """
         Deactivates self and reduces activation for upstream pipes.   
@@ -1167,6 +1260,8 @@ class Endpoint(Pipe):
             parent_pipe.deactivate()
             parent_pipe = parent_pipe.parent
 
+   
+
     def update_flow_rate(self, new_flow_rate: float):
         """
         Dictate the flow rates through all upstream pipes.
@@ -1175,11 +1270,14 @@ class Endpoint(Pipe):
         :param new_flow_rate: the new flow rate of the pipe.
         """
         
+
+
         flow_rate_change = new_flow_rate - self.flow_rate
         flow_change_per_timestep = flow_rate_change / self.manager.timestep
         self.flow_rate = new_flow_rate
         self.flow = new_flow_rate / self.manager.timestep
         parent_pipe = self.parent
+        self.update_reynolds()
         while parent_pipe is not None:
             parent_pipe.flow_rate += flow_rate_change
             parent_pipe.flow += flow_change_per_timestep
@@ -1189,6 +1287,7 @@ class Endpoint(Pipe):
                     self.flow_rate = 0
                 else:
                     print("negative flow rate error: pipe ", parent_pipe.name, "has flow rate of", parent_pipe.flow_rate)
+            parent_pipe.update_reynolds()
             parent_pipe = parent_pipe.parent
 
     def update_pipe_flow_rates(self, old_flow_rate: float):

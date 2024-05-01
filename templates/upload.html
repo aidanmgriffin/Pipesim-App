@@ -18,24 +18,6 @@
     <div class="foreground-spacer-block"></div>
     <br />
 
-    <h3>Using Settings Preset File</h3>
-    <p>Upload a CSV file with all of the system/flow information included. To find out how to create this form, click <a
-            href="{{url_for('documentation')}}">here!</a></p>
-
-    <form method="POST" enctype="multipart/form-data" name="SettingsForm">
-        <!--<label for="file" class="font-weight-bold">File:</label>-->
-        <div class="mb-3">
-            <label for="setting-preset" class="form-label">Settings Preset</label>
-            <input class="form-control" type="file" id="setting-preset" name="setting-preset">
-        </div>
-
-        <button type="submit" class="btn" name="settings-submit" id = "settings-submit" onclick="disableText()" style="background-color: #e2e3e5;">Upload</button>
-        <button type="submit" class="btn" name="settings-loading" id = "settings-loading" style="background-color: #e2e3e5; display: none;" disabled>Loading...</button>
-    </form>
-    <br />
-    <div class="foreground-spacer-block"></div>
-    <br />
-
     <h3>Build Simulation Preset</h3>
     <p>Upload separate CSV files: one containing a pipe network description and one containing flow preset. To learn
         more about format requirements, click <a href="{{url_for('documentation')}}">here!</a></p>
@@ -123,7 +105,7 @@
         </div> -->
         <div class="form-row d-flex align-items-center">
             <div class="col-auto mx-2">
-                <a href=documentation#particle-density>Particle Density</a> [120-12000] :
+                <a href=documentation#particle-density>Particle Density</a> [1-12000 Particles / Cubic Feet] :
             </div>
 
             <div class="col-md-1">

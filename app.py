@@ -11,6 +11,7 @@ import pathlib
 import builder
 import webbrowser
 import multiprocessing
+import time
 from io import BytesIO
 from flask import request
 from datetime import datetime
@@ -80,321 +81,305 @@ def upload():
    # If user is submitting the upload form, check whether they are running a settings preset simulation or a custom simulation based on the button which was pressed.
     if request.method == 'POST':
 
-        # User is electing to run a settings preset simulation.
-        if 'settings-submit' in request.form:
-            file = request.files['setting-preset']
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                save_location = os.path.join('input', filename)
-                file.save(save_location)
+        # Get pipe network and flows files from form
+        pipes = request.files['pipe-network']
+        flows = request.files['flow-preset']
 
-                sim = SimulationWindow()
-           
-                output_file = 0
-                output_file = sim.settings_preset_simulation_button_handler(save_location)
+        #Validating density input. Input must be a number between 0 and 1 inclusive. 
+        try:
+            density = request.values['density']
 
-                # print("output_file: ", output_file)
-                if(output_file):
-                    # print("output")
-                    return redirect(url_for('download', concentration_status = 0, diffusion_status = 0 , date_time = date_time))
-        
-            return 'uploaded'
-        
-        # User is not electing to run a settings preset simulation. Thus, running a custom simulation with selected files/settings.
-        elif 'preset-submit' in request.form:
-
-            # Get pipe network and flows files from form
-            pipes = request.files['pipe-network']
-            flows = request.files['flow-preset']
-
-            #Validating density input. Input must be a number between 0 and 1 inclusive. 
-            try:
-                density = request.values['density']
-
-                # If no density is input, default to 120.
-                if density == '':                
-                    density = 120
-                density = float(density)
-                if density < 0 or density > 12000:
-                    alertDanger.message = "Density must be between 1 and 12000"
-                    raise Exception
-            except:
-                alertDanger.message = "Density must be a number between 1 and 12000"
+            # If no density is input, default to 120 in Particles / Cubic Feet.
+            if density == '':                
+                density = 120
+            density = float(density)
+            if density < 0 or density > 12000:
+                alertDanger.message = "Density must be between 1 and 12000"
                 raise Exception
-                
-            # Validating granularity input. Input is a number in unit: seconds, which is converted to unit: minutes granularity for the simulation.
-            granularity = request.values['custom-granularity']
-            if granularity == '':
-                granularity = 1
-            else:
-                granularity = float(granularity) 
-                granularity /= 60
-        
-            # Check if diffusion is enabled (flexbox is checked). If so, set diffusion status to 1. Else, set to 0.
-            if('flex-check' in request.values):
-                diffusion_status = 1                    
-            else:
-                diffusion_status = 0
+        except:
+            alertDanger.message = "Density must be a number between 1 and 12000"
+            raise Exception
             
-            if('flexCheckStagnant' in request.values):
-                stagnant_diffusion_status = 1                    
-            else:
-                stagnant_diffusion_status = 0
-            
-            if('flexCheckAdvective' in request.values):
-                advective_diffusion_status = 1                    
-            else:
-                advective_diffusion_status = 0
-            
-            # Validate that molecular diffusion coefficient input exists. If not, d_m will be set to default value.
-            molecular_diffusion_coefficient = request.values['molecular-diffusion-coefficient']
-            if any(char.isdigit() for char in molecular_diffusion_coefficient):
-                pass
-            else:
-                molecular_diffusion_coefficient = 8.28 * math.pow(10, -4) 
-
-            global decay_free_chlorine_status 
-            # Check if Free chlorine / monochloramine decay are enabled. Will affect whether the update function in particles.py will call the decay subroutines.
-            if('flexCheckFreeChlorineDecay' in request.values):
-                decay_free_chlorine_status = 1
-                starting_particles_free_chlorine_concentration = request.values['starting-particles-concentration-free-chlorine']
-                injected_particles_free_chlorine_concentration = request.values['injected-particles-concentration-free-chlorine']
-            else:
-                decay_free_chlorine_status = 0
-                starting_particles_free_chlorine_concentration = 1.0
-                injected_particles_free_chlorine_concentration = 1.0
-            
-            if starting_particles_free_chlorine_concentration == '':
-                starting_particles_free_chlorine_concentration = 1.0
-            if injected_particles_free_chlorine_concentration == '':
-                injected_particles_free_chlorine_concentration = 1.0
-
-            decay_monochloramine_dict = {}
-
-            if('flexCheckMonochloramineDecay' in request.values):
-                decay_monochloramine_status = 1
-            else:
-                decay_monochloramine_status = 0
-
-            if('starting-particles-concentration-hypochlorous' in request.values):
-                starting_particles_hypochlorous_concentration = request.values['starting-particles-concentration-hypochlorous']
-                injected_particles_hypochlorous_concentration = request.values['injected-particles-concentration-hypochlorous']
-            else:
-                starting_particles_hypochlorous_concentration = 1.0
-                injected_particles_hypochlorous_concentration = 1.0
-
-            if starting_particles_hypochlorous_concentration == '':
-                starting_particles_hypochlorous_concentration = 1.0
-            if injected_particles_hypochlorous_concentration == '':
-                injected_particles_hypochlorous_concentration = 1.0
-            
-            decay_monochloramine_dict['starting-particles-concentration-hypochlorous'] = starting_particles_hypochlorous_concentration
-            decay_monochloramine_dict['injected-particles-concentration-hypochlorous'] = injected_particles_hypochlorous_concentration
-            
-            if('starting-particles-concentration-ammonia' in request.values):
-                starting_particles_ammonia_concentration = request.values['starting-particles-concentration-ammonia']
-                injected_particles_ammonia_concentration = request.values['injected-particles-concentration-ammonia']
-            else:
-                starting_particles_ammonia_concentration = 1.0
-                injected_particles_ammonia_concentration = 1.0
-            
-            if starting_particles_ammonia_concentration == '':
-                starting_particles_ammonia_concentration = 1.0
-            if injected_particles_ammonia_concentration == '':
-                injected_particles_ammonia_concentration = 1.0
-
-            decay_monochloramine_dict['starting-particles-concentration-ammonia'] = starting_particles_ammonia_concentration
-            decay_monochloramine_dict['injected-particles-concentration-ammonia'] = injected_particles_ammonia_concentration
-
-            if('starting-particles-concentration-monochloramine' in request.values):
-                starting_particles_monochloramine_concentration = request.values['starting-particles-concentration-monochloramine']
-                injected_particles_monochloramine_concentration = request.values['injected-particles-concentration-monochloramine']
-            else:
-                starting_particles_monochloramine_concentration = 1.0
-                injected_particles_monochloramine_concentration = 1.0
-
-            if starting_particles_monochloramine_concentration == '':
-                starting_particles_monochloramine_concentration = 1.0
-            if injected_particles_monochloramine_concentration == '':
-                injected_particles_monochloramine_concentration = 1.0
-
-            decay_monochloramine_dict['starting-particles-concentration-monochloramine'] = starting_particles_monochloramine_concentration
-            decay_monochloramine_dict['injected-particles-concentration-monochloramine'] = injected_particles_monochloramine_concentration
-            
-            if('starting-particles-concentration-dichloramine' in request.values):
-                starting_particles_dichloramine_concentration = request.values['starting-particles-concentration-dichloramine']
-                injected_particles_dichloramine_concentration = request.values['injected-particles-concentration-dichloramine']
-            else:
-                starting_particles_dichloramine_concentration = 1.0
-                injected_particles_dichloramine_concentration = 1.0
-
-            if starting_particles_dichloramine_concentration == '':
-                starting_particles_dichloramine_concentration = 1.0
-            if injected_particles_dichloramine_concentration == '':
-                injected_particles_dichloramine_concentration = 1.0
-            
-            decay_monochloramine_dict['starting-particles-concentration-dichloramine'] = starting_particles_dichloramine_concentration
-            decay_monochloramine_dict['injected-particles-concentration-dichloramine'] = injected_particles_dichloramine_concentration
-
-            if('starting-particles-concentration-iodine' in request.values):
-                starting_particles_iodine_concentration = request.values['starting-particles-concentration-iodine']
-                injected_particles_iodine_concentration = request.values['injected-particles-concentration-iodine']
-            else:
-                starting_particles_iodine_concentration = 1.0
-                injected_particles_iodine_concentration = 1.0
-            
-            if starting_particles_iodine_concentration == '':
-                starting_particles_iodine_concentration = 1.0
-            if injected_particles_iodine_concentration == '':
-                injected_particles_iodine_concentration = 1.0
-            
-            decay_monochloramine_dict['starting-particles-concentration-iodine'] = starting_particles_iodine_concentration
-            decay_monochloramine_dict['injected-particles-concentration-iodine'] = injected_particles_iodine_concentration
-
-            if('starting-particles-concentration-docb' in request.values):
-                starting_particles_docb_concentration = request.values['starting-particles-concentration-docb']
-                injected_particles_docb_concentration = request.values['injected-particles-concentration-docb']
-            else:
-                starting_particles_docb_concentration = 1.0
-                injected_particles_docb_concentration = 1.0
-            
-            if starting_particles_docb_concentration == '':
-                starting_particles_docb_concentration = 1.0
-            if injected_particles_docb_concentration == '':
-                injected_particles_docb_concentration = 1.0
-
-            decay_monochloramine_dict['starting-particles-concentration-docb'] = starting_particles_docb_concentration
-            decay_monochloramine_dict['injected-particles-concentration-docb'] = injected_particles_docb_concentration
-
-            if('starting-particles-concentration-docbox' in request.values):
-                starting_particles_docbox_concentration = request.values['starting-particles-concentration-docbox']
-                injected_particles_docbox_concentration = request.values['injected-particles-concentration-docbox']
-            else:
-                starting_particles_docbox_concentration = 1.0
-                injected_particles_docbox_concentration = 1.0
-
-            if starting_particles_docbox_concentration == '':
-                starting_particles_docbox_concentration = 1.0
-            if injected_particles_docbox_concentration == '':
-                injected_particles_docbox_concentration = 1.0
-
-            decay_monochloramine_dict['starting-particles-concentration-docbox'] = starting_particles_docbox_concentration
-            decay_monochloramine_dict['injected-particles-concentration-docbox'] = injected_particles_docbox_concentration
-
-            if('starting-particles-concentration-docw' in request.values):
-                starting_particles_docw_concentration = request.values['starting-particles-concentration-docw']
-                injected_particles_docw_concentration = request.values['injected-particles-concentration-docw']
-            else:
-                starting_particles_docw_concentration = 1.0
-                injected_particles_docw_concentration = 1.0
-
-            if starting_particles_docw_concentration == '':
-                starting_particles_docw_concentration = 1.0
-            if injected_particles_docw_concentration == '':
-                injected_particles_docw_concentration = 1.0
-            
-            decay_monochloramine_dict['starting-particles-concentration-docw'] = starting_particles_docw_concentration
-            decay_monochloramine_dict['injected-particles-concentration-docw'] = injected_particles_docw_concentration
-
-            if('starting-particles-concentration-docwox' in request.values):
-                starting_particles_docwox_concentration = request.values['starting-particles-concentration-docwox']
-                injected_particles_docwox_concentration = request.values['injected-particles-concentration-docwox']
-            else:
-                starting_particles_docwox_concentration = 1.0
-                injected_particles_docwox_concentration = 1.0
-
-            if starting_particles_docwox_concentration == '':
-                starting_particles_docwox_concentration = 1.0
-            if injected_particles_docwox_concentration == '':
-                injected_particles_docwox_concentration = 1.0
-            
-            decay_monochloramine_dict['starting-particles-concentration-docwox'] = starting_particles_docwox_concentration
-            decay_monochloramine_dict['injected-particles-concentration-docwox'] = injected_particles_docwox_concentration
-
-            if('starting-particles-concentration-chlorine' in request.values):
-                starting_particles_chlorine_concentration = request.values['starting-particles-concentration-chlorine']
-                injected_particles_chlorine_concentration = request.values['injected-particles-concentration-chlorine']
-            else:
-                starting_particles_chlorine_concentration = 1.0
-                injected_particles_chlorine_concentration = 1.0
-
-            if starting_particles_chlorine_concentration == '':
-                starting_particles_chlorine_concentration = 1.0
-            if injected_particles_chlorine_concentration == '':
-                injected_particles_chlorine_concentration = 1.0
-            
-            decay_monochloramine_dict['starting-particles-concentration-chlorine'] = starting_particles_chlorine_concentration
-            decay_monochloramine_dict['injected-particles-concentration-chlorine'] = injected_particles_chlorine_concentration
-
-            if('flexCheckGroupByTimestep' in request.values):
-                groupby_status = 1
-                timestep_group_size = request.values['timestep-group-size']
-            else:
-                groupby_status = 0
-                timestep_group_size = 1.0
-
-            if timestep_group_size == '':
-                timestep_group_size = 1.0
-
-            # Attempt to save pipe network and flows files to input folder. If unsuccessful (most likely due to incorrect file type),
-            # an error will be shown to the user.
-            try:
-                if pipes and allowed_file(pipes.filename) and flows and allowed_file(flows.filename):
-                    pipes_filename = secure_filename(pipes.filename)
-                    pipes_save_location = os.path.join("input", pipes_filename)
-                    pipes.save(pipes_save_location)
-                    flows_filename = secure_filename(flows.filename)
-                    flows_save_location = os.path.join("input", flows_filename)
-                    flows.save(flows_save_location)
-            except Exception as e:
-                alertDanger.message = "Pipe Network File Could Not Uploaded. Is file type CSV?" + e
-                raise Exception
-            
-            # Attempts to build pipe network. If builder.build successfully returns a single value, an error will be shown to the user.
-            try:
-                message = builder.build(pipes_save_location)
-                alertDanger.message = message
-                raise Exception
-            except:
-                pass
-
-            sim = SimulationWindow()
-
-            # Catches and alerts users of errors in the simulation. These include errors involving output files being open,
-            # errors involving the input files, and errors involving the simulation itself.
-            try:
-                output_file = 0
-                output_file = sim.preset_simulation_button_handler(
-                    pipes_save_location,
-                    flows_save_location,
-                    density, diffusion_status, 
-                    stagnant_diffusion_status, 
-                    advective_diffusion_status, 
-                    molecular_diffusion_coefficient, 
-                    granularity, 
-                    decay_free_chlorine_status, 
-                    decay_monochloramine_status, 
-                    starting_particles_free_chlorine_concentration,
-                    injected_particles_free_chlorine_concentration,
-                    decay_monochloramine_dict,
-                    groupby_status,
-                    timestep_group_size)
-                
-            except Exception as e:
-                alertDanger.message = e
-
-            with open('static/update-text.txt', 'w') as f:
-                f.write('')
-
-            #If simulation is successful, redirect to download page. If failed, show error message.
-            if(output_file):
-                print("Simulation Complete...")
-                return redirect(url_for('download' ,  concentration_status = int(decay_free_chlorine_status), diffusion_status = diffusion_status, date_time = date_time))
-
-            else:
-                # alertDanger.message = "Simulation Failed. Do the files contain the correct data?"
-                return render_template("upload.html", alert = alertDanger)
+        # Validating granularity input. Input is a number in unit: seconds, which is converted to unit: minutes granularity for the simulation.
+        granularity = request.values['custom-granularity']
+        if granularity == '':
+            granularity = 1
+        else:
+            granularity = float(granularity) 
+            granularity /= 60
     
+        # Check if diffusion is enabled (flexbox is checked). If so, set diffusion status to 1. Else, set to 0.
+        if('flex-check' in request.values):
+            diffusion_status = 1                    
+        else:
+            diffusion_status = 0
+        
+        if('flexCheckStagnant' in request.values):
+            stagnant_diffusion_status = 1                    
+        else:
+            stagnant_diffusion_status = 0
+        
+        if('flexCheckAdvective' in request.values):
+            advective_diffusion_status = 1                    
+        else:
+            advective_diffusion_status = 0
+        
+        # Validate that molecular diffusion coefficient input exists. If not, d_m will be set to default value.
+        molecular_diffusion_coefficient = request.values['molecular-diffusion-coefficient']
+        if any(char.isdigit() for char in molecular_diffusion_coefficient):
+            pass
+        else:
+            # molecular_diffusion_coefficient = 8.28 * math.pow(10, -4) 
+            molecular_diffusion_coefficient = 0.000002139
+
+        global decay_free_chlorine_status 
+        # Check if Free chlorine / monochloramine decay are enabled. Will affect whether the update function in particles.py will call the decay subroutines.
+        if('flexCheckFreeChlorineDecay' in request.values):
+            decay_free_chlorine_status = 1
+            starting_particles_free_chlorine_concentration = request.values['starting-particles-concentration-free-chlorine']
+            injected_particles_free_chlorine_concentration = request.values['injected-particles-concentration-free-chlorine']
+        else:
+            decay_free_chlorine_status = 0
+            starting_particles_free_chlorine_concentration = 1.0
+            injected_particles_free_chlorine_concentration = 1.0
+        
+        if starting_particles_free_chlorine_concentration == '':
+            starting_particles_free_chlorine_concentration = 1.0
+        if injected_particles_free_chlorine_concentration == '':
+            injected_particles_free_chlorine_concentration = 1.0
+
+        decay_monochloramine_dict = {}
+
+        if('flexCheckMonochloramineDecay' in request.values):
+            decay_monochloramine_status = 1
+        else:
+            decay_monochloramine_status = 0
+
+        if('starting-particles-concentration-hypochlorous' in request.values):
+            starting_particles_hypochlorous_concentration = request.values['starting-particles-concentration-hypochlorous']
+            injected_particles_hypochlorous_concentration = request.values['injected-particles-concentration-hypochlorous']
+        else:
+            starting_particles_hypochlorous_concentration = 1.0
+            injected_particles_hypochlorous_concentration = 1.0
+
+        if starting_particles_hypochlorous_concentration == '':
+            starting_particles_hypochlorous_concentration = 1.0
+        if injected_particles_hypochlorous_concentration == '':
+            injected_particles_hypochlorous_concentration = 1.0
+        
+        decay_monochloramine_dict['starting-particles-concentration-hypochlorous'] = starting_particles_hypochlorous_concentration
+        decay_monochloramine_dict['injected-particles-concentration-hypochlorous'] = injected_particles_hypochlorous_concentration
+        
+        if('starting-particles-concentration-ammonia' in request.values):
+            starting_particles_ammonia_concentration = request.values['starting-particles-concentration-ammonia']
+            injected_particles_ammonia_concentration = request.values['injected-particles-concentration-ammonia']
+        else:
+            starting_particles_ammonia_concentration = 1.0
+            injected_particles_ammonia_concentration = 1.0
+        
+        if starting_particles_ammonia_concentration == '':
+            starting_particles_ammonia_concentration = 1.0
+        if injected_particles_ammonia_concentration == '':
+            injected_particles_ammonia_concentration = 1.0
+
+        decay_monochloramine_dict['starting-particles-concentration-ammonia'] = starting_particles_ammonia_concentration
+        decay_monochloramine_dict['injected-particles-concentration-ammonia'] = injected_particles_ammonia_concentration
+
+        if('starting-particles-concentration-monochloramine' in request.values):
+            starting_particles_monochloramine_concentration = request.values['starting-particles-concentration-monochloramine']
+            injected_particles_monochloramine_concentration = request.values['injected-particles-concentration-monochloramine']
+        else:
+            starting_particles_monochloramine_concentration = 1.0
+            injected_particles_monochloramine_concentration = 1.0
+
+        if starting_particles_monochloramine_concentration == '':
+            starting_particles_monochloramine_concentration = 1.0
+        if injected_particles_monochloramine_concentration == '':
+            injected_particles_monochloramine_concentration = 1.0
+
+        decay_monochloramine_dict['starting-particles-concentration-monochloramine'] = starting_particles_monochloramine_concentration
+        decay_monochloramine_dict['injected-particles-concentration-monochloramine'] = injected_particles_monochloramine_concentration
+        
+        if('starting-particles-concentration-dichloramine' in request.values):
+            starting_particles_dichloramine_concentration = request.values['starting-particles-concentration-dichloramine']
+            injected_particles_dichloramine_concentration = request.values['injected-particles-concentration-dichloramine']
+        else:
+            starting_particles_dichloramine_concentration = 1.0
+            injected_particles_dichloramine_concentration = 1.0
+
+        if starting_particles_dichloramine_concentration == '':
+            starting_particles_dichloramine_concentration = 1.0
+        if injected_particles_dichloramine_concentration == '':
+            injected_particles_dichloramine_concentration = 1.0
+        
+        decay_monochloramine_dict['starting-particles-concentration-dichloramine'] = starting_particles_dichloramine_concentration
+        decay_monochloramine_dict['injected-particles-concentration-dichloramine'] = injected_particles_dichloramine_concentration
+
+        if('starting-particles-concentration-iodine' in request.values):
+            starting_particles_iodine_concentration = request.values['starting-particles-concentration-iodine']
+            injected_particles_iodine_concentration = request.values['injected-particles-concentration-iodine']
+        else:
+            starting_particles_iodine_concentration = 1.0
+            injected_particles_iodine_concentration = 1.0
+        
+        if starting_particles_iodine_concentration == '':
+            starting_particles_iodine_concentration = 1.0
+        if injected_particles_iodine_concentration == '':
+            injected_particles_iodine_concentration = 1.0
+        
+        decay_monochloramine_dict['starting-particles-concentration-iodine'] = starting_particles_iodine_concentration
+        decay_monochloramine_dict['injected-particles-concentration-iodine'] = injected_particles_iodine_concentration
+
+        if('starting-particles-concentration-docb' in request.values):
+            starting_particles_docb_concentration = request.values['starting-particles-concentration-docb']
+            injected_particles_docb_concentration = request.values['injected-particles-concentration-docb']
+        else:
+            starting_particles_docb_concentration = 1.0
+            injected_particles_docb_concentration = 1.0
+        
+        if starting_particles_docb_concentration == '':
+            starting_particles_docb_concentration = 1.0
+        if injected_particles_docb_concentration == '':
+            injected_particles_docb_concentration = 1.0
+
+        decay_monochloramine_dict['starting-particles-concentration-docb'] = starting_particles_docb_concentration
+        decay_monochloramine_dict['injected-particles-concentration-docb'] = injected_particles_docb_concentration
+
+        if('starting-particles-concentration-docbox' in request.values):
+            starting_particles_docbox_concentration = request.values['starting-particles-concentration-docbox']
+            injected_particles_docbox_concentration = request.values['injected-particles-concentration-docbox']
+        else:
+            starting_particles_docbox_concentration = 1.0
+            injected_particles_docbox_concentration = 1.0
+
+        if starting_particles_docbox_concentration == '':
+            starting_particles_docbox_concentration = 1.0
+        if injected_particles_docbox_concentration == '':
+            injected_particles_docbox_concentration = 1.0
+
+        decay_monochloramine_dict['starting-particles-concentration-docbox'] = starting_particles_docbox_concentration
+        decay_monochloramine_dict['injected-particles-concentration-docbox'] = injected_particles_docbox_concentration
+
+        if('starting-particles-concentration-docw' in request.values):
+            starting_particles_docw_concentration = request.values['starting-particles-concentration-docw']
+            injected_particles_docw_concentration = request.values['injected-particles-concentration-docw']
+        else:
+            starting_particles_docw_concentration = 1.0
+            injected_particles_docw_concentration = 1.0
+
+        if starting_particles_docw_concentration == '':
+            starting_particles_docw_concentration = 1.0
+        if injected_particles_docw_concentration == '':
+            injected_particles_docw_concentration = 1.0
+        
+        decay_monochloramine_dict['starting-particles-concentration-docw'] = starting_particles_docw_concentration
+        decay_monochloramine_dict['injected-particles-concentration-docw'] = injected_particles_docw_concentration
+
+        if('starting-particles-concentration-docwox' in request.values):
+            starting_particles_docwox_concentration = request.values['starting-particles-concentration-docwox']
+            injected_particles_docwox_concentration = request.values['injected-particles-concentration-docwox']
+        else:
+            starting_particles_docwox_concentration = 1.0
+            injected_particles_docwox_concentration = 1.0
+
+        if starting_particles_docwox_concentration == '':
+            starting_particles_docwox_concentration = 1.0
+        if injected_particles_docwox_concentration == '':
+            injected_particles_docwox_concentration = 1.0
+        
+        decay_monochloramine_dict['starting-particles-concentration-docwox'] = starting_particles_docwox_concentration
+        decay_monochloramine_dict['injected-particles-concentration-docwox'] = injected_particles_docwox_concentration
+
+        if('starting-particles-concentration-chlorine' in request.values):
+            starting_particles_chlorine_concentration = request.values['starting-particles-concentration-chlorine']
+            injected_particles_chlorine_concentration = request.values['injected-particles-concentration-chlorine']
+        else:
+            starting_particles_chlorine_concentration = 1.0
+            injected_particles_chlorine_concentration = 1.0
+
+        if starting_particles_chlorine_concentration == '':
+            starting_particles_chlorine_concentration = 1.0
+        if injected_particles_chlorine_concentration == '':
+            injected_particles_chlorine_concentration = 1.0
+        
+        decay_monochloramine_dict['starting-particles-concentration-chlorine'] = starting_particles_chlorine_concentration
+        decay_monochloramine_dict['injected-particles-concentration-chlorine'] = injected_particles_chlorine_concentration
+
+        if('flexCheckGroupByTimestep' in request.values):
+            groupby_status = 1
+            timestep_group_size = request.values['timestep-group-size']
+        else:
+            groupby_status = 0
+            timestep_group_size = 1.0
+
+        if timestep_group_size == '':
+            timestep_group_size = 1.0
+
+        # Attempt to save pipe network and flows files to input folder. If unsuccessful (most likely due to incorrect file type),
+        # an error will be shown to the user.
+        try:
+            if pipes and allowed_file(pipes.filename) and flows and allowed_file(flows.filename):
+                pipes_filename = secure_filename(pipes.filename)
+                pipes_save_location = os.path.join("input", pipes_filename)
+                pipes.save(pipes_save_location)
+                flows_filename = secure_filename(flows.filename)
+                flows_save_location = os.path.join("input", flows_filename)
+                flows.save(flows_save_location)
+        except Exception as e:
+            alertDanger.message = "Pipe Network File Could Not Uploaded. Is file type CSV?" + e
+            raise Exception
+        
+        # Attempts to build pipe network. If builder.build successfully returns a single value, an error will be shown to the user.
+        try:
+            message = builder.build(pipes_save_location)
+            alertDanger.message = message
+            raise Exception
+        except:
+            pass
+
+        sim = SimulationWindow()
+
+        # Catches and alerts users of errors in the simulation. These include errors involving output files being open,
+        # errors involving the input files, and errors involving the simulation itself.
+        try:
+            output_file = 0
+
+            prev_time = time.time()
+            
+            output_file = sim.preset_simulation_button_handler(
+                pipes_save_location,
+                flows_save_location,
+                density, diffusion_status, 
+                stagnant_diffusion_status, 
+                advective_diffusion_status, 
+                molecular_diffusion_coefficient, 
+                granularity, 
+                decay_free_chlorine_status, 
+                decay_monochloramine_status, 
+                starting_particles_free_chlorine_concentration,
+                injected_particles_free_chlorine_concentration,
+                decay_monochloramine_dict,
+                groupby_status,
+                timestep_group_size)
+            
+            new_time = time.time() - prev_time
+            print(new_time)
+
+        except Exception as e:
+            alertDanger.message = e
+
+        with open('static/update-text.txt', 'w') as f:
+            f.write('')
+
+        #If simulation is successful, redirect to download page. If failed, show error message.
+        if(output_file):
+            print("Simulation Complete...")
+            return redirect(url_for('download' ,  concentration_status = int(decay_free_chlorine_status), diffusion_status = diffusion_status, date_time = date_time))
+
+        else:
+            # alertDanger.message = "Simulation Failed. Do the files contain the correct data?"
+            return render_template("upload.html", alert = alertDanger)
+
     
     return render_template("upload.html")
 
