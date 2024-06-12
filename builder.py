@@ -195,12 +195,12 @@ def load_sim_preset(filename):
 
     contents = load_csv(filename)
     firstline = True
-    maxTime = 0
+    max_time = 0
     endpoint_activations = {}
     for line in contents:
         if firstline is True:
             firstline = False
-            maxTime = line[4]
+            max_time = line[4]
         if endpoint_activations.get(line[0]) is None:
             endpoint_activations[line[0]] = []
         name = line[0]
@@ -212,5 +212,12 @@ def load_sim_preset(filename):
     for value in endpoint_activations.values():
         value.sort(key = lambda x: x[0])
 
-    maxTime = float(maxTime)
-    return maxTime, endpoint_activations
+    # max_time = float(max_time)
+    time_split = max_time.split(":")
+
+    try : 
+        max_time = int(time_split[0]) * 60 + int(time_split[1])
+    except:
+        max_time = int(time_split[0]) * 60
+
+    return max_time, endpoint_activations

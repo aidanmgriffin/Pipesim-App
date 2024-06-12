@@ -1,0 +1,10 @@
+Pex,Material,Width (inches),Length (feet),Parent,Root,Endpoint,D_INF,Alpha,Free Chlorine Lambda,kv1 Lambda,kv2 Lambda,kv3 Lambda,kv5 Lambda,kv7 Lambda,DOC1 Lambda,DOC2 Lambda
+BASE,Copper,12,50,NONE,TRUE,FALSE,2.8022,1,0.01,0,0,0,0,0,0,0
+Pipe,Copper,12,50,BASE,FALSE,FALSE,2.8022,1,0.01,0,0,0,0,0,0,0
+Pipe2,Copper,12,50,BASE,FALSE,FALSE,2.8022,1,0.01,0,0,0,0,0,0,0
+Pipe3,Copper,12,50,BASE,FALSE,FALSE,2.8022,1,0.01,0,0,0,0,0,0,0
+Pipe4,Copper,12,50,BASE,FALSE,FALSE,2.8022,1,0.01,0,0,0,0,0,0,0
+Tap,None,12,1,Pipe,FALSE,TRUE,2.8022,1,0.01,0,0,0,0,0,0,0
+Tap2,None,12,1,Pipe2,FALSE,TRUE,2.8022,1,0.01,0,0,0,0,0,0,0
+Tap3,None,12,1,Pipe3,FALSE,TRUE,2.8022,1,0.01,0,0,0,0,0,0,0
+Tap4,None,12,1,Pipe4,FALSE,TRUE,2.8022,1,0.01,0,0,0,0,0,0,0

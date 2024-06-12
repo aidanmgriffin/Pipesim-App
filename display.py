@@ -214,7 +214,6 @@ class SimulationWindow():
             self.generate_path()
             simulator = driver.Driver(self.Queue, step = self.step_size)
             arguments = driver.ExecutionArguments(
-                settingsfile = None, 
                 modelfile=file1,
                 presetsfile=file2,
                 density=density,

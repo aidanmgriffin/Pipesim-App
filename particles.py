@@ -621,9 +621,17 @@ class Particle:
                 particle_info.append(self.container.name)
 
                 contact_list = []
+                route_list = []
+                # print(self.contact, "r:" , self.ages)
+
                 for key in self.contact.keys():
                     contact_list.append([key, self.contact[key]])
                 particle_info.append(contact_list)
+                for key in self.ages.keys():
+                    route_list.append([key, self.ages[key]])
+                particle_info.append(route_list)
+               
+                # particle_info.append(contact_list)
 
                 if(self.manager.decay_active_free_chlorine):
                     particle_info.append(self.free_chlorine)
@@ -792,9 +800,15 @@ class Particle:
                 particle_info.append(self.container.name)
                 
                 contact_list = []
+                route_list = []
+
                 for key in self.contact.keys():
                     contact_list.append([key, self.contact[key]])
                 particle_info.append(contact_list)
+
+                for key in self.ages.keys():
+                    route_list.append([key, self.ages[key]])
+                particle_info.append(route_list)
 
                 if(self.manager.decay_active_free_chlorine):
                     particle_info.append(self.free_chlorine)

@@ -24,7 +24,6 @@ class ExecutionArguments:
     """
 
     def __init__(self,
-                 settingsfile = None,
                  modelfile = None,
                  presetsfile = None,
                  pathname = None,
@@ -46,7 +45,6 @@ class ExecutionArguments:
                  groupby_status = None,
                  timestep_group_size = 1,
                  ):
-        self.settingsfile = settingsfile
         self.modelfile = modelfile
         self.presetsfile = presetsfile
         self.pathname = pathname
@@ -1235,7 +1233,9 @@ class Driver:
         :return: The maximum time of the simulation and the parsed instructions.
         """
 
-        max_time = int(max_time * self.ONE_DAY)
+        # max_time = int(max_time * self.ONE_DAY)
+
+        print("max_time : " , max_time)
         for key in instructions.keys():
             val = instructions.get(key)
             new_val = []
