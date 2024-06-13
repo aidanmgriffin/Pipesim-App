@@ -1,6 +1,5 @@
 function CheckAll() {
     
-    console.log("check all!")
     var checkBox = document.getElementById("flexCheckDefault");
     var checkBoxStagnant = document.getElementById("flexCheckStagnant");
     var checkBoxAdvective = document.getElementById("flexCheckAdvective");
@@ -37,7 +36,6 @@ function CheckAll() {
 
 function UncheckAll() {
 
-    console.log("uncheck all!")
     var checkBox = document.getElementById("flexCheckDefault");
     var checkBoxStagnant = document.getElementById("flexCheckStagnant");
     var checkBoxAdvective = document.getElementById("flexCheckAdvective");
@@ -511,14 +509,14 @@ function disableText() {
     uploadButtonSettings.style.display = "none";
     loadingButtonSettings.style.display = "block";
 
-//     setInterval(function() {
-//     fetch("static/update-text.txt")
-//     .then(function (res) {
-//         return res.text();
-//     })
-//     .then(function (data) {
-//         console.log(data);
-//         document.getElementById("text-show").innerHTML = data;
-//     });
-// }, 2000)
+    setInterval(function() {
+    fetch("static/update-text.txt")
+    .then(function (res) {
+        return res.text();
+    })
+    .then(function (data) {
+        console.log(data);
+        document.getElementById("text-show").innerHTML = data;
+    });
+}, 2000)
 }

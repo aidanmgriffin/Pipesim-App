@@ -1,0 +1,5 @@
+steps:
+- name: 'gcr.io/cloud-builders/gcloud'
+  script: |
+    gcloud run deploy cloudrunservice --image us-west1-docker.pkg.dev/pipesim-app/pipesim-app/hello5 --region us-west1 --platform managed --allow-unauthenticated
+   

@@ -1,0 +1,455 @@
+{% extends 'base-documentation.html' %}
+
+
+{% block content %}
+
+<div class="container-fluid">
+  <!-- <div class="docs-content"> -->
+
+  <div class="row" id="docs-wrapper">
+    <div class="col-2 bg-light" id="docs-sidebar">
+      <div class="sticky-top">
+        <br>
+        <a class = "doc-content" href = "#"><h2 class="text-center">Contents</h2></a>
+
+        <li><a class="doc-content" href="#">Get Started</a></li>
+        <li><a class="doc-content" href="#run-simulation">Build a Simulation</a></li>
+        <li><a class="doc-content" href="#simulation-models">Simulation Models</a></li>
+        <li><a class="doc-content-sub" href="#pipe-network">Pipe Network</a></li>
+        <li><a class="doc-content-sub" href="#flow-description">Flow Description</a></li>
+        <li><a class="doc-content" href="#simulation-arguments">Simulation Arguments</a></li>
+        <li><a class="doc-content-sub" href="#diffusion">Diffusion</a></li>
+        <li><a class="doc-content-sub" href="#particle-density">Particle Density</a></li>
+        <li><a class="doc-content-sub" href="#time-granularity">Time Granularity</a></li>
+        <li><a class="doc-content" href="#outputs">Outputs</a></li>
+        <li><a class="doc-content-sub" href="#age-plot">Age Plot</a></li>
+        <li><a class="doc-content-sub" href="#concentration-plot">Concentration Plot</a></li>
+        <li><a class="doc-content-sub" href="#particle-modifier-histogram">Particle Modifier Histogram</a></li>
+        <li><a class="doc-content-sub" href="#pipe-network-diagram">Pipe Network Diagram</a></li>
+        <li><a class="doc-content" href="#download-logs">Download Logs</a></li>
+
+
+      </div>
+    </div>
+
+    
+    <div class="col-10" id="docs-main">
+        
+      <br>
+      <h1>Documentation</h1>
+      <div class="foreground-spacer-block"></div>
+      <br />
+
+      <h2 id="get-started">Get Started</h2>
+      <p>Pipesim is a tool for simulating water residence
+        times in a plumbing system inside a building (“premise
+        plumbing”). It takes as input the pipe network e.g. from building
+        blueprints, and a time series of flow events at outlets such as
+        fountains or faucets, and simulates aging of water in the system as
+        well as disinfectant decay and resulting concentrations. Ages and
+        concentrations at effluent water are computed, with some simple
+        automatic graphing of these quantities. Pipesim is a
+        “particle-tracking” code in that is sprinkles imaginary particles
+        both initially along the entire network and in the influent during
+        flow events. Each particle has a list of attributes including Age
+        (total, and age in each pipe traversed) and disinfectant
+        concentration (that decays according to specified rates). The
+        simulation will run at time steps specified by the user and for a
+        total Run Time before producting charts and raw data. Simple
+        demonstration files are provided to exploring how the code
+        works. </p>
+
+      <h2 id="build-simulation-preset">Build a Simulation</h2>
+      <h2 id="simulation-models">Simulation Models</h2>
+      <p> This simulation requires input in the form of two <em>CSV</em> files: one for the pipe network and one for the
+        flow diagram</p>
+
+      <h3 id="pipe-network">Pipe Network </h3>
+      <p> To get started building a pipe network file, open a new <em>CSV</em> file or download the <a class = "linked-text" class = "linked-text" href = "/examples/templates/settingspresettemplate.csv" download>sample template <i class="bi bi-download"></i></a> </p>
+      <p>The first row (header) of the <em>CSV</em> file is as follows:</p>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th scope="col" class="table-widths">Name</th>
+            <th scope="col" class="table-widths">Material</th>
+            <th scope="col" class="table-widths">Width (inches)</th>
+            <th scope="col" class="table-widths">Length (feet)</th>
+            <th scope="col" class="table-widths">Parent</th>
+            <th scope="col" class="table-widths">Root?</th>
+            <th scope="col" class="table-widths">Endpoint?</th>
+            <th scope="col" class="table-widths">D_INF</th>
+            <th scope="col" class="table-widths">Alpha</th>
+            <!-- <th scope="col" class="table-widths">Lambda</th> -->
+          </tr>
+        </thead>
+      </table>
+      <br />
+      <p>The line following the header contains information about the root pipe (the first pipe in the network). The
+        format of this line follows that of the header:</p>
+      <table class="table table-bordered">
+        <tbody>
+          <tr>
+            <td scope="col" class="table-widths">Root</th>
+            <td scope="col" class="table-widths">Pex</th>
+            <td scope="col" class="table-widths">12</th>
+            <td scope="col" class="table-widths">100</th>
+            <td scope="col" class="table-widths">NONE</th>
+            <td scope="col" class="table-widths">TRUE</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <!-- <td scope="col" class="table-widths">0.1</th> -->
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The root node lists TRUE under the root column and has no entry in the Endpoint column. Since the
+        root node has no parent, NONE is written in the parent column. </p>
+
+      <div class="alert alert-secondary align-middle" role="alert">
+        <h1><i class="bi bi-exclamation"></i> <span class = "align-middle">Note that the Parent, Root?, and Endpoint? entries are <em>case-sensitive</em>. </span></h1> </div>
+
+      <p>Each concurrent entry will describe the next connected pipe in the network. Let us explain how to create the
+        model: </p>
+      <ol>
+        <li>root</li>
+        <li>arterial-1</li>
+        <li>arterial-2</li>
+        <li>a2-branch-1</li>
+        <li>a2-branch-2</li>
+      </ol>
+      <!-- <p>The five pipes are connected as diagrammed below:</p> -->
+      <!-- <img src="static/images/tree-graph.png" alt="pipe network" class="img-fluid"> -->
+      <p>This pipe network has three endpoints. One at the end of arterial-1, one at the end of a2-branch-1, and one at
+        the end of a2-branch-2. You will need to explicitly state these endpoints and give them names in the model file,
+        or else these pipes will be dead-ends.</p>
+      <p>We add lines describing the endpoints as follows:</p>
+      <ol>
+        <li>endpoint-1</li>
+        <li>endpoint-2</li>
+        <li>endpoint-3</li>
+      </ol>
+      <p>Now our pipe network looks like:</p>
+      <img src="static/images/tree-graph-scaled.png" alt="pipe network" class="img-fluid">
+      <br/><br/>
+      <p>With a visualization of the pipe network created, let's show how this network will be written into the pipe network model file.</p>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th scope="col" class="table-widths">Name</th>
+            <th scope="col" class="table-widths">Material</th>
+            <th scope="col" class="table-widths">Width (inches)</th>
+            <th scope="col" class="table-widths">Length (feet)</th>
+            <th scope="col" class="table-widths">Parent</th>
+            <th scope="col" class="table-widths">Root?</th>
+            <th scope="col" class="table-widths">Endpoint?</th>
+            <th scope="col" class="table-widths">D_INF</th>
+            <th scope="col" class="table-widths">Alpha</th>
+            <!-- <th scope="col" class="table-widths">Free Chlorine</th> -->
+            <!-- <th scope="col" class="table-widths">Lambda</th> -->
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td scope="col" class="table-widths">root</th>
+            <td scope="col" class="table-widths">Copper</th>
+            <td scope="col" class="table-widths">2</th>
+            <td scope="col" class="table-widths">60</th>
+            <td scope="col" class="table-widths">NONE</th>
+            <td scope="col" class="table-widths">TRUE</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <!-- <td scope="col" class="table-widths">0.1</th> -->
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">Arterial-1</th>
+            <td scope="col" class="table-widths">Copper</th>
+            <td scope="col" class="table-widths">1</th>
+            <td scope="col" class="table-widths">40</th>
+            <td scope="col" class="table-widths">Root</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <!-- <td scope="col" class="table-widths">0.1</th> -->
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">Arterial-2</th>
+            <td scope="col" class="table-widths">Copper</th>
+            <td scope="col" class="table-widths">1</th>
+            <td scope="col" class="table-widths">40</th>
+            <td scope="col" class="table-widths">Root</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <!-- <td scope="col" class="table-widths">0.1</th> -->
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">endpoint-1</th>
+            <td scope="col" class="table-widths">NONE</th>
+            <td scope="col" class="table-widths">0</th>
+            <td scope="col" class="table-widths">0</th>
+            <td scope="col" class="table-widths">Arterial-1</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">TRUE</th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <!-- <td scope="col" class="table-widths">0.1</th> -->
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">a2-branch-1</th>
+            <td scope="col" class="table-widths">pex</th>
+            <td scope="col" class="table-widths">0.5</th>
+            <td scope="col" class="table-widths">25</th>
+            <td scope="col" class="table-widths">arterial-2</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <!-- <td scope="col" class="table-widths">0.1</th> -->
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">a2-branch-2</th>
+            <td scope="col" class="table-widths">pex</th>
+            <td scope="col" class="table-widths">0.75</th>
+            <td scope="col" class="table-widths">15</th>
+            <td scope="col" class="table-widths">arterial-2</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <!-- <td scope="col" class="table-widths">0.1</th> -->
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">endpoint-2</th>
+            <td scope="col" class="table-widths">NONE</th>
+            <td scope="col" class="table-widths">0</th>
+            <td scope="col" class="table-widths">0</th>
+            <td scope="col" class="table-widths">a2-branch-1</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">TRUE</th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <!-- <td scope="col" class="table-widths">0.1</th> -->
+          </tr>
+          <tr>
+            <td scope="col" class="table-widths">endpoint-3</th>
+            <td scope="col" class="table-widths">NONE</th>
+            <td scope="col" class="table-widths">0</th>
+            <td scope="col" class="table-widths">0</th>
+            <td scope="col" class="table-widths">a2-branch-2</th>
+            <td scope="col" class="table-widths">
+              </th>
+            <td scope="col" class="table-widths">TRUE</th>
+            <td scope="col" class="table-widths">0.01946</th>
+            <td scope="col" class="table-widths">114</th>
+            <!-- <td scope="col" class="table-widths">0.1</th> -->
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="alert alert-secondary align-middle" role="alert">
+        <h1><i class="bi bi-exclamation"></i> <span class = "align-middle">The first row of the pipe network spreadsheet must describe the root of the pipe network. </span></h1>
+      </div>
+      
+      <p>The columns of this table describe the following: </p>
+      <strong>Name </strong>
+      <p>The name of an individual pipe. Each name must be unique. </p>
+
+      <strong>Material </strong>
+      <p>The Material of the given pipe.</p>
+
+      <p> Pipes with the same material type must be given the same name. The program will group pipes by material type in order to measure residence times by material.</p>
+        
+       <p> If describing an endpoint, input "NONE" into the pipe's corresponding material cell. </p>
+
+      <strong>Width </strong>
+      <p>The width of the given pipe in inches. </p>
+     
+      <strong>Length </strong>
+      <p>The length of the given pipe in feet.</p>
+
+      <strong>Parent </strong>
+      <p>The name of the pipe that is the parent of the given pipe. Multiple pipes may be connected to the same parent. Each individual pipe must have a single parent. </p>
+
+      <p>If describing the root of a pipe network, input "NONE" into the pipe's corresponding parent cell. This row must be the first of the spreadsheet. </p>
+
+      <p>Note that each pipe must appear below its parent in the pipe network file.</p>
+
+      <strong>Root? </strong>
+      <p>Indicates whether the given pipe is the root of the pipe network. Indicate "TRUE" in the Root? column of the first row of the spreadsheet, as this describes the root of the pipe network.</p>
+
+      <strong>Endpoint? </strong>
+      <p>Indicates whether the given pipe is an endpoint of the pipe network. Indicate "TRUE" in the Endpoint? column of each row describing an endpoint. Pipes designated as endpoints must not act as the parents of any other pipes in the network.</p>
+
+      <strong id = "D_INF">D_INF </strong>
+      <p>The molecular diffusion coefficient of the given pipe. This value is used to calculate the diffusion of particles in the pipe network. This should be entered in units: cm^2/min. If making a simulation run without diffusion ebabled, this column may be left blank. </p>
+
+      <strong id = "Alpha">Alpha </strong>
+      <p>The alpha value of the given pipe. This value is used in the calculation of diffusion for particles in the pipe network. This should be given in units of minutes. If making a simulation run without diffusion ebabled, this column may be left blank.</p>
+
+      <u><strong>Optional Columns </strong></u>
+
+      <strong>Free Chlorine Lambda </strong>
+      <p>Lambdas for the given pipe affecting various chemical decay formulas given here. </p>
+
+      <figure class="figure">
+        <img src="static\images\pipe-network-spreadsheet-expanded.png" class="figure-img img-fluid rounded" alt="An expanded pipe network spreadsheet.">
+        <figcaption class="figure-caption">The full pipe network spreadsheet, including optional free chlorine and monochloramine network lambdas.</figcaption>
+      </figure>
+
+     <h3 id = "flow-description">Flow Description</h3>
+     <p> To get started building a pipe network file, open a new <em>CSV</em> file or download the <a class = "linked-text" class = "linked-text" href = "/examples/templates/settingspresettemplate.csv" download>sample template <i class="bi bi-download"></i></a> </p>
+      <p>The first row (header) of the <em>CSV</em> file is as follows:</p>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th scope="col" class="table-widths">endpoint</th>
+            <th scope="col" class="table-widths">Start Time</th>
+            <th scope="col" class="table-widths">End Time</th>
+            <th scope="col" class="table-widths">Flowrate</th>
+            <th scope="col" class="table-widths">Sim Lifetime</th>
+          
+          </tr>
+        </thead>
+      </table>
+
+      <p>The following rows describe the flow events occuring in the pipe system.</p>
+      <p> The first row following the header must also contain the total runtime of the simulation. </p>
+      <p> A completed flows spreadsheet will look something like the following: </p>
+      <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th scope="col" class="table-widths">endpoint</th>
+          <th scope="col" class="table-widths">Start Time</th>
+          <th scope="col" class="table-widths">End Time</th>
+          <th scope="col" class="table-widths">Flowrate</th>
+          <th scope="col" class="table-widths">Sim Lifetime</th>
+        
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-1</th>
+          <td scope="col" class="table-widths">0</th>
+          <td scope="col" class="table-widths">120</th>
+          <td scope="col" class="table-widths">5</th>
+          <td scope="col" class="table-widths">1</th>
+        </tr>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-2</th>
+          <td scope="col" class="table-widths">90</th>
+          <td scope="col" class="table-widths">410</th>
+          <td scope="col" class="table-widths">1</th>
+          <td scope="col" class="table-widths"></th>
+        </tr>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-1</th>
+          <td scope="col" class="table-widths">900</th>
+          <td scope="col" class="table-widths">1025</th>
+          <td scope="col" class="table-widths">1.25</th>
+          <td scope="col" class="table-widths"></th>
+        </tr>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-2</th>
+          <td scope="col" class="table-widths">1000</th>
+          <td scope="col" class="table-widths">2000</th>
+          <td scope="col" class="table-widths">1</th>
+          <td scope="col" class="table-widths"></th>
+        </tr>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-1</th>
+          <td scope="col" class="table-widths">2480</th>
+          <td scope="col" class="table-widths">3000</th>
+          <td scope="col" class="table-widths">0.5</th>
+          <td scope="col" class="table-widths"></th>
+        </tr>
+        <tr>
+          <td scope="col" class="table-widths">Endpoint-3</th>
+          <td scope="col" class="table-widths">500</th>
+          <td scope="col" class="table-widths">900</th>
+          <td scope="col" class="table-widths">1</th>
+          <td scope="col" class="table-widths"></th>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>The columns of this table describe the following:</p>
+    <strong>Endpoint </strong>
+    <p>The name of the endpoint of the pipe network. This must match the name of an endpoint in the pipe network file. Each endpoint represents a tap in the pipe system. </p>
+
+    <strong>Start Time </strong>
+    <p>The time at which the tap opens. This value is given in minutes. </p>
+
+    <strong>End Time </strong>
+    <p>The time at which the tap closes. This value is given in minutes. </p>
+
+    <strong>Flowrate </strong>
+    <p>The flowrate of the tap. This value is given in gallons/minute. </p>
+    
+    <strong>Sim Lifetime </strong>
+    <p>The total duration of the simulation. This value is given in days. </p>
+
+     <h2 id = "simulation-arguments">Simulation Arguments</h2>
+
+     <p>When running a new simulation, there are several arguments which must be initially defined. These include diffusion status / rate, particle density, and time granularity. </p>
+     <h3 id = "diffusion">Diffusion</h3>
+      <p>Diffusion is the net spreading of water particles in the pipe network. This can be turned on or off by selecting/deselecting the "Diffusion Enabled" box while building a simulation. </p>
+      <p>The (pre-asymptotic) dispersion coefficient is D(ω) = (D_inf - D_m)(1 - e ^ (- ω / α)) where ω is time in flow, D_m s molecular diffusion coefficient, D_inf is asymptotic dispersion coefficient, and ɑ is a scaling parameter. If you do not wish to model pre-asymptotic dispersion, set α = 1, and D_m = D_inf = the asymptotic diffusion coefficient for each pipe.</p>
+      <p>Once diffusion is chosen, it can be customized in multiple ways.</p>
+      <strong>Diffusion Rate </strong>
+      <p> The rate of diffusion is given in gallons per minute. </p>
+      <strong>Diffusion During Stagnant Periods </strong>
+      <p> Diffusion can be turned on / off for periods of no flow in the pipe system. </p>
+      <strong>Diffusion & Dispersion During Advective Periods</strong>
+      <p> Diffusion & dispersion can be turned on / off for periods of flow in the pipe system. Periods of flow are defined as time periods between an endpoint's starttime and endtime.</p>
+     <h3 id = "particle-density">Particle Density</h3>
+     <p>The distance (in inches) between particle placements in the pipe network. A smaller particle density value results in more particles being entered into the pipe network. This way of adding particles to the inflow water does not maintain constant particle numbers per inflow volume.</p>
+     <p>Density range is held within [0.1,1]</p>
+     <h3 id = "time-granularity">Time Granularity</h3>
+     <p>The time increment in which the simulation advances towards the total simulation lifetime, chosen in units of seconds.</p>
+     <p> i.e. if the total sim lifetime is given as 1 day: </p>
+     <p>If time granularity is chosen as hours (custom granularity of 3600), the simulation will update a total of 24 times. </p>
+     <p>If time granularity is chosen as minutes (custom granularity of 60), the simulation will update a total of 1440 times. </p>
+      <p>If time granularity is chosen as seconds (granularity of 1), the simulation will update a total of 86400 times. </p>
+     <h2 id = "outputs">Outputs</h2>
+     <p>Pipesim outputs a variety of relevant plots, along with spreadsheet full of raw data</p>
+     <h3 id = "age-plot">Age Plot</h3>
+     <p> The age plot plots the age (y-axis) vs. expel time (x-axis) for each particle expelled from the pipe network. Individual flows are differentiated by color.</p>
+     <h3 id = "concentration-plot">Concentration Plot</h3>
+     <p> If free chlorine decay is selected, a chlorine concentration plot will be produced charting the free chlorine concentration (y-axis) vs. time expelled (x-axis) for each particle in the pipe network. Individual flows are differentiated by color.</p>
+     <!-- <h3 id = "particle-modifier-histogram">Particle Modifier Histogram</h3> -->
+     <h3 id = "flow-plot">Flow Plot</h3>
+     <p> The flow plot represents flow in the pipnetwork by simulation time and flow rate. Individual flows are differentiated by color. </p>
+     <h3 id = "pipe-network-diagram">Pipe Network Diagram</h3>
+     <p> The pipe network diagram is a visual representation of the logical tree that forms from the inputted pipe network. </p>
+     <h2 id = "download-logs">Download Logs</h2>
+     <p> After running a simulation, a zip file can be downloaded including the age plot, concentration plot (if applicable), flow plot, and a expelled.csv file containing run and expelled particle information. </p>
+     <p> This information can be saved for future experimentation and reference . </p>
+      <!-- <p>Note that pipes (including endpoints) that have parent pipes farther up the tree (in the diagram) must
+        appear after those parent pipes in the list. There are no other restrictions on the listing order of
+        pipes.</p> -->
+      
+    </div>
+  </div>
+</div>
+
+
+<!-- </div> -->
+
+{% endblock %}
