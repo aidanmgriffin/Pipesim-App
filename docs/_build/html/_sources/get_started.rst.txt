@@ -1,12 +1,11 @@
-Getting started with PipeSim is easy! Choose an access option below, then follow the steps layed out throughout the documentation.
 
 *****************
 Accessing PipeSim
 *****************
 
-PipeSim can be accessed in multiple ways. 
+Getting started with PipeSim is easy! Choose an access option below, then follow the steps layed out throughout the documentation.
 
-Web-App
+Web App
 *******
 
 The PipeSim  `Web App <https://psim-app-2ngq6iwzrq-uw.a.run.app/>`_ allows users to run PipeSim simulations, regardless of system and requirement installations.
@@ -19,7 +18,7 @@ For Windows users, an executable version of the program can be installed directl
 Github Clone 
 ************
 
-Cloning the *no-install* branch of the `GitHub <https://github.com/aidanmgriffin/Pipesim-App/tree/no-install>`_ and running app.py will allow PipeSim to run on LocalHost:5000.
+Cloning the *no-install* branch of the `GitHub`_ and running app.py will allow PipeSim to run locally.
 
 ``Python Version: 3.10.7``
 
