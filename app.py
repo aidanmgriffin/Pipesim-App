@@ -321,6 +321,7 @@ def upload():
             if pipes and allowed_file(pipes.filename) and flows and allowed_file(flows.filename):
                 pipes_filename = secure_filename(pipes.filename)
                 pipes_save_location = os.path.join("input", pipes_filename)
+                print("pipes save location: ", pipes_save_location)
                 pipes.save(pipes_save_location)
                 flows_filename = secure_filename(flows.filename)
                 flows_save_location = os.path.join("input", flows_filename)
