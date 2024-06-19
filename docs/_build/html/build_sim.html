@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Simulation Models &#8212; PipeSim 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=8d563738"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Simulation Arguments" href="sim_arguments.html" />
+    <link rel="prev" title="Get Started" href="documentation.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="simulation-models">
+<h1>Simulation Models<a class="headerlink" href="#simulation-models" title="Link to this heading">¶</a></h1>
+<p>This simulation requires input in the form of two <em>CSV</em> files: one for the pipe network and one for the flow diagram.</p>
+<section id="pipe-network">
+<h2>Pipe Network<a class="headerlink" href="#pipe-network" title="Link to this heading">¶</a></h2>
+<p>To get started building a pipe network file, open a new <em>CSV</em> file or download the <a class="reference download internal" download="" href="_downloads/91a081b4444034c43770968eb8ebf6f6/pipefiletemplate.csv"><code class="xref download docutils literal notranslate"><span class="pre">sample</span> <span class="pre">template</span></code></a>
+The first row (header) of the <em>CSV</em> file is as follows:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>Name</strong></p></td>
+<td><p><strong>Material</strong></p></td>
+<td><p><strong>Width (inches)</strong></p></td>
+<td><p><strong>Length (feet)</strong></p></td>
+<td><p><strong>Parent</strong></p></td>
+<td><p><strong>Root</strong></p></td>
+<td><p><strong>Endpoint</strong></p></td>
+<td><p><strong>D_INF</strong></p></td>
+<td><p><strong>Alpha</strong></p></td>
+</tr>
+</tbody>
+</table>
+<p>If chlorine decay is selected, a free chlorine lambda column should be added to the end of the table.</p>
+<p>If monocholorine network decay is selected add the following columns to the end of the table: kv1 Lambda, kv2 Lambda, kv3 Lambda, kv5 Lambda, kv7 Lambda, DOC1 Lambda, DOC2 Lambda</p>
+<p>The line following the header contains information about the root pipe (the first pipe in the network). The format of this line follows that of the header:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+<col style="width: 11.1%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>root</p></td>
+<td><p>Pex</p></td>
+<td><p>12</p></td>
+<td><p>100</p></td>
+<td><p>NONE</p></td>
+<td><p>TRUE</p></td>
+<td></td>
+<td><p>0.019</p></td>
+<td><p>114</p></td>
+</tr>
+</tbody>
+</table>
+<p>The root node lists TRUE under the root column and has no entry in the Endpoint column. Since the root node has no parent, NONE is written in the parent column.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that the Parent, Root?, and Endpoint? entries are <em>case-sensitive</em>.</p>
+</div>
+<p>Each concurrent entry will describe the next connected pipe in the network. Let us explain how to create the model:</p>
+<div class="line-block">
+<div class="line">root</div>
+<div class="line">arterial-1</div>
+<div class="line">arterial-2</div>
+<div class="line">a2-branch-1</div>
+<div class="line">a2-branch-2</div>
+</div>
+<p>This pipe network has three endpoints. One at the end of arterial-1, one at the end of a2-branch-1, and one at the end of a2-branch-2. You will need to explicitly state these endpoints and give them names in the model file, or else these pipes will be dead-ends.</p>
+<p>We add lines describing the endpoints as follows:</p>
+<div class="line-block">
+<div class="line">endpoint-1</div>
+<div class="line">endpoint-2</div>
+<div class="line">endpoint-3</div>
+</div>
+<p>Now our pipe network looks like:</p>
+<img alt="Pipe network tree visualization" src="_images/tree-graph-scaled.png" />
+<p>With a visualization of the pipe network created, let’s show how this network will be written into the pipe network model file.</p>
+<table class="longtable docutils align-default" id="id1">
+<caption><span class="caption-text">example-model.csv</span><a class="headerlink" href="#id1" title="Link to this table">¶</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Material</p></th>
+<th class="head"><p>Width (inches)</p></th>
+<th class="head"><p>Length (feet)</p></th>
+<th class="head"><p>Parent</p></th>
+<th class="head"><p>Root</p></th>
+<th class="head"><p>Endpoint</p></th>
+<th class="head"><p>D_INF</p></th>
+<th class="head"><p>Alpha</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>root</p></td>
+<td><p>copper</p></td>
+<td><p>2</p></td>
+<td><p>60</p></td>
+<td><p>NONE</p></td>
+<td><p>TRUE</p></td>
+<td></td>
+<td><p>0.01946</p></td>
+<td><p>114</p></td>
+</tr>
+<tr class="row-odd"><td><p>Arterial-1</p></td>
+<td><p>copper</p></td>
+<td><p>1</p></td>
+<td><p>40</p></td>
+<td><p>root</p></td>
+<td></td>
+<td></td>
+<td><p>0.01946</p></td>
+<td><p>114</p></td>
+</tr>
+<tr class="row-even"><td><p>Arterial-2</p></td>
+<td><p>copper</p></td>
+<td><p>1</p></td>
+<td><p>40</p></td>
+<td><p>root</p></td>
+<td></td>
+<td></td>
+<td><p>0.01946</p></td>
+<td><p>114</p></td>
+</tr>
+<tr class="row-odd"><td><p>Endpoint-1</p></td>
+<td><p>None</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>Arterial-1</p></td>
+<td></td>
+<td><p>TRUE</p></td>
+<td><p>0.01946</p></td>
+<td><p>114</p></td>
+</tr>
+<tr class="row-even"><td><p>a2-branch-1</p></td>
+<td><p>PVC</p></td>
+<td><p>0.5</p></td>
+<td><p>25</p></td>
+<td><p>Arterial-1</p></td>
+<td></td>
+<td></td>
+<td><p>0.01946</p></td>
+<td><p>114</p></td>
+</tr>
+<tr class="row-odd"><td><p>a2-branch-2</p></td>
+<td><p>PVC</p></td>
+<td><p>0.75</p></td>
+<td><p>15</p></td>
+<td><p>Arterial-2</p></td>
+<td></td>
+<td></td>
+<td><p>0.01946</p></td>
+<td><p>114</p></td>
+</tr>
+<tr class="row-even"><td><p>Endpoint-2</p></td>
+<td><p>None</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>a2-branch-1</p></td>
+<td></td>
+<td><p>TRUE</p></td>
+<td><p>0.01946</p></td>
+<td><p>114</p></td>
+</tr>
+<tr class="row-odd"><td><p>Endpoint-3</p></td>
+<td><p>None</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>a2-branch-2</p></td>
+<td></td>
+<td><p>TRUE</p></td>
+<td><p>0.01946</p></td>
+<td><p>114</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The first row of the pipe network spreadsheet must describe the root of the pipe network.</p>
+</div>
+<p>The columns of this table describe the following:</p>
+<p><strong>Name</strong></p>
+<p>The name of an individual pipe. Each name must be unique.</p>
+<p><strong>Material</strong></p>
+<p>The Material of the given pipe.</p>
+<p>Pipes with the same material type must be given the same name. The program will group pipes by material type in order to measure residence times by material.</p>
+<p>If describing an endpoint, input “NONE” into the pipe’s corresponding material cell.</p>
+<p><strong>Width</strong></p>
+<p>The width of the given pipe in inches.</p>
+<p><strong>Length</strong></p>
+<p>The length of the given pipe in feet.</p>
+<p><strong>Parent</strong></p>
+<p>The name of the pipe that is the parent of the given pipe. Multiple pipes may be connected to the same parent. Each individual pipe must have a single parent.</p>
+<p>If describing the root of a pipe network, input “NONE” into the pipe’s corresponding parent cell. This row must be the first of the spreadsheet.</p>
+<p>Note that each pipe must appear below its parent in the pipe network file.</p>
+<p><strong>Root?</strong></p>
+<p>Indicates whether the given pipe is the root of the pipe network. Indicate “TRUE” in the Root? column of the first row of the spreadsheet, as this describes the root of the pipe network.</p>
+<p><strong>Endpoint?</strong></p>
+<p>Indicates whether the given pipe is an endpoint of the pipe network. Indicate “TRUE” in the Endpoint? column of each row describing an endpoint. Pipes designated as endpoints must not act as the parents of any other pipes in the network.</p>
+<p><strong>D_INF</strong></p>
+<p>The molecular diffusion coefficient of the given pipe. This value is used to calculate the diffusion of particles in the pipe network. This should be entered in units: cm^2/min. If making a simulation run without diffusion ebabled, this column may be left blank.</p>
+<p><strong>Alpha</strong></p>
+<p>The alpha value of the given pipe. This value is used in the calculation of diffusion for particles in the pipe network. This should be given in units of minutes. If making a simulation run without diffusion ebabled, this column may be left blank.</p>
+<section id="optional-columns">
+<h3>Optional Columns<a class="headerlink" href="#optional-columns" title="Link to this heading">¶</a></h3>
+<p><strong>Free Chlorine Lambda</strong>
+Lambdas for the given pipe affecting various chemical decay formulas given here.</p>
+<p><strong>Monochloramine Lambdas</strong>
+kv1, kv2, kv3, kv5, kv7, DOC1, and DOC2 Lambdas affect monochloramine network decay formulas.</p>
+</section>
+</section>
+<section id="flow-description">
+<h2>Flow Description<a class="headerlink" href="#flow-description" title="Link to this heading">¶</a></h2>
+<p>To get started building a pipe network file, open a new &lt;em&gt;CSV&lt;/em&gt; file or download the <a class="reference download internal" download="" href="_downloads/afc4fe6bfee905cb914e61dc7ac4a245/flowstemplate.csv"><code class="xref download docutils literal notranslate"><span class="pre">flows</span> <span class="pre">template</span></code></a></p>
+<p>The first row (header) of the <em>CSV</em> file is as follows:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>Endpoint</strong></p></td>
+<td><p><strong>Start Time</strong></p></td>
+<td><p><strong>End Time</strong></p></td>
+<td><p><strong>Flowrate</strong></p></td>
+<td><p><strong>Sim Lifetime</strong></p></td>
+</tr>
+</tbody>
+</table>
+<p>The following rows describe the flow events occuring in the pipe system.</p>
+<p>The first row following the header must also contain the total runtime of the simulation.</p>
+<p>A completed flows spreadsheet will look something like the following:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Endpoint</p></th>
+<th class="head"><p>Start Time</p></th>
+<th class="head"><p>End Time</p></th>
+<th class="head"><p>Flowrate</p></th>
+<th class="head"><p>Sim Lifetime</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>endpoint-1</p></td>
+<td><p>0</p></td>
+<td><p>120</p></td>
+<td><p>5</p></td>
+<td><p>24:00:00</p></td>
+</tr>
+<tr class="row-odd"><td><p>endpoint-2</p></td>
+<td><p>90</p></td>
+<td><p>410</p></td>
+<td><p>1</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>endpoint-1</p></td>
+<td><p>900</p></td>
+<td><p>1025</p></td>
+<td><p>1.25</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>endpoint-2</p></td>
+<td><p>1000</p></td>
+<td><p>2000</p></td>
+<td><p>1</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>endpoint-1</p></td>
+<td><p>2480</p></td>
+<td><p>3000</p></td>
+<td><p>0.5</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>endpoint-3</p></td>
+<td><p>500</p></td>
+<td><p>900</p></td>
+<td><p>1</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>The columns of this table describe the following:</p>
+<p><strong>Endpoint</strong></p>
+<p>The name of the endpoint of the pipe network. This must match the name of an endpoint in the pipe network file. Each endpoint represents a tap in the pipe system.</p>
+<p><strong>Start Time</strong></p>
+<p>The time at which the tap opens. This value is given in minutes.</p>
+<p><strong>End Time</strong></p>
+<p>The time at which the tap closes. This value is given in minutes.</p>
+<p><strong>Flowrate</strong></p>
+<p>The flowrate of the tap. This value is given in gallons/minute.</p>
+<p><strong>Sim Lifetime</strong></p>
+<p>The total duration of the simulation. This value is given in days.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">PipeSim</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Get Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Build a Simulation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pipe-network">Pipe Network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#optional-columns">Optional Columns</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#flow-description">Flow Description</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sim_arguments.html">Simulation Arguments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="download_logs.html">Download Logs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="documentation.html" title="previous chapter">Get Started</a></li>
+      <li>Next: <a href="sim_arguments.html" title="next chapter">Simulation Arguments</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Nikita Ostrander, Aidan Griffin, Tim Ginn.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/build_sim.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
