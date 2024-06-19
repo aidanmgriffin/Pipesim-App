@@ -1,85 +1,50 @@
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<html lang="en" data-content_root="./">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulation Arguments &mdash; PipeSim 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
-    <title>Simulation Arguments &#8212; PipeSim 1.0.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
-    <script src="_static/documentation_options.js?v=8d563738"></script>
-    <script src="_static/doctools.js?v=9a2dae69"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=8d563738"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Outputs" href="outputs.html" />
-    <link rel="prev" title="Simulation Models" href="build_sim.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
+    <link rel="prev" title="Simulation Models" href="build_sim.html" /> 
+</head>
 
-  
-  
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
 
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
           
-
-          <div class="body" role="main">
-            
-  <section id="simulation-arguments">
-<h1>Simulation Arguments<a class="headerlink" href="#simulation-arguments" title="Link to this heading">¶</a></h1>
-<p>When running a new simulation, there are several arguments which must be initially defined. These include diffusion status / rate, particle density, and time granularity.</p>
-<section id="diffusion">
-<h2>Diffusion<a class="headerlink" href="#diffusion" title="Link to this heading">¶</a></h2>
-<p>Diffusion is the net spreading of water particles in the pipe network. This can be turned on or off by selecting/deselecting the “Diffusion Enabled” box while building a simulation.</p>
-<p>The (pre-asymptotic) dispersion coefficient is D(ω) = (D_inf - D_m)(1 - e ^ (- ω / α)) where ω is time in flow, D_m s molecular diffusion coefficient, D_inf is asymptotic dispersion coefficient, and ɑ is a scaling parameter. If you do not wish to model pre-asymptotic dispersion, set α = 1, and D_m = D_inf = the asymptotic diffusion coefficient for each pipe.</p>
-<p>Once diffusion is chosen, it can be customized in multiple ways.</p>
-<p><strong>Diffusion Rate</strong></p>
-<p>The rate of diffusion is given in gallons per minute.</p>
-<p><strong>Diffusion During Stagnant Periods</strong></p>
-<p>Diffusion can be turned on / off for periods of no flow in the pipe system.</p>
-<p><strong>Diffusion &amp; Dispersion During Advective Periods</strong></p>
-<p>Diffusion &amp; dispersion can be turned on / off for periods of flow in the pipe system. Periods of flow are defined as time periods between an endpoint’s starttime and endtime.</p>
-</section>
-<section id="particle-density">
-<h2>Particle Density<a class="headerlink" href="#particle-density" title="Link to this heading">¶</a></h2>
-<p>The distance (in inches) between particle placements in the pipe network. A smaller particle density value results in more particles being entered into the pipe network. This way of adding particles to the inflow water does not maintain constant particle numbers per inflow volume.</p>
-<p>Density range is held within [0.1,1]</p>
-</section>
-<section id="time-granularity">
-<h2>Time Granularity<a class="headerlink" href="#time-granularity" title="Link to this heading">¶</a></h2>
-<p>The time increment in which the simulation advances towards the total simulation lifetime, chosen in units of seconds.</p>
-<p>i.e. if the total sim lifetime is given as 1 day:
-- If time granularity is chosen as hours (custom granularity of 3600), the simulation will update a total of 24 times.
-- If time granularity is chosen as minutes (custom granularity of 60), the simulation will update a total of 1440 times.
-- If time granularity is chosen as seconds (granularity of 1), the simulation will update a total of 86400 times.</p>
-</section>
-</section>
-
-
-          </div>
           
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">PipeSim</a></h1>
-
-
-
-
-
-
-
-
-<h3>Navigation</h3>
-<ul class="current">
+          <a href="index.html" class="icon icon-home">
+            PipeSim
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="documentation.html">Get Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="build_sim.html">Build a Simulation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Simulation Arguments</a><ul>
@@ -92,51 +57,89 @@
 <li class="toctree-l1"><a class="reference internal" href="download_logs.html">Download Logs</a></li>
 </ul>
 
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="build_sim.html" title="previous chapter">Simulation Models</a></li>
-      <li>Next: <a href="outputs.html" title="next chapter">Outputs</a></li>
-  </ul></li>
-</ul>
-</div>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
-
-
-
-
-
-
-
-
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &#169;2024, Nikita Ostrander, Aidan Griffin, Tim Ginn.
-      
-      |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
-      
-      |
-      <a href="_sources/sim_arguments.rst.txt"
-          rel="nofollow">Page source</a>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PipeSim</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Simulation Arguments</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/sim_arguments.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="simulation-arguments">
+<h1>Simulation Arguments<a class="headerlink" href="#simulation-arguments" title="Link to this heading"></a></h1>
+<p>When running a new simulation, there are several arguments which must be initially defined. These include diffusion status / rate, particle density, and time granularity.</p>
+<section id="diffusion">
+<h2>Diffusion<a class="headerlink" href="#diffusion" title="Link to this heading"></a></h2>
+<p>Diffusion is the net spreading of water particles in the pipe network. This can be turned on or off by selecting/deselecting the “Diffusion Enabled” box while building a simulation.</p>
+<p>The (pre-asymptotic) dispersion coefficient is D(ω) = (D_inf - D_m)(1 - e ^ (- ω / α)) where ω is time in flow, D_m s molecular diffusion coefficient, D_inf is asymptotic dispersion coefficient, and ɑ is a scaling parameter. If you do not wish to model pre-asymptotic dispersion, set α = 1, and D_m = D_inf = the asymptotic diffusion coefficient for each pipe.</p>
+<p>Once diffusion is chosen, it can be customized in multiple ways.</p>
+<p><strong>Diffusion Rate</strong></p>
+<p>The rate of diffusion is given in gallons per minute.</p>
+<p><strong>Diffusion During Stagnant Periods</strong></p>
+<p>Diffusion can be turned on / off for periods of no flow in the pipe system.</p>
+<p><strong>Diffusion &amp; Dispersion During Advective Periods</strong></p>
+<p>Diffusion &amp; dispersion can be turned on / off for periods of flow in the pipe system. Periods of flow are defined as time periods between an endpoint’s starttime and endtime.</p>
+</section>
+<section id="particle-density">
+<h2>Particle Density<a class="headerlink" href="#particle-density" title="Link to this heading"></a></h2>
+<p>The distance (in inches) between particle placements in the pipe network. A smaller particle density value results in more particles being entered into the pipe network. This way of adding particles to the inflow water does not maintain constant particle numbers per inflow volume.</p>
+<p>Density range is held within [0.1,1]</p>
+</section>
+<section id="time-granularity">
+<h2>Time Granularity<a class="headerlink" href="#time-granularity" title="Link to this heading"></a></h2>
+<p>The time increment in which the simulation advances towards the total simulation lifetime, chosen in units of seconds.</p>
+<p>i.e. if the total sim lifetime is given as 1 day:
+- If time granularity is chosen as hours (custom granularity of 3600), the simulation will update a total of 24 times.
+- If time granularity is chosen as minutes (custom granularity of 60), the simulation will update a total of 1440 times.
+- If time granularity is chosen as seconds (granularity of 1), the simulation will update a total of 86400 times.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="build_sim.html" class="btn btn-neutral float-left" title="Simulation Models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="outputs.html" class="btn btn-neutral float-right" title="Outputs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
-    
+  <hr/>
 
-    
-  </body>
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Nikita Ostrander, Aidan Griffin, Tim Ginn.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>
