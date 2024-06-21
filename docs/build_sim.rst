@@ -70,6 +70,9 @@ With a visualization of the pipe network created, let's show how this network wi
 .. note::
    The first row of the pipe network spreadsheet must describe the root of the pipe network.
 
+Default Columns
+^^^^^^^^^^^^^^^
+
 The columns of this table describe the following:
 
 **Name**
