@@ -65,7 +65,7 @@ def canvas():
 def upload():
 
     # Clear output folder of any files from previous simulations.
-    path = pathlib.Path('logs\output_batch')
+    path = pathlib.Path('logs/output_batch')
     for root, dirs, files in os.walk(path):
         for file in files:
             os.remove((str(path) + '/'  + file))
@@ -409,7 +409,7 @@ def download():
 @app.route('/download_log')
 def download_log():
     
-    path = pathlib.Path('logs\output_batch')
+    path = pathlib.Path('logs/output_batch')
     memory_file = BytesIO()
 
     
