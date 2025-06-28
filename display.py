@@ -142,115 +142,6 @@ class SimulationWindow():
             traceback.print_exc()
             exception_holder.exception = e
 
-    def settings_preset_simulation_button_handler(self, filename):
-        """
-        Takes parameters from the settings preset file and passes them to the simulation.
-
-        :param filename: the name of the settings preset file
-        :return: 1 if the simulation was successful and 0 otherwise
-        """
-
-        valid = True
-        f0 = None
-
-        try:
-            f0 = open(filename)
-            f0.close()
-        except:
-            valid = False
-        
-        if valid:
-            contents = self.load_settings_csv(filename)
-
-            if contents[0][3] == 'Yes' or contents[0][2] == 'yes' or contents[0][2] == "YES":
-                self.diffusion_stagnant_status = True 
-            else:
-                self.diffusion_stagnant_status = False
-            
-            if contents[0][4] == 'Yes' or contents[0][3] == 'yes' or contents[0][3] == "YES":
-                self.diffusion_advective_status = True 
-            else:
-                self.diffusion_advective_status = False
-
-            if contents[0][7] == 'Yes' or contents[0][7] == 'yes' or contents[0][7] == "YES":
-                self.decay_free_chlorine_status = True
-            else:
-                self.decay_free_chlorine_status = False
-            
-            if contents[0][10] == 'Yes' or contents[0][10] == 'yes' or contents[0][10] == "YES":
-                self.decay_monochloramine_status = True
-            else:
-                self.decay_monochloramine_status = False
-
-            if contents[0][31] == 'Yes' or contents[0][31] == 'yes' or contents[0][31] == "YES":
-                self.groupby_status = True
-            else:
-               self.groupby_status = False
-            
-
-            if self.diffusion_advective_status == True or self.diffusion_stagnant_status == True:
-                self.diffusion_status = True
-            else:
-                self.diffusion_status = False
-
-            self.step_size = float(contents[0][6]) / 60
-            self.generate_path()
-
-            
-            decay_monochloramine_dict = {}
-            decay_monochloramine_dict["starting-particles-concentration-hypochlorous"] = float(contents[0][11])
-            decay_monochloramine_dict["injected-particles-concentration-hypochlorous"] = float(contents[0][12])
-            decay_monochloramine_dict["starting-particles-concentration-ammonia"] = float(contents[0][13])
-            decay_monochloramine_dict["injected-particles-concentration-ammonia"] = float(contents[0][14])
-            decay_monochloramine_dict["starting-particles-concentration-monochloramine"] = float(contents[0][15])
-            decay_monochloramine_dict["injected-particles-concentration-monochloramine"] = float(contents[0][16])
-            decay_monochloramine_dict["starting-particles-concentration-dichloramine"] = float(contents[0][17])
-            decay_monochloramine_dict["injected-particles-concentration-dichloramine"] = float(contents[0][18])
-            decay_monochloramine_dict["starting-particles-concentration-iodine"] = float(contents[0][19])
-            decay_monochloramine_dict["injected-particles-concentration-iodine"] = float(contents[0][20])
-            decay_monochloramine_dict["starting-particles-concentration-docb"] = float(contents[0][21])
-            decay_monochloramine_dict["injected-particles-concentration-docb"] = float(contents[0][22])
-            decay_monochloramine_dict["starting-particles-concentration-docbox"] = float(contents[0][23])
-            decay_monochloramine_dict["injected-particles-concentration-docbox"] = float(contents[0][24])
-            decay_monochloramine_dict["starting-particles-concentration-docw"] = float(contents[0][25])
-            decay_monochloramine_dict["injected-particles-concentration-docw"] = float(contents[0][26])
-            decay_monochloramine_dict["starting-particles-concentration-docwox"] = float(contents[0][27])
-            decay_monochloramine_dict["injected-particles-concentration-docwox"] = float(contents[0][28])
-            decay_monochloramine_dict["starting-particles-concentration-chlorine"] = float(contents[0][29])
-            decay_monochloramine_dict["injected-particles-concentration-chlorine"] = float(contents[0][30])
-
-            manager = multiprocessing.Manager()
-            exception_holder = manager.Namespace()
-            
-            simulator = driver.Driver(self.Queue, step = self.step_size)
-            arguments = driver.ExecutionArguments(settingsfile = filename, 
-                                                  modelfile=contents[0][0], 
-                                                  presetsfile=contents[0][1],
-                                                  density= float(contents[0][5]), 
-                                                  pathname=self.outputLocation,
-                                                  diffuse=self.diffusion_status, 
-                                                  diffuse_stagnant= self.diffusion_stagnant_status, 
-                                                  diffuse_advective=self.diffusion_advective_status, 
-                                                  molecular_diffusion_coefficient = float(contents[0][4]),
-                                                  decay_free_chlorine_status=self.decay_free_chlorine_status,
-                                                  decay_monochloramine_status=self.decay_monochloramine_status,
-                                                  starting_particles_free_chlorine_concentration=float(contents[0][8]),
-                                                  injected_particles_free_chlorine_concentration=float(contents[0][9]),
-                                                  decay_monochloramine_dict=decay_monochloramine_dict,
-                                                  groupby_status=self.groupby_status,
-                                                  timestep_group_size=float(contents[0][32]),
-                                                  )
-            
-            sim = Process(target = self.exception_wrapper, args = (simulator.exec_preset, exception_holder, arguments))
-            sim.start()
-            sim.join()
-
-            if sim.exitcode == 0:
-                return([1, self.diffusion_status])
-            else:
-                return(0)
-            
-        
     def preset_simulation_button_handler(   self, 
                                             file1, 
                                             file2, 
@@ -323,7 +214,6 @@ class SimulationWindow():
             self.generate_path()
             simulator = driver.Driver(self.Queue, step = self.step_size)
             arguments = driver.ExecutionArguments(
-                settingsfile = None, 
                 modelfile=file1,
                 presetsfile=file2,
                 density=density,
