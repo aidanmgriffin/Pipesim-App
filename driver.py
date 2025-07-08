@@ -3,6 +3,7 @@ This module contains the driver class, which is responsible for running the simu
 """
 
 import os
+import sys
 import csv
 import math
 import time
@@ -22,6 +23,7 @@ class ExecutionArguments:
     note that it performs no validation on input and may be created with improper values,
     missing values, or incorrect types.
     """
+
 
     def __init__(self,
                  modelfile = None,
@@ -45,6 +47,7 @@ class ExecutionArguments:
                  groupby_status = None,
                  timestep_group_size = 1,
                  ):
+        
         self.modelfile = modelfile
         self.presetsfile = presetsfile
         self.pathname = pathname
@@ -75,6 +78,7 @@ class Graphing:
     """
 
     def __init__(self, queue):
+
         """
         initializes a new graphing class instance when provided with a reference to the process messaging queue
 
@@ -116,10 +120,21 @@ class Graphing:
 
         self.step = (1 / step) * 60
 
-        age_display = './static/output/age_graph.png'
-        age_display_large ='./static/output/age_graph_large.png'
-        concentration_display = './static/output/concentration_graph.png'
-        flows_display ='./static/output/flow_graph.png'
+        try:
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+
+
+        age_display = 'static/output/age_graph.png'
+        age_display =os.path.join(base_path, age_display)
+        age_display_large ='static/output/age_graph_large.png'
+        age_display_large = os.path.join(base_path, age_display_large)
+        concentration_display = 'static/output/concentration_graph.png'
+        concentration_display = os.path.join(base_path, concentration_display)
+        flows_display ='static/output/flow_graph.png'
+        flows_display = os.path.join(base_path, flows_display)
+        
         # filename_concentration = filename + '/concentration_graph.png'
         # filename_large = filename + '/age_graph_large.png'
         # filename_standard = filename + '/age_graph.png'
@@ -314,7 +329,7 @@ class Graphing:
         
         color = self.select_color()
         try:
-            plt.hist(modifier_values, bins=60, color=color, ec=color, edgecolor='black')
+            plt.hist(modifier_values, bins=60, color=color, ec=color)
             plt.title("Mean: " + str(total / num_modifiers))
             plt.savefig(filename + '.png', format='png')
         except:
@@ -345,7 +360,7 @@ class Graphing:
         top_values = new_values
         color = self.select_color()
         try:
-            plt.hist(top_values, bins=60, color=color, ec=color, density=True, edgecolor='black')
+            plt.hist(top_values, bins=60, color=color, ec=color, density=True)
         except Exception as e:
             raise Exception(e)
 
@@ -364,6 +379,7 @@ class Driver:
     """
 
     def __init__(self, queue = None, timer = None, step = None):
+
         """
         Establishes initial variables for the simulation.
         """
@@ -617,7 +633,13 @@ class Driver:
                     pipe_particles, expelled_particles)
             message += line2
 
-            with open("static/update-text.txt", "w") as update_text:
+            try:
+                base_path = sys._MEIPASS
+            except Exception:
+                base_path = os.path.abspath(".")
+
+
+            with open(os.path.join(base_path, "static", "update-text.txt"), "w") as update_text:
                 update_text.write(message)
             print(message)
             send = ("progress_update", message)
@@ -637,8 +659,10 @@ class Driver:
         :param particles: The dictionary of particles to be written to the file. Contain expulsion information for each particle.
         """
 
+        print("Writing output...", filename)
         results = open(filename, 'w')
         writer = csv.writer(results,'excel')
+
         arguments = self.arguments
 
         # Print run information in the first row of the output csv file.
@@ -659,6 +683,8 @@ class Driver:
             # data = particle.get_output()
             writer.writerow(key)
         results.close()
+
+        print("Finished writing output...")
 
     def write_groupby_particles_output(self, filename, particles, groupby):
         """
@@ -1182,12 +1208,21 @@ class Driver:
             except Exception as e:
                 raise Exception("Error generating graphs. [" + str(e) + "]") 
             
+            try:
+    # PyInstaller creates a temp folder and stores path in _MEIPASS
+                base_path = sys._MEIPASS
+            except Exception:
+                base_path = os.path.abspath(".")
+
             try: 
+                
+                expelled_output_path = os.path.join(base_path, "static/output/expelled.csv")
+                # expelled_output_path = "static/output/expelled.csv"
         
-                self.write_output("./static/output/expelled.csv", self.manager.expelled_particles)
+                self.write_output(expelled_output_path, self.manager.expelled_particles)
 
                 if(self.arguments.groupby_status == 1):
-                    self.write_groupby_time_output("./static/output/expelled_groups.csv", self.manager.expelled_particles, self.arguments.timestep_group_size)
+                    self.write_groupby_time_output(expelled_output_path, self.manager.expelled_particles, self.arguments.timestep_group_size)
 
                 # This function slows everything down considerably, and is not currently used. Generates a particle modifier histogram...
                 # if self.manager.diffusionActive:
@@ -1204,7 +1239,8 @@ class Driver:
                 skew = 3 * math.sqrt((2 * (self.manager.molecular_diffusion_coefficient /144)) / (lengthFeet * velocity))
                 mean *= self.TIME_STEP
                 # g.write_expel_bins(pathname+"\expelled_histogram", mean, var, self.manager.expelled_particle_data)
-                g.write_expel_bins("./static/output/expelled_histogram", mean, var,  self.manager.expelled_particle_data)
+                expelled_histogram_path = os.path.join(base_path, "static/output/expelled_histogram")
+                g.write_expel_bins(expelled_histogram_path, mean, var,  self.manager.expelled_particle_data)
                 # ageDict = self.write_pipe_ages(pathname+"\pipe_ages.csv", self.manager.expelled_particles)
                 # self.root.generate_tree()
 

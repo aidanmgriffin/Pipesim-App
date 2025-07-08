@@ -3,6 +3,7 @@ This file contains the main flask application. It contains the routes for the we
 """
 
 import os
+import sys
 from time import time
 from flask import jsonify
 import math
@@ -65,7 +66,7 @@ def canvas():
 def upload():
 
     # Clear output folder of any files from previous simulations.
-    path = pathlib.Path('logs\output_batch')
+    path = pathlib.Path('logs/output_batch')
     for root, dirs, files in os.walk(path):
         for file in files:
             os.remove((str(path) + '/'  + file))
@@ -318,13 +319,23 @@ def upload():
         # Attempt to save pipe network and flows files to input folder. If unsuccessful (most likely due to incorrect file type),
         # an error will be shown to the user.
         try:
+
             if pipes and allowed_file(pipes.filename) and flows and allowed_file(flows.filename):
+
+                try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+                    base_path = sys._MEIPASS
+                except Exception:
+                    base_path = os.path.abspath(".")
+
                 pipes_filename = secure_filename(pipes.filename)
-                pipes_save_location = os.path.join("input", pipes_filename)
-                print("pipes save location: ", pipes_save_location)
+                pipes_filename = os.path.join("input", pipes_filename)
+                pipes_save_location = os.path.join(base_path, pipes_filename)
+                print("pipes_save_location: ", pipes_save_location)
                 pipes.save(pipes_save_location)
                 flows_filename = secure_filename(flows.filename)
-                flows_save_location = os.path.join("input", flows_filename)
+                flows_filename = os.path.join("input", flows_filename)
+                flows_save_location = os.path.join(base_path, flows_filename)
                 flows.save(flows_save_location)
         except Exception as e:
             alertDanger.message = "Pipe Network File Could Not Uploaded. Is file type CSV?" + e
@@ -368,13 +379,17 @@ def upload():
 
         except Exception as e:
             alertDanger.message = e
+        
+        try:
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
 
-        with open('static/update-text.txt', 'w') as f:
+        with open(os.path.join(base_path, 'static','update-text.txt'), 'w') as f:
             f.write('')
 
         #If simulation is successful, redirect to download page. If failed, show error message.
         if(output_file):
-            print("Simulation Complete...")
             return redirect(url_for('download' ,  concentration_status = int(decay_free_chlorine_status), diffusion_status = diffusion_status, date_time = date_time))
 
         else:
@@ -409,7 +424,7 @@ def download():
 @app.route('/download_log')
 def download_log():
     
-    path = pathlib.Path('logs\output_batch')
+    path = pathlib.Path('logs/output_batch')
     memory_file = BytesIO()
 
     
@@ -449,9 +464,9 @@ def page_not_found_500(e):
 
 if __name__ == '__main__':
 
-    # multiprocessing.freeze_support() # Required for multiprocessing to work on Windows
+    multiprocessing.freeze_support() # Required for multiprocessing to work on Windows
 
     print("App Running...")
 
-    # webbrowser.open("http://localhost:5000") # Open browser to localhost:5000
+    webbrowser.open("http://localhost:5000") # Open browser to localhost:5000
     app.run()

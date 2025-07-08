@@ -53,6 +53,8 @@ class ParticleManager():
 
         :param time: the time object that tracks the passage of time in the simulation.
         """
+
+        print("Particle Manager initialized")
         
         self.num_particles: int = 0
         self.deleted_particles: int = 0

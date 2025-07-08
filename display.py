@@ -17,6 +17,7 @@ class SimulationWindow():
     """
 
     def __init__(self):
+
         """
         Establish initial window state including text, buttons, and data entry boxes.
         """
@@ -207,6 +208,7 @@ class SimulationWindow():
 
         self.step_size = granularity
 
+
         manager = multiprocessing.Manager()
         exception_holder = manager.Namespace()
 
@@ -238,7 +240,6 @@ class SimulationWindow():
             sim.join()
 
             if hasattr(exception_holder, 'exception'):
-                print("exception holder")
                 raise exception_holder.exception
             
             if sim.exitcode == 0:
